@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.cream.dto.product.AdminCreateProductResponse;
-import com.sparta.cream.dto.product.AdminProductCreateRequest;
+import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.service.ProductService;
 
 import jakarta.validation.Valid;
@@ -23,7 +23,7 @@ public class AdminProductController {
 
 	@PostMapping
 	public ResponseEntity<AdminCreateProductResponse> createProduct(
-		@RequestBody @Valid AdminProductCreateRequest request
+		@RequestBody @Valid AdminCreateProductRequest request
 	) {
 		AdminCreateProductResponse response = productService.createProduct(request);
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);

@@ -9,26 +9,24 @@ import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductStatus;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 public class AdminCreateProductResponse {
 
 	private Long id;
 	private String name;
 	private String modelNumber;
-	private String brandName;
-	private Long categoryId;
-	private List<Long> imageIds;
-	private List<Long> productIds;
-	private String color;
-	private String sizeUnit;
-	private ProductStatus productStatus;
-	private OperationStatus operationStatus;
-	private BigDecimal retailPrice;
-	private LocalDateTime retailDate;
 	private LocalDateTime createDate;
 
-	public static AdminCreateProductResponse from(Product savedProduct) {
+	public static AdminCreateProductResponse from(Product product) {
+		return new AdminCreateProductResponse(
+			product.getId(),
+			product.getName(),
+			product.getModelNumber(),
+			product.getCreatedAt()
+		);
 	}
 }

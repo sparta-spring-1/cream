@@ -12,8 +12,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
-public class AdminProductCreateRequest {
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor
+public class AdminCreateProductRequest {
 
 	@NotBlank(message = "상품명은 필수입니다.")
 	@Size(max = 100, message = "상품명은 100자를 초과할 수 없습니다.")
