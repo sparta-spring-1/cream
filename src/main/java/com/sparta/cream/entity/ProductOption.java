@@ -10,8 +10,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 @Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductOption extends BaseEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,9 +28,12 @@ public class ProductOption extends BaseEntity {
 	@Column(nullable = false, length = 30)
 	private String size;
 
-	@Column(length = 30)
-	private int sizeOrder;
-
 	@Column(precision = 12, scale = 2)
 	private BigDecimal lastMatchedPrice;
+
+	@Builder
+	public ProductOption(Product product, String size) {
+		this.product = product;
+		this.size = size;
+	}
 }

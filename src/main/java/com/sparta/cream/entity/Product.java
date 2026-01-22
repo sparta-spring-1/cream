@@ -18,6 +18,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -73,5 +74,20 @@ public class Product extends BaseEntity {
 
 	private LocalDateTime retailDate;
 
+	@Builder
+	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory, String color,
+		String sizeUnit, ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
+		LocalDateTime retailDate) {
+		this.name = name;
+		this.modelNumber = modelNumber;
+		this.brandName = brandName;
+		this.productCategory = productCategory;
+		this.color = color;
+		this.sizeUnit = sizeUnit;
+		this.productStatus = productStatus;
+		this.operationStatus = operationStatus;
+		this.retailPrice = retailPrice;
+		this.retailDate = retailDate;
+	}
 }
 
