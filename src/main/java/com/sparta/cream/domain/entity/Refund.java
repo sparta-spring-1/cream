@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
  * <p>
  * 특정 결제 건에 대한 환불이 발생했을 때, 환불 사유와 금액 등의 정보를 저장하여
  * 환불 내역을 관리합니다.
+ * 전액 환불만 가능합니다.
  * </p>
  *
  * @author 변채주
@@ -40,12 +41,12 @@ public class Refund extends BaseTimeEntity {
 	private Long amount;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "payment_id", nullable = false)
-	private Payment payment;
+	@JoinColumn(name = "payment_history_id", nullable = false)
+	private PaymentHistory paymentHistory;
 
-	public Refund(String reason, Long amount, Payment payment) {
+	public Refund(String reason, Long amount, PaymentHistory paymentHistory) {
 		this.reason = reason;
 		this.amount = amount;
-		this.payment = payment;
+		this.paymentHistory = paymentHistory;
 	}
 }

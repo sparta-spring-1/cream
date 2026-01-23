@@ -13,7 +13,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,9 +33,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @Getter
-@Builder
 public class Payment extends BaseTimeEntity {
 
 	@Id
@@ -56,7 +53,7 @@ public class Payment extends BaseTimeEntity {
 	@Column(nullable = false)
 	private PaymentStatus status;
 
-	@Column(nullable = false, length = 50)
+	@Column(length = 50)
 	private String method;
 
 	@Column(name = "paid_at")
@@ -71,4 +68,28 @@ public class Payment extends BaseTimeEntity {
 	@JoinColumn(name = "user_id")
 	private Users user;
 	*/
+
+	public Payment(String merchantUid, Long amount, PaymentStatus status/*, Trade trade*/) {
+		this.merchantUid = merchantUid;
+		this.amount = amount;
+		this.status = status;
+		//this.trade = trade;
+	}
+
+	@Builder
+	private Payment(String merchantUid,
+		String impUid,
+		Long amount,
+		PaymentStatus status,
+		String method,
+		LocalDateTime paidAt/*,
+		 Trade trade,
+		 Users user*/) {
+		this.merchantUid = merchantUid;
+		this.impUid = impUid;
+		this.amount = amount;
+		this.status = status;
+		this.method = method;
+		this.paidAt = paidAt;
+	}
 }
