@@ -13,11 +13,13 @@ import lombok.Getter;
 public class CommonErrorResponse<T> {
 
 	private final HttpStatus status;
+	private final String code;
 	private final String message;
 	private final T data;
 
-	public CommonErrorResponse(HttpStatus status, String message, T data) {
+	public CommonErrorResponse(HttpStatus status, String code, String message, T data) {
 		this.status = status;
+		this.code = code;
 		this.message = message;
 		this.data = data;
 	}
@@ -28,7 +30,7 @@ public class CommonErrorResponse<T> {
 	 * @param data : 어떤 응답 dto 인지
 	 */
 	public static <T> CommonErrorResponse<T> of(BaseCode code, T data) {
-		return new CommonErrorResponse<>(code.getStatus(), code.getMessage(), data);
+		return new CommonErrorResponse<>(code.getStatus(),code.toString(), code.getMessage(), data);
 	}
 
 	/**
