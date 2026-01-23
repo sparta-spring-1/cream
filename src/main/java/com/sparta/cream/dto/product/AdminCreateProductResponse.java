@@ -4,17 +4,22 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.entity.Product;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class AdminCreateProductResponse {
 
-	private Long id;
-	private String name;
-	private String modelNumber;
-	private LocalDateTime createDate;
+	private final Long id;
+	private final String name;
+	private final String modelNumber;
+	private final LocalDateTime createDate;
+
+	public AdminCreateProductResponse(Long id, String name, String modelNumber, LocalDateTime createDate) {
+		this.id = id;
+		this.name = name;
+		this.modelNumber = modelNumber;
+		this.createDate = createDate;
+	}
 
 	public static AdminCreateProductResponse from(Product product) {
 		return new AdminCreateProductResponse(

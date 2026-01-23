@@ -15,7 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("v1/admin/products")
+@RequestMapping("/v1/admin/products")
 @RequiredArgsConstructor
 public class AdminProductController {
 
