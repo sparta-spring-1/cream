@@ -3,6 +3,8 @@ package com.sparta.cream.domain.bid.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.DisplayName;
@@ -111,6 +113,65 @@ class BidServiceTest {
 		assertThatThrownBy(() -> bidService.createBid(userId, requestDto))
 			.isInstanceOf(BusinessException.class)
 			.hasMessageContaining(ErrorCode.INVALID_BID_PRICE.getMessage());
+	}
+
+	/**
+	 * 내 입찰 내역 조회 성공 시나리오를 검증합니다.
+	 */
+	@Test
+	@DisplayName("내 입찰 내역 조회 성공 - 목록 반환 확인")
+	void getMyBids_Success() {
+		// given
+		Long userId = 1L;
+		ProductOption productOption = mock(ProductOption.class);
+
+		Bid bid1 = Bid.builder()
+			.userId(userId)
+			.productOption(productOption)
+			.price(100000L)
+			.type(BidType.BUY)
+			.status(BidStatus.PENDING)
+			.build();
+
+		Bid bid2 = Bid.builder()
+			.userId(userId)
+			.productOption(productOption)
+			.price(120000L)
+			.type(BidType.BUY)
+			.status(BidStatus.PENDING)
+			.build();
+
+		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId))
+			.willReturn(List.of(bid1, bid2));
+
+		// when
+		List<BidResponseDto> response = bidService.getMyBids(userId);
+
+		// then
+		assertThat(response).hasSize(2);
+		assertThat(response.get(0).getPrice()).isEqualTo(100000L);
+		assertThat(response.get(1).getPrice()).isEqualTo(120000L);
+
+		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId);
+	}
+
+	/**
+	 * 입찰 내역이 없을 때 빈 리스트가 반환되는지 검증합니다.
+	 */
+	@Test
+	@DisplayName("내 입찰 내역 조회 성공 - 내역이 없는 경우 빈 리스트 반환")
+	void getMyBids_Success_EmptyList() {
+		// given
+		Long userId = 1L;
+		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId))
+			.willReturn(Collections.emptyList());
+
+		// when
+		List<BidResponseDto> response = bidService.getMyBids(userId);
+
+		// then
+		assertThat(response).isEmpty();
+		assertThat(response).isNotNull();
 	}
 }
 
