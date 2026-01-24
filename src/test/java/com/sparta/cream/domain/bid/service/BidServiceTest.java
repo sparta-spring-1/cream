@@ -1,6 +1,7 @@
 package com.sparta.cream.domain.bid.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.util.Collections;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
@@ -172,6 +174,50 @@ class BidServiceTest {
 		// then
 		assertThat(response).isEmpty();
 		assertThat(response).isNotNull();
+	}
+
+	@Test
+	@DisplayName("상품별 입찰 조회 성공 - 가격 내림차순 확인")
+	void getBidsByProductOption_Success() {
+		// given
+		Long productOptionId = 1L;
+		ProductOption productOption = ProductOption.builder()
+			.size("260")
+			.build();
+
+		ReflectionTestUtils.setField(productOption, "id", productOptionId);
+
+		Bid bid1 = Bid.builder().price(10000L).productOption(productOption).build();
+		Bid bid2 = Bid.builder().price(20000L).productOption(productOption).build();
+
+		List<Bid> bids = List.of(bid2, bid1);
+
+		given(productOptionRepository.existsById(productOptionId)).willReturn(true);
+		given(bidRepository.findAllByProductOptionIdOrderByPriceDesc(productOptionId)).willReturn(bids);
+
+		// when
+		List<BidResponseDto> result = bidService.getBidsByProductOption(productOptionId);
+
+		// then
+		assertThat(result).hasSize(2);
+		assertThat(result.get(0).getPrice()).isEqualTo(20000L);
+		assertThat(result.get(1).getPrice()).isEqualTo(10000L);
+		verify(bidRepository).findAllByProductOptionIdOrderByPriceDesc(productOptionId);
+	}
+
+
+	@Test
+	@DisplayName("상품별 입찰 조회 실패 - 존재하지 않는 상품 옵션")
+	void getBidsByProductOption_Fail_NotFound() {
+		// given
+		Long productOptionId = 999L;
+		given(productOptionRepository.existsById(productOptionId)).willReturn(false);
+
+		// when & then
+		BusinessException exception = assertThrows(BusinessException.class,
+			() -> bidService.getBidsByProductOption(productOptionId));
+
+		assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
 	}
 }
 
