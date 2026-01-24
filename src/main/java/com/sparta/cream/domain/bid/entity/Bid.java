@@ -4,6 +4,9 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.ErrorCode;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
@@ -75,10 +78,11 @@ public class Bid extends BaseEntity {
 	 * @param price 새로운 입찰가격
 	 * @param productOption 새로운 상품 옵션
 	 */
-	public void update(Long price, ProductOption productOption) {
+	public void update(Long price, ProductOption productOption, BidType type) {
 		validatePending();
 		this.price = price;
 		this.productOption = productOption;
+		this.type = type;
 	}
 
 	/**
@@ -98,13 +102,13 @@ public class Bid extends BaseEntity {
 	}
 
 	/**
-	 * 채결된 거래를 취소하고 다시 대기(PENDING)상태로 되돌립니다.
+	 * 체결된 거래를 '취소 상태'로 확정합니다. (종료)
 	 */
-	public void undoMatch() {
+	public void cancelMatchedBid() {
 		if (this.status != BidStatus.MATCHED) {
-			throw new IllegalStateException("MATCHED 상태의 입찰만 되돌릴 수 있습니다.");
+			throw new BusinessException(ErrorCode.CANNOT_CANCEL_UNMATCHED);
 		}
-		this.status = BidStatus.PENDING;
+		this.status = BidStatus.CANCELED;
 	}
 
 	/**
@@ -112,7 +116,7 @@ public class Bid extends BaseEntity {
 	 */
 	private void validatePending() {
 		if (this.status != BidStatus.PENDING) {
-			throw new IllegalStateException("PENDING 상태에서만 수행할 수 있는 작업입니다.");
+			throw new BusinessException(ErrorCode.CANNOT_UPDATE_BID);
 		}
 	}
 }
