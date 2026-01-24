@@ -98,4 +98,27 @@ public class BidService {
 			.map(BidResponseDto::new)
 			.toList();
 	}
+
+	/**
+	 * 기존 입찰 정보를 수정합니다
+	 * 입찰 가격, 상품옵션, 입찰 타입(구매/판매)을 변경할수 있습니다.
+	 * 대기(PENDING) 상태인 입찰만 수정이 가능합니다.
+	 * 수정 권한은 해당 입찰을 등록한 본인에게만 잇습니다.
+	 * @param userId 수정하는 사용자
+	 * @param bidId 수정할 입찰 ID
+	 * @param requestDto 수정할 새로운 정보 (상품 옵셔 ID, 가격, 타입)
+	 * @return 수정이 완료된 입찰의 상세 정보
+	 */
+	@Transactional
+	public BidResponseDto updateBid(Long userId, Long bidId, BidRequestDto requestDto) {
+		Bid bid = bidRepository.findById(bidId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.BID_NOT_FOUND));
+
+		ProductOption newOption = productOptionRepository.findById(requestDto.getProductOptionId())
+			.orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
+
+		bid.update(requestDto.getPrice(), newOption, requestDto.getType());
+
+		return new BidResponseDto(bid);
+	}
 }
