@@ -1,6 +1,9 @@
 package com.sparta.cream.domain.bid.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -47,5 +50,20 @@ public class BidController {
 
 		BidResponseDto response = bidService.createBid(tempUserId, requestDto);
 		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * 현재 로그인한 사용자의 압찰 내역 목록을 조회합니다.
+	 * @return 사용자의 입찰 정보 목록
+	 */
+	@GetMapping("/me")
+	public ResponseEntity<List<BidResponseDto>> getMyBids() {
+		// 로그인 기능 구현 전이라 주석 처리
+		// @AuthenticationPrincipal CustomUserDetails user,
+
+		// 유저 기능 구현 전까지 임시값 사용
+		Long userId = 1L;
+		List<BidResponseDto> myBids = bidService.getMyBids(userId);
+		return ResponseEntity.ok(myBids);
 	}
 }
