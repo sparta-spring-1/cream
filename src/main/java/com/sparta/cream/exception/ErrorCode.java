@@ -14,6 +14,7 @@ public enum ErrorCode implements BaseCode {
 	ACCESS_DENIED(HttpStatus.FORBIDDEN, "해당 user 에 권한이 없습니다"),
 
 	//Bid(입찰)관련
+	PRODUCT_ID_REQUIRED(HttpStatus.BAD_REQUEST, "상품 ID가 누락되었습니다."),
 	PRODUCT_OPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 상품 옵션(사이즈)입니다."),
 	INVALID_BID_PRICE(HttpStatus.BAD_REQUEST, "입찰 가격은 0원보다 커야 합니다."),
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다.");
