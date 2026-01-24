@@ -1,6 +1,7 @@
 package com.sparta.cream.domain.bid.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,5 +63,20 @@ public class BidService {
 		Bid savedBid = bidRepository.save(bid);
 
 		return new BidResponseDto(savedBid);
+	}
+
+	/**
+	 * 특정 사용자의 입찰 내역을 최신순으로 조회합니다.
+	 * @param userId 사용자 식별자
+	 * @return 입찰 정보 응답 DTO 리스트
+	 */
+	@Transactional(readOnly = true)
+	public List<BidResponseDto> getMyBids(Long userId) {
+
+		List<Bid> bids = bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
+
+		return bids.stream()
+			.map(BidResponseDto::new)
+			.toList();
 	}
 }
