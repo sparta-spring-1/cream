@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -73,7 +75,7 @@ public class BidController {
 	/**
 	 * 특정 상품 옵션의 전체 입찰 내역을 조회합니다.
 	 * 성퓸에 대해 입찰중인 정보와 시세를 확인 하기 위해 사용됩니다.
-	 * @param productOptionId 상품 옵션 식별자
+	 * @param productOptionId 상품 옵션 ID
 	 * @return 상품 옵션별 입찰 목록(입찰가 내립차순 리스트)
 	 */
 	@GetMapping
@@ -86,6 +88,26 @@ public class BidController {
 
 		List<BidResponseDto> bids = bidService.getBidsByProductOption(productOptionId);
 		return ResponseEntity.ok(bids);
+	}
+
+	/**
+	 * 본인이 입찰한 정보를 수정하는 API입니다.
+	 * 사용자가 등록한 입찰의 상품 옵션, 가격, 타입을 수정합니다.
+	 * 체결 대기인 상태만 입찰을 수정할 수 있으며, 본인의 입찰이 아닐 경우 예외가 발생합니다.
+	 * @param bidId 수정할 입찰의 ID
+	 * @param requestDto 수정할 정보를 담은 DTO
+	 * @return 함께 수정된 입찰 상세 정보 반환
+	 */
+	@PatchMapping("/{bidId}")
+	public ResponseEntity<BidResponseDto> updateBid(
+		@PathVariable Long bidId,
+		@Valid @RequestBody BidRequestDto requestDto) {
+
+		// 유저 기능 구현 전까지 임시값 사용
+		Long tempUserId = 1L;
+
+		BidResponseDto response = bidService.updateBid(tempUserId, bidId, requestDto);
+		return ResponseEntity.ok(response);
 	}
 
 }
