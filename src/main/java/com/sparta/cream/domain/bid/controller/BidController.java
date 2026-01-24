@@ -7,11 +7,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.service.BidService;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.ErrorCode;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -66,4 +69,23 @@ public class BidController {
 		List<BidResponseDto> myBids = bidService.getMyBids(userId);
 		return ResponseEntity.ok(myBids);
 	}
+
+	/**
+	 * 특정 상품 옵션의 전체 입찰 내역을 조회합니다.
+	 * 성퓸에 대해 입찰중인 정보와 시세를 확인 하기 위해 사용됩니다.
+	 * @param productOptionId 상품 옵션 식별자
+	 * @return 상품 옵션별 입찰 목록(입찰가 내립차순 리스트)
+	 */
+	@GetMapping
+	public ResponseEntity<List<BidResponseDto>> getBidsByProduct(
+		@RequestParam(required = false) Long productOptionId) {
+
+		if (productOptionId == null) {
+			throw new BusinessException(ErrorCode.PRODUCT_ID_REQUIRED);
+		}
+
+		List<BidResponseDto> bids = bidService.getBidsByProductOption(productOptionId);
+		return ResponseEntity.ok(bids);
+	}
+
 }
