@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
@@ -121,4 +122,41 @@ public class BidService {
 
 		return new BidResponseDto(bid);
 	}
+
+	/**
+	 * 기존 입찰을 취소합니다.
+	 * 입찰은 대기중(PENDING) 상태일 때만 취소할수 있으며,
+	 * 이미 취소되었거나 체결 상태인 입찰은 취소할 수 없습니다.
+	 * 1.입찰 존재 여부 확인
+	 * 2.일차 소유자 검증
+	 * 3.이미 취소된 입찰 여부 확인
+	 * 4.PENDING 상태 여부 검증
+	 * 5.입찰 취소 처리
+	 *
+	 * @param userId 입찰을 취소하려는 사용자 ID
+	 * @param bidId 취소할 입찰 ID
+	 * @return 입찰 취소 결과 응답 DTO
+	 */
+	@Transactional
+	public BidCancelResponseDto cancelBid(Long userId, Long bidId) {
+		Bid bid = bidRepository.findById(bidId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.BID_NOT_FOUND));
+
+		if (!bid.getUserId().equals(userId)) {
+			throw new BusinessException(ErrorCode.NOT_YOUR_BID);
+		}
+
+		if (bid.getStatus() == BidStatus.CANCELED) {
+			throw new BusinessException(ErrorCode.BID_ALREADY_CANCELED);
+		}
+
+		if (bid.getStatus() != BidStatus.PENDING) {
+			throw new BusinessException(ErrorCode.CANNOT_CANCEL_NON_PENDING_BID);
+		}
+
+		bid.cancel();
+
+		return BidCancelResponseDto.from(bid);
+	}
+
 }
