@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.service.BidService;
@@ -108,6 +109,23 @@ public class BidController {
 
 		BidResponseDto response = bidService.updateBid(tempUserId, bidId, requestDto);
 		return ResponseEntity.ok(response);
+	}
+
+	/**
+	 * 본인이 입찰한 입찰을 취소하는 API입니다.
+	 * 사용자가 등록한 입찰을 취소합니다.
+	 *
+	 * @param bidId 취소할 입찰의 ID
+	 * @return 입찰 취소 결과 응답 DTO
+	 */
+	@PatchMapping("/{bidId}/cancel")
+	public ResponseEntity<BidCancelResponseDto> cancelBid(
+		@PathVariable Long bidId
+	) {
+		// 유저 기능 구현 전까지 임시값 사용
+		Long userId = 1L;
+
+		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
 	}
 
 }
