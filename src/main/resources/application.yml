@@ -23,4 +23,6 @@ logging:
 portone:
   api:
     base-url: https://api.portone.io
+    store-id: ${PORTONE_STORE_ID}
+    channel-key: ${PORTONE_CHANNELKEY}
     secret: ${PORTONE_API_SECRET}
