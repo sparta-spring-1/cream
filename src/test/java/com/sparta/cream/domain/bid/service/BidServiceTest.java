@@ -205,7 +205,6 @@ class BidServiceTest {
 		verify(bidRepository).findAllByProductOptionIdOrderByPriceDesc(productOptionId);
 	}
 
-
 	@Test
 	@DisplayName("상품별 입찰 조회 실패 - 존재하지 않는 상품 옵션")
 	void getBidsByProductOption_Fail_NotFound() {
@@ -219,5 +218,70 @@ class BidServiceTest {
 
 		assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
 	}
-}
 
+	/**
+	 * 입찰 수정 성공 시나리오를 검증합니다. (가격, 옵션, 타입 모두 변경)
+	 */
+	@Test
+	@DisplayName("입찰 수정 성공 - 가격, 옵션, 타입이 정상적으로 변경되어야 함")
+	void updateBid_Success() {
+		// given
+		Long userId = 1L;
+		Long bidId = 100L;
+		Long newPrice = 200000L;
+		Long newProductOptionId = 101L;
+		BidType newType = BidType.SELL;
+
+		BidRequestDto requestDto = new BidRequestDto(newProductOptionId, newPrice, newType);
+
+		ProductOption oldOption = mock(ProductOption.class);
+		ProductOption newOption = mock(ProductOption.class);
+
+		Bid bid = Bid.builder()
+			.userId(userId)
+			.productOption(oldOption)
+			.price(150000L)
+			.type(BidType.BUY)
+			.status(BidStatus.PENDING)
+			.build();
+		ReflectionTestUtils.setField(bid, "id", bidId);
+
+		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
+		given(productOptionRepository.findById(newProductOptionId)).willReturn(Optional.of(newOption));
+
+		// when
+		BidResponseDto response = bidService.updateBid(userId, bidId, requestDto);
+
+		// then
+		assertThat(response.getPrice()).isEqualTo(newPrice);
+		assertThat(response.getType()).isEqualTo(newType);
+		assertThat(bid.getProductOption()).isEqualTo(newOption);
+
+		verify(bidRepository, times(1)).findById(bidId);
+	}
+
+	/**
+	 * 이미 MATCHED 상태인 입찰 수정 실패 시나리오
+	 */
+	@Test
+	@DisplayName("입찰 수정 실패 - 이미 체결(MATCHED)된 경우")
+	void updateBid_Fail_AlreadyMatched() {
+		// given
+		Long userId = 1L;
+		Long bidId = 100L;
+		BidRequestDto requestDto = new BidRequestDto(101L, 200000L, BidType.SELL);
+
+		Bid bid = Bid.builder()
+			.userId(userId)
+			.status(BidStatus.MATCHED)
+			.build();
+
+		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
+		given(productOptionRepository.findById(anyLong())).willReturn(Optional.of(mock(ProductOption.class)));
+
+		// when & then
+		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, requestDto))
+			.isInstanceOf(BusinessException.class)
+			.hasMessageContaining(ErrorCode.CANNOT_UPDATE_BID.getMessage());
+	}
+}
