@@ -1,5 +1,7 @@
 package com.sparta.cream.domain.bid.repository;
 
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -12,5 +14,7 @@ import com.sparta.cream.domain.bid.entity.Bid;
  * @since 2026. 1. 22.
  */
 public interface BidRepository extends JpaRepository<Bid, Long> {
+
+	List<Bid> findAllByUserIdOrderByCreatedAtAsc(Long userId);
 
 }
