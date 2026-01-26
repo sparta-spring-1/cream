@@ -1,7 +1,7 @@
 package com.sparta.cream.domain.entity;
 
-import com.sparta.cream.domain.entity.common.BaseTimeEntity;
 import com.sparta.cream.domain.status.PaymentStatus;
+import com.sparta.cream.entity.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -25,13 +25,13 @@ import lombok.NoArgsConstructor;
  * </p>
  *
  * @author 변채주
- * @version 1.0
- * @since 2026. 01. 22.
+ * @version 1.1
+ * @since 2026. 01. 26.
  */
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class PaymentHistory extends BaseTimeEntity {
+public class PaymentHistory extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,10 +52,18 @@ public class PaymentHistory extends BaseTimeEntity {
 	@JoinColumn(name = "payment_id", nullable = false)
 	private Payment payment;
 
-	public PaymentHistory(PaymentStatus prevStatus, PaymentStatus newStatus, Long amount, Payment payment) {
-		this.prevStatus = prevStatus;
-		this.newStatus = newStatus;
-		this.amount = amount;
-		this.payment = payment;
-	}
+    /**
+     * PaymentHistory 생성자.
+     *
+     * @param prevStatus 변경 전 상태
+     * @param newStatus  변경 후 상태
+     * @param amount     당시 금액
+     * @param payment    결제 엔티티
+     */
+    public PaymentHistory(PaymentStatus prevStatus, PaymentStatus newStatus, Long amount, Payment payment) {
+        this.prevStatus = prevStatus;
+        this.newStatus = newStatus;
+        this.amount = amount;
+        this.payment = payment;
+    }
 }
