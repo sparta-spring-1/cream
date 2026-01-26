@@ -79,4 +79,23 @@ public class BidService {
 			.map(BidResponseDto::new)
 			.toList();
 	}
+
+	/**
+	 * 특정 상품 옵션에 등록된 모든 입찰 내역을 조회합니다. (상품 상세 페이지용)
+	 * @param productOptionId 상품 옵션 식별자
+	 * @return 해당 상품의 입찰 정보 리스트
+	 */
+	@Transactional(readOnly = true)
+	public List<BidResponseDto> getBidsByProductOption(Long productOptionId) {
+
+		if (!productOptionRepository.existsById(productOptionId)) {
+			throw new BusinessException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+		}
+
+		List<Bid> bids = bidRepository.findAllByProductOptionIdOrderByPriceDesc(productOptionId);
+
+		return bids.stream()
+			.map(BidResponseDto::new)
+			.toList();
+	}
 }
