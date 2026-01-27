@@ -3,6 +3,9 @@ package com.sparta.cream.domain.bid.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +16,7 @@ import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.repository.ProductOptionRepository;
@@ -46,11 +50,8 @@ public class BidService {
 	@Transactional
 	public BidResponseDto createBid(Long userId, BidRequestDto requestDto) {
 		ProductOption productOption = productOptionRepository.findById(requestDto.getProductOptionId())
-			.orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
-		if (requestDto.getPrice() == null || requestDto.getPrice() <= 0) {
-			throw new BusinessException(ErrorCode.INVALID_BID_PRICE);
-		}
 
 		Bid bid = Bid.builder()
 			.userId(userId)
@@ -72,13 +73,11 @@ public class BidService {
 	 * @return 입찰 정보 응답 DTO 리스트
 	 */
 	@Transactional(readOnly = true)
-	public List<BidResponseDto> getMyBids(Long userId) {
+	public Page<BidResponseDto> getMyBids(Long userId, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size);
+		Page<Bid> bidPage = bidRepository. findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
 
-		List<Bid> bids = bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
-
-		return bids.stream()
-			.map(BidResponseDto::new)
-			.toList();
+		return bidPage.map(BidResponseDto::new);
 	}
 
 	/**
@@ -90,7 +89,7 @@ public class BidService {
 	public List<BidResponseDto> getBidsByProductOption(Long productOptionId) {
 
 		if (!productOptionRepository.existsById(productOptionId)) {
-			throw new BusinessException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+			throw new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND);
 		}
 
 		List<Bid> bids = bidRepository.findAllByProductOptionIdOrderByPriceDesc(productOptionId);
@@ -113,10 +112,14 @@ public class BidService {
 	@Transactional
 	public BidResponseDto updateBid(Long userId, Long bidId, BidRequestDto requestDto) {
 		Bid bid = bidRepository.findById(bidId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.BID_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
+
+		if (!bid.getUserId().equals(userId)) {
+			throw new BusinessException(BidErrorCode.NOT_YOUR_BID);
+		}
 
 		ProductOption newOption = productOptionRepository.findById(requestDto.getProductOptionId())
-			.orElseThrow(() -> new BusinessException(ErrorCode.PRODUCT_OPTION_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
 		bid.update(requestDto.getPrice(), newOption, requestDto.getType());
 
@@ -125,14 +128,7 @@ public class BidService {
 
 	/**
 	 * 기존 입찰을 취소합니다.
-	 * 입찰은 대기중(PENDING) 상태일 때만 취소할수 있으며,
-	 * 이미 취소되었거나 체결 상태인 입찰은 취소할 수 없습니다.
-	 * 1.입찰 존재 여부 확인
-	 * 2.일차 소유자 검증
-	 * 3.이미 취소된 입찰 여부 확인
-	 * 4.PENDING 상태 여부 검증
-	 * 5.입찰 취소 처리
-	 *
+	 * 입찰 취소에 대한 모든 검증 로직은 Bid 도메인 객체에 위임합니다.
 	 * @param userId 입찰을 취소하려는 사용자 ID
 	 * @param bidId 취소할 입찰 ID
 	 * @return 입찰 취소 결과 응답 DTO
@@ -140,21 +136,9 @@ public class BidService {
 	@Transactional
 	public BidCancelResponseDto cancelBid(Long userId, Long bidId) {
 		Bid bid = bidRepository.findById(bidId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.BID_NOT_FOUND));
+			.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
 
-		if (!bid.getUserId().equals(userId)) {
-			throw new BusinessException(ErrorCode.NOT_YOUR_BID);
-		}
-
-		if (bid.getStatus() == BidStatus.CANCELED) {
-			throw new BusinessException(ErrorCode.BID_ALREADY_CANCELED);
-		}
-
-		if (bid.getStatus() != BidStatus.PENDING) {
-			throw new BusinessException(ErrorCode.CANNOT_CANCEL_NON_PENDING_BID);
-		}
-
-		bid.cancel();
+		bid.cancel(userId);
 
 		return BidCancelResponseDto.from(bid);
 	}
