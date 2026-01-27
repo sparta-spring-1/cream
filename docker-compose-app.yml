@@ -1,0 +1,27 @@
+services:
+  spring-app:
+    image: ${DOCKER_USERNAME}/cream:${IMAGE_TAG:-latest}
+    container_name: cream-app
+    restart: always
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST}:3306/${DATABASE_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PORT: 6379
+      
+      PORTONE_API_STORE_ID: ${PORTONE_STORE_ID}
+      PORTONE_API_SECRET: ${PORTONE_API_SECRET}
+      PORTONE_API_CHANNEL_KEY: ${PORTONE_CHANNEL_KEY}
+      
+      SERVER_PORT: 8080
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    ports:
+      - "8080:8080"
+    networks:
+      - cream-network
+
+networks:
+  cream-network:
+    driver: bridge
