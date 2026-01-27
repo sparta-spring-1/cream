@@ -72,5 +72,23 @@ public class JwtTokenProvider {
 			.signWith(key)
 			.compact();
 	}
+
+	/**
+	 * JWT 토큰에서 사용자 ID 추출
+	 * 토큰의 subject(sub) 클레임에서 사용자 ID를 추출합니다.
+	 *
+	 * @param token JWT 토큰 문자열
+	 * @return 사용자 ID
+	 * @throws io.jsonwebtoken.JwtException 토큰 파싱 실패 시 예외 발생
+	 */
+	public Long getUserIdFromToken(String token) {
+		String subject = Jwts.parserBuilder()
+			.setSigningKey(key)
+			.build()
+			.parseClaimsJws(token)
+			.getBody()
+			.get("sub", String.class);
+		return Long.parseLong(subject);
+	}
 }
 
