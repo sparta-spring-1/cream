@@ -2,6 +2,7 @@ package com.sparta.cream.controller;
 
 import com.sparta.cream.dto.auth.LoginRequestDto;
 import com.sparta.cream.dto.auth.LoginResponseDto;
+import com.sparta.cream.dto.auth.ReissueResponseDto;
 import com.sparta.cream.dto.auth.SignupRequestDto;
 import com.sparta.cream.dto.auth.SignupResponseDto;
 import com.sparta.cream.service.AuthService;
@@ -57,9 +58,9 @@ public class AuthController {
 
 		ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", result.getRefreshToken())
 			.httpOnly(true)
-			.secure(true)
+			.secure(false) // 로컬 개발 환경에서는 false
 			.sameSite("Strict")
-			.path("/auth/reissue")
+			.path("/v1/auth/reissue")
 			.maxAge(Duration.ofSeconds(result.getRefreshExpSec()))
 			.build();
 
@@ -67,5 +68,25 @@ public class AuthController {
 		return ResponseEntity.status(HttpStatus.OK)
 			.header("Set-Cookie", refreshCookie.toString())
 			.body(response);
+	}
+
+	/**
+	 * 토큰 재발급 API
+	 * Refresh Token을 검증하고 새로운 Access Token을 발급합니다.
+	 * Refresh Token은 Cookie에서 전달받습니다.
+	 *
+	 * @param refreshToken Cookie에서 전달받은 Refresh Token
+	 * @return 재발급 성공 응답 (200 OK) 및 새 Access Token
+	 */
+	@PostMapping("/v1/auth/reissue")
+	public ResponseEntity<ReissueResponseDto> reissue(
+		@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+		if (refreshToken == null || refreshToken.isEmpty()) {
+			throw new com.sparta.cream.exception.BusinessException(
+				com.sparta.cream.exception.ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		ReissueResponseDto response = authService.reissue(refreshToken);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 }

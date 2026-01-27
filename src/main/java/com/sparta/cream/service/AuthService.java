@@ -2,6 +2,7 @@ package com.sparta.cream.service;
 
 import com.sparta.cream.dto.auth.LoginRequestDto;
 import com.sparta.cream.dto.auth.LoginResponseDto;
+import com.sparta.cream.dto.auth.ReissueResponseDto;
 import com.sparta.cream.dto.auth.SignupRequestDto;
 import com.sparta.cream.dto.auth.SignupResponseDto;
 import com.sparta.cream.entity.Users;
@@ -97,6 +98,53 @@ public class AuthService {
 		);
 
 		return new LoginResult(body, refresh, props.refreshExpSec());
+	}
+
+	/**
+	 * 토큰 재발급 처리
+	 * Refresh Token을 검증하고 새로운 Access Token을 발급합니다.
+	 * 전달된 Refresh Token과 Redis에 저장된 Refresh Token을 비교하여 검증합니다.
+	 *
+	 * @param refreshToken 전달된 Refresh Token
+	 * @return 재발급 응답 DTO (새 Access Token, 토큰 타입, 만료 시간)
+	 * @throws BusinessException Refresh Token이 없거나 유효하지 않은 경우 AUTH_LOGIN_FAILED 예외 발생
+	 * @throws BusinessException 저장된 토큰과 불일치하는 경우 AUTH_LOGIN_FAILED 예외 발생
+	 * @throws BusinessException Access Token 생성 실패 시 AUTH_TOKEN_GENERATION_FAILED 예외 발생
+	 */
+	@Transactional(readOnly = true)
+	public ReissueResponseDto reissue(String refreshToken) {
+		// Refresh Token에서 사용자 ID 추출
+		Long userId;
+		try {
+			userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+		} catch (Exception e) {
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		// Redis에서 저장된 Refresh Token 조회
+		String storedToken = refreshTokenStore.get(userId);
+		if (storedToken == null) {
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		// 전달된 토큰과 저장된 토큰 비교
+		if (!refreshToken.equals(storedToken)) {
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		// 새 Access Token 생성
+		String newAccessToken;
+		try {
+			newAccessToken = jwtTokenProvider.createAccessToken(userId);
+		} catch (Exception e) {
+			throw new BusinessException(ErrorCode.AUTH_TOKEN_GENERATION_FAILED);
+		}
+
+		return new ReissueResponseDto(
+			newAccessToken,
+			"Bearer",
+			props.accessExpSec()
+		);
 	}
 
 	/**
