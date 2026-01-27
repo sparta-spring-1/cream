@@ -14,6 +14,18 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 
+/**
+ * 관리자 상품 수정 요청을 위한 DTO 클래스.
+ *
+ * <p>
+ * 관리자가 기존 상품 정보를 수정할 때 사용하는 요청 객체로 상품의 정보를 포함합니다.
+ * 각 필드는 Bean Validation을 통해 입력값 검증이 수행됩니다.
+ * 유효하지 않은 요청은 컨트롤러 단에서 예외로 처리됩니다.
+ * </p>
+ *
+ * @author heoarim
+ * @since 2026. 1. 27
+ */
 @Getter
 public class AdminUpdateProductRequest {
 

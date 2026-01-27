@@ -14,6 +14,14 @@ import com.sparta.cream.entity.ProductStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 관리자 상품 수정 결과를 반환하기 위한 응답 DTO 클래스입니다.
+ * 관리자가 상품 수정 API를 호출한 후,
+ * 수정된 상품의 최신 상태를 응답으로 전달하기 위해 사용됩니다.
+ *
+ * @author heoarim
+ * @since 2026. 1. 27
+ */
 @Getter
 @AllArgsConstructor
 public class AdminUpdateProductResponse {
