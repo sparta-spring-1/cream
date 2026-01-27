@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -31,6 +32,26 @@ public class GlobalExceptionHandler {
 			.status(BAD_REQUEST)
 			.body(CommonErrorResponse.of(ErrorCode.VALIDATION_ERROR, errors));
 	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<CommonErrorResponse<String>> handleHttpMessageNotReadable(
+		HttpMessageNotReadableException ex
+	) {
+		String errorDetail = ex.getMessage();
+
+		// Enum 파싱 에러인 경우 더 자세한 메시지
+		if (errorDetail != null && errorDetail.contains("Enum")) {
+			String detailMessage = "올바른 Enum 값을 입력해주세요. 에러: " + errorDetail;
+			return ResponseEntity
+				.status(BAD_REQUEST)
+				.body(CommonErrorResponse.of(ErrorCode.INVALID_JSON, detailMessage));
+		}
+
+		return ResponseEntity
+			.status(BAD_REQUEST)
+			.body(CommonErrorResponse.of(ErrorCode.INVALID_JSON));
+	}
+
 
 	/**
 	 * 404 Not Found
