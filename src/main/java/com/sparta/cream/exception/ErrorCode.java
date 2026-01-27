@@ -15,7 +15,8 @@ public enum ErrorCode implements BaseCode {
 	//auth
 	AUTH_EMAIL_DUPLICATED(HttpStatus.CONFLICT, "이미 사용 중인 이메일입니다."),
 	AUTH_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 올바르지 않습니다."),
-	AUTH_REFRESH_STORE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Refresh Token 저장 중 오류가 발생했습니다.");
+	AUTH_REFRESH_STORE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Refresh Token 저장 중 오류가 발생했습니다."),
+	AUTH_TOKEN_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "토큰 생성 중 오류가 발생했습니다.");
 
 	private final HttpStatus status;
 	private final String message;
