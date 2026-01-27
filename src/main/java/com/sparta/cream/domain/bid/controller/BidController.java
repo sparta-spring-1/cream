@@ -2,7 +2,9 @@ package com.sparta.cream.domain.bid.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,10 +18,9 @@ import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.service.BidService;
-import com.sparta.cream.exception.BusinessException;
-import com.sparta.cream.exception.ErrorCode;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -63,14 +64,16 @@ public class BidController {
 	 * @return 사용자의 입찰 정보 목록
 	 */
 	@GetMapping("/me")
-	public ResponseEntity<List<BidResponseDto>> getMyBids() {
+	public ResponseEntity<Page<BidResponseDto>> getMyBids(
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "10") int size) {
 		// 로그인 기능 구현 전이라 주석 처리
 		// @AuthenticationPrincipal CustomUserDetails user,
 
 		// 유저 기능 구현 전까지 임시값 사용
 		Long userId = 1L;
-		List<BidResponseDto> myBids = bidService.getMyBids(userId);
-		return ResponseEntity.ok(myBids);
+		Page<BidResponseDto> bids = bidService.getMyBids(userId, page, size);
+		return ResponseEntity.ok(bids);
 	}
 
 	/**
@@ -81,11 +84,8 @@ public class BidController {
 	 */
 	@GetMapping
 	public ResponseEntity<List<BidResponseDto>> getBidsByProduct(
-		@RequestParam(required = false) Long productOptionId) {
-
-		if (productOptionId == null) {
-			throw new BusinessException(ErrorCode.PRODUCT_ID_REQUIRED);
-		}
+		@NotNull(message = "상품 옵션 아이디는 필수 입니다.")
+		@RequestParam Long productOptionId) {
 
 		List<BidResponseDto> bids = bidService.getBidsByProductOption(productOptionId);
 		return ResponseEntity.ok(bids);
@@ -118,7 +118,7 @@ public class BidController {
 	 * @param bidId 취소할 입찰의 ID
 	 * @return 입찰 취소 결과 응답 DTO
 	 */
-	@PatchMapping("/{bidId}/cancel")
+	@DeleteMapping("/{bidId}")
 	public ResponseEntity<BidCancelResponseDto> cancelBid(
 		@PathVariable Long bidId
 	) {
