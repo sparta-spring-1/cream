@@ -113,7 +113,7 @@ public class AuthService {
 	 */
 	@Transactional(readOnly = true)
 	public ReissueResponseDto reissue(String refreshToken) {
-		// Refresh Token에서 사용자 ID 추출
+
 		Long userId;
 		try {
 			userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
@@ -121,18 +121,15 @@ public class AuthService {
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
-		// Redis에서 저장된 Refresh Token 조회
 		String storedToken = refreshTokenStore.get(userId);
 		if (storedToken == null) {
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
-		// 전달된 토큰과 저장된 토큰 비교
 		if (!refreshToken.equals(storedToken)) {
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
-		// 새 Access Token 생성
 		String newAccessToken;
 		try {
 			newAccessToken = jwtTokenProvider.createAccessToken(userId);
