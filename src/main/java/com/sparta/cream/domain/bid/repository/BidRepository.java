@@ -2,6 +2,8 @@ package com.sparta.cream.domain.bid.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -20,7 +22,7 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 	 * @param userId 사용자 식별자
 	 * @return 사용자 전체 입찰 리스트 (과거순 정렬)
 	 */
-	List<Bid> findAllByUserIdOrderByCreatedAtAsc(Long userId);
+	Page<Bid> findAllByUserIdOrderByCreatedAtAsc(Long userId, Pageable pageable);
 
 	/**
 	 * 특정 상품 옵션에 등록된 모든 입찰 내역을 입찰가 내림차순으로 조회합니다.
