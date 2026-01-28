@@ -5,16 +5,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.SoftDelete;
-import org.hibernate.annotations.Where;
 
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ProductErrorCode;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

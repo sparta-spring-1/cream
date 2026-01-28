@@ -10,7 +10,6 @@ import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
-import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
 import com.sparta.cream.entity.ProductOption;
@@ -154,6 +153,14 @@ public class ProductService {
 		return AdminUpdateProductResponse.from(newProduct);
 	}
 
+	/**
+	 * 상품을 소프트 삭제 처리한다.
+	 * 전달받은 상품 ID로 상품을 조회한 뒤,
+	 * 실제 레코드를 삭제하지 않고 삭제 플래그를 변경하는 방식으로 삭제한다.
+	 *
+	 * @param productId 삭제할 상품의 ID
+	 * @throws BusinessException 상품이 존재하지 않는 경우
+	 */
 	@Transactional
 	public void deleteProduct(Long productId) {
 
