@@ -160,7 +160,7 @@ public class AuthService {
 	 * @throws BusinessException Access Token 생성 실패 시 AUTH_TOKEN_GENERATION_FAILED 예외 발생
 	 * @throws BusinessException Redis 조회 실패 시 AUTH_REDIS_CONNECTION_FAILED, AUTH_REDIS_SYSTEM_ERROR, AUTH_REDIS_TIMEOUT 예외 발생
 	 */
-	@Transactional(readOnly = true)
+	@Transactional
 	public ReissueResponseDto reissue(String refreshToken) {
 		Long userId;
 		try {
