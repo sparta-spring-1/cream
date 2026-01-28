@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -48,15 +49,11 @@ public class BidController {
 	 */
 	@PostMapping
 	public ResponseEntity<BidResponseDto> createBid(
-		// 로그인 기능 구현 전이라 주석 처리
-		// @AuthenticationPrincipal CustomUserDetails user,
+		@AuthenticationPrincipal String userIdAuth,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		//테스트용 UserId(1L)
-		Long tempUserId = 1L;
-
-		BidResponseDto response = bidService.createBid(tempUserId, requestDto);
-		return ResponseEntity.ok(response);
+		Long userId = Long.parseLong(userIdAuth);
+		return ResponseEntity.ok(bidService.createBid(userId, requestDto));
 	}
 
 	/**
@@ -65,15 +62,12 @@ public class BidController {
 	 */
 	@GetMapping("/me")
 	public ResponseEntity<Page<BidResponseDto>> getMyBids(
+		@AuthenticationPrincipal String userIdAuth,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
-		// 로그인 기능 구현 전이라 주석 처리
-		// @AuthenticationPrincipal CustomUserDetails user,
 
-		// 유저 기능 구현 전까지 임시값 사용
-		Long userId = 1L;
-		Page<BidResponseDto> bids = bidService.getMyBids(userId, page, size);
-		return ResponseEntity.ok(bids);
+		Long userId = Long.parseLong(userIdAuth);
+		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
 	}
 
 	/**
@@ -101,14 +95,13 @@ public class BidController {
 	 */
 	@PatchMapping("/{bidId}")
 	public ResponseEntity<BidResponseDto> updateBid(
+		@AuthenticationPrincipal String userIdAuth,
 		@PathVariable Long bidId,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		// 유저 기능 구현 전까지 임시값 사용
-		Long tempUserId = 1L;
+		Long userId = Long.parseLong(userIdAuth);
 
-		BidResponseDto response = bidService.updateBid(tempUserId, bidId, requestDto);
-		return ResponseEntity.ok(response);
+		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
 	}
 
 	/**
@@ -120,11 +113,10 @@ public class BidController {
 	 */
 	@DeleteMapping("/{bidId}")
 	public ResponseEntity<BidCancelResponseDto> cancelBid(
+		@AuthenticationPrincipal String userIdAuth,
 		@PathVariable Long bidId
 	) {
-		// 유저 기능 구현 전까지 임시값 사용
-		Long userId = 1L;
-
+		Long userId = Long.parseLong(userIdAuth);
 		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
 	}
 
