@@ -4,7 +4,7 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3313/cream?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://localhost:3306/cream?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
 
@@ -30,6 +30,8 @@ logging:
 portone:
   api:
     base-url: https://api.portone.io
+    store-id: ${PORTONE_STORE_ID}
+    channel-key: ${PORTONE_CHANNELKEY}
     secret: ${PORTONE_API_SECRET:}
 
 jwt:
