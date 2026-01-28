@@ -10,6 +10,7 @@ import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
 import com.sparta.cream.entity.ProductOption;
@@ -151,5 +152,15 @@ public class ProductService {
 		Product newProduct = productRepository.save(oldProduct);
 
 		return AdminUpdateProductResponse.from(newProduct);
+	}
+
+	@Transactional
+	public void deleteProduct(Long productId) {
+
+		Product product = productRepository.findById(productId)
+			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
+
+		// 상품 삭제
+		product.softDelete();
 	}
 }

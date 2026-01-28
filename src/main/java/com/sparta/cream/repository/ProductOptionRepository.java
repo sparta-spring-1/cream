@@ -7,6 +7,5 @@ import com.sparta.cream.entity.ProductOption;
 
 public interface ProductOptionRepository extends JpaRepository<ProductOption, Long> {
 	boolean existsByProductAndSize(Product oldProduct, String size);
-
 	ProductOption findByProductAndSize(Product oldProduct, String size);
 }
