@@ -22,10 +22,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public class BidCancelResponseDto {
 
-	private Long bidId;
-	private BidStatus status;
-	private String message;
-	private LocalDateTime canceledAt;
+	private final Long bidId;
+	private final BidStatus status;
+	private final String message;
+	private final LocalDateTime canceledAt;
 
 	/**
 	 * Bid 엔티티를 기반으로 입찰 취소 응답 DTO를 생성합니다.
