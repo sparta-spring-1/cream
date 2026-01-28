@@ -113,6 +113,7 @@ public class Payment extends BaseEntity {
      * <p>
      * 동시성 이슈를 방지하기 위해 입력되는 이전 상태(prevStatus)를 검증하며,
      * 이미 취소되거나 환불된 건에 대해서는 상태 변경을 거부합니다.
+	 * 이미 결제 완료된 건은 결제 준비(READY) 또는 결제 중(PENDING) 상태로 변경을 거부합니다.
      * </p>
      *
      * @param prevStatus 	변경 전 기대하는 현재 상태
@@ -121,13 +122,13 @@ public class Payment extends BaseEntity {
      * @throws BusinessException 현재 상태가 기대값과 다르거나, 변경 불가능한 상태일 경우
      */
     public PaymentHistory changeStatus(PaymentStatus prevStatus, PaymentStatus newStatus) {
-        validateStatus(prevStatus);
+        validateStatus(prevStatus, newStatus);
         this.status = newStatus;
 
         return new PaymentHistory(prevStatus, newStatus, this.amount, this);
     }
 
-    private void validateStatus(PaymentStatus expectedPrevStatus) {
+    private void validateStatus(PaymentStatus expectedPrevStatus, PaymentStatus newStatus) {
         if (this.status != expectedPrevStatus) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_CONFLICT);
         }
@@ -135,5 +136,10 @@ public class Payment extends BaseEntity {
         if (this.status == PaymentStatus.CANCELLED || this.status == PaymentStatus.FULL_REFUNDED) {
             throw new BusinessException(PaymentErrorCode.PAYMENT_CONFLICT);
         }
+
+		if (this.status == PaymentStatus.PAID_SUCCESS &&
+			(newStatus == PaymentStatus.PENDING || newStatus == PaymentStatus.READY)) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_ALREADY_PAID);
+		}
     }
 }
