@@ -2,6 +2,8 @@ package com.sparta.cream.config;
 
 import com.sparta.cream.jwt.JwtProperties;
 import com.sparta.cream.jwt.JwtTokenProvider;
+import com.sparta.cream.security.JwtAuthenticationFilter;
+import com.sparta.cream.security.SecurityErrorHandlers;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.*;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,6 +11,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.*;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Spring Security 설정 클래스
@@ -52,14 +55,26 @@ public class SecurityConfig {
 	 * @throws Exception 설정 오류
 	 */
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain filterChain(
+		HttpSecurity http,
+		JwtAuthenticationFilter jwtAuthenticationFilter,
+		SecurityErrorHandlers securityErrorHandlers
+	) throws Exception {
 		http
 			.csrf(csrf -> csrf.disable())
+			.httpBasic(httpBasic -> httpBasic.disable())
+			.formLogin(formLogin -> formLogin.disable())
 			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.exceptionHandling(eh -> eh
+				.authenticationEntryPoint(securityErrorHandlers)
+				.accessDeniedHandler(securityErrorHandlers)
+			)
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue").permitAll()
 				.anyRequest().authenticated()
 			);
+
+		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
