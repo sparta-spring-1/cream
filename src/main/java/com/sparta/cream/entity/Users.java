@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
  * 사용자 엔티티
  * users 테이블과 매핑되는 JPA 엔티티입니다.
@@ -16,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @NoArgsConstructor
 @Getter
-public class Users {
+public class Users extends BaseEntity {
 
 	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -34,12 +32,6 @@ public class Users {
 	@Column(nullable = false, length = 20)
 	private UserRole role;
 
-	@Column(name = "created_at", nullable = false)
-	private LocalDateTime createdAt;
-
-	@Column(name = "updated_at", nullable = false)
-	private LocalDateTime updatedAt;
-
 	/**
 	 * 사용자 생성자
 	 * 기본 역할은 USER로 설정됩니다.
@@ -53,8 +45,6 @@ public class Users {
 		this.password = password;
 		this.name = name;
 		this.role = UserRole.USER;
-		this.createdAt = LocalDateTime.now();
-		this.updatedAt = LocalDateTime.now();
 	}
 
 	/**
@@ -70,17 +60,6 @@ public class Users {
 		this.password = password;
 		this.name = name;
 		this.role = role;
-		this.createdAt = LocalDateTime.now();
-		this.updatedAt = LocalDateTime.now();
-	}
-
-	/**
-	 * 엔티티 업데이트 전 호출되는 메서드
-	 * updatedAt 필드를 현재 시간으로 갱신합니다.
-	 */
-	@PreUpdate
-	public void onUpdate() {
-		this.updatedAt = LocalDateTime.now();
 	}
 }
 
