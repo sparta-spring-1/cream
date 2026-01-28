@@ -9,12 +9,11 @@ package com.sparta.cream.domain.status;
  * PAID_SUCCESS: 결제 성공
  * PAID_FAIL: 결제 실패, 재시도 필요
  * FULL_REFUNDED: 전액 환불
- * PART_REFUNDED: 부분 환불
  * </p>
  *
  * @author 변채주
- * @version 1.0
- * @since 2026. 01. 22.
+ * @version 1.1
+ * @since 2026. 01. 26.
  */
 public enum PaymentStatus {
 	READY,
@@ -22,6 +21,5 @@ public enum PaymentStatus {
 	CANCELLED,
 	PAID_SUCCESS,
 	PAID_FAIL,
-	FULL_REFUNDED,
-	PART_REFUNDED
+	FULL_REFUNDED
 }
