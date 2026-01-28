@@ -5,8 +5,16 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sparta.cream.dto.product.AdminUpdateProductRequest;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.Where;
 
+import com.sparta.cream.dto.product.AdminUpdateProductRequest;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.ProductErrorCode;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,6 +40,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"model_number", "brand_name"})
 	}
 )
+@SQLRestriction("isDeleted <> 'DELETED'")
 public class Product extends BaseEntity {
 
 	@Id
@@ -116,5 +125,13 @@ public class Product extends BaseEntity {
 		this.productOptionList = productOption;
 	}
 
+	public void softDelete() {
+		if(this.productStatus == ProductStatus.ON_SALE){
+			throw new BusinessException(ProductErrorCode.PRODUCT_CANNOT_DELETE_ON_SALE);
+		}
+		super.softDelete();
+		imageList.forEach(BaseEntity::softDelete);
+		productOptionList.forEach(BaseEntity::softDelete);
+	}
 }
 
