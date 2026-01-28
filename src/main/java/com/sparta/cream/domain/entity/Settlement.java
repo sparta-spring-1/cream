@@ -2,8 +2,8 @@ package com.sparta.cream.domain.entity;
 
 import java.time.LocalDateTime;
 
-import com.sparta.cream.domain.entity.common.BaseTimeEntity;
 import com.sparta.cream.domain.status.SettlementStatus;
+import com.sparta.cream.entity.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,7 +35,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Settlement extends BaseTimeEntity {
+public class Settlement extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -66,11 +66,20 @@ public class Settlement extends BaseTimeEntity {
 	private Users seller;
 	*/
 
-	public Settlement(Long feeAmount, Long settlementAmount, SettlementStatus status, Payment payment) {
-		this.feeAmount = feeAmount;
-		this.settlementAmount = settlementAmount;
-		this.totalAmount = feeAmount + settlementAmount;
-		this.status = status;
-		this.payment = payment;
-	}
+    /**
+     * Settlement 생성자.
+     * <p>생성 시점에 총 금액(totalAmount)은 수수료와 정산 금액의 합으로 자동 계산되어 설정됩니다.</p>
+     *
+     * @param feeAmount        수수료
+     * @param settlementAmount 실 지급액
+     * @param status           초기 상태
+     * @param payment          결제 정보
+     */
+    public Settlement(Long feeAmount, Long settlementAmount, SettlementStatus status, Payment payment) {
+        this.feeAmount = feeAmount;
+        this.settlementAmount = settlementAmount;
+        this.totalAmount = feeAmount + settlementAmount;
+        this.status = status;
+        this.payment = payment;
+    }
 }
