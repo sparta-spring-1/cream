@@ -44,6 +44,7 @@ jobs:
             IMAGE_TAG=${{ env.IMAGE_TAG }}
             DB_HOST=${{ secrets.PRIVATE_DB_HOST }}
             REDIS_HOST=${{ secrets.PRIVATE_REDIS_HOST }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DATABASE_NAME=${{ secrets.DATABASE_NAME }}

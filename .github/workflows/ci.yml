@@ -29,7 +29,9 @@ jobs:
         ports:
           - 3306:3306
       redis:
-        image: redis:7-alpine
+        image: bitnami/redis:7.2
+        env:
+          REDIS_PASSWORD: test-password
         ports:
           - 6379:6379
 
