@@ -40,7 +40,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"model_number", "brand_name"})
 	}
 )
-@SQLRestriction("isDeleted <> 'DELETED'")
+@SQLRestriction("is_deleted = false")
 public class Product extends BaseEntity {
 
 	@Id
