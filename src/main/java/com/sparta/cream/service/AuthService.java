@@ -18,7 +18,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.QueryTimeoutException;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisSystemException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -122,6 +124,12 @@ public class AuthService {
 		} catch (RedisConnectionFailureException e) {
 			log.error("Refresh Token 저장 실패: Redis 연결 실패 - userId={}, error={}", user.getId(), e.getMessage(), e);
 			throw new BusinessException(ErrorCode.AUTH_REDIS_CONNECTION_FAILED);
+		} catch (RedisSystemException e) {
+			log.error("Refresh Token 저장 실패: Redis 시스템 오류 - userId={}, error={}", user.getId(), e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REDIS_SYSTEM_ERROR);
+		} catch (QueryTimeoutException e) {
+			log.error("Refresh Token 저장 실패: Redis 요청 타임아웃 - userId={}, error={}", user.getId(), e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REDIS_TIMEOUT);
 		} catch (DataAccessException e) {
 			log.error("Refresh Token 저장 실패: 데이터 접근 오류 - userId={}, error={}", user.getId(), e.getMessage(), e);
 			throw new BusinessException(ErrorCode.AUTH_REFRESH_STORE_FAILED);
@@ -150,30 +158,65 @@ public class AuthService {
 	 * @throws BusinessException Refresh Token이 없거나 유효하지 않은 경우 AUTH_LOGIN_FAILED 예외 발생
 	 * @throws BusinessException 저장된 토큰과 불일치하는 경우 AUTH_LOGIN_FAILED 예외 발생
 	 * @throws BusinessException Access Token 생성 실패 시 AUTH_TOKEN_GENERATION_FAILED 예외 발생
+	 * @throws BusinessException Redis 조회 실패 시 AUTH_REDIS_CONNECTION_FAILED, AUTH_REDIS_SYSTEM_ERROR, AUTH_REDIS_TIMEOUT 예외 발생
 	 */
 	@Transactional(readOnly = true)
 	public ReissueResponseDto reissue(String refreshToken) {
-
 		Long userId;
 		try {
 			userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
+		} catch (JwtException e) {
+			log.error("토큰 재발급 실패: JWT 파싱 오류 - error={}", e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		} catch (IllegalArgumentException e) {
+			log.error("토큰 재발급 실패: 잘못된 토큰 형식 - error={}", e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		} catch (Exception e) {
+			log.error("토큰 재발급 실패: 토큰 파싱 중 예상치 못한 오류 - error={}", e.getMessage(), e);
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
-		String storedToken = refreshTokenStore.get(userId);
+		String storedToken;
+		try {
+			storedToken = refreshTokenStore.get(userId);
+		} catch (RedisConnectionFailureException e) {
+			log.error("Refresh Token 조회 실패: Redis 연결 실패 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REDIS_CONNECTION_FAILED);
+		} catch (RedisSystemException e) {
+			log.error("Refresh Token 조회 실패: Redis 시스템 오류 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REDIS_SYSTEM_ERROR);
+		} catch (QueryTimeoutException e) {
+			log.error("Refresh Token 조회 실패: Redis 요청 타임아웃 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REDIS_TIMEOUT);
+		} catch (DataAccessException e) {
+			log.error("Refresh Token 조회 실패: 데이터 접근 오류 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REFRESH_STORE_FAILED);
+		} catch (Exception e) {
+			log.error("Refresh Token 조회 실패: 예상치 못한 오류 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_REFRESH_STORE_FAILED);
+		}
+
 		if (storedToken == null) {
+			log.warn("Refresh Token 조회 실패: 저장된 토큰 없음 - userId={}", userId);
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
 		if (!refreshToken.equals(storedToken)) {
+			log.warn("Refresh Token 검증 실패: 토큰 불일치 - userId={}", userId);
 			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
 		}
 
 		String newAccessToken;
 		try {
 			newAccessToken = jwtTokenProvider.createAccessToken(userId);
+		} catch (JwtException e) {
+			log.error("토큰 재발급 실패: JWT 생성 오류 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_TOKEN_GENERATION_FAILED);
+		} catch (IllegalArgumentException e) {
+			log.error("토큰 재발급 실패: 잘못된 인자 - userId={}, error={}", userId, e.getMessage(), e);
+			throw new BusinessException(ErrorCode.AUTH_TOKEN_GENERATION_FAILED);
 		} catch (Exception e) {
+			log.error("토큰 재발급 실패: 토큰 생성 중 예상치 못한 오류 - userId={}, error={}", userId, e.getMessage(), e);
 			throw new BusinessException(ErrorCode.AUTH_TOKEN_GENERATION_FAILED);
 		}
 
