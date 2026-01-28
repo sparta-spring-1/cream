@@ -20,7 +20,9 @@ public enum BidErrorCode implements BaseCode {
 	CANNOT_UPDATE_BID(HttpStatus.BAD_REQUEST, "이미 체결되었거나 취소된 입찰은 수정할 수 없습니다."),
 	CANNOT_CANCEL_NON_PENDING_BID(HttpStatus.BAD_REQUEST,"대기 상태의 입찰만 취소할 수 있습니다."),
 	BID_ALREADY_CANCELED(HttpStatus.BAD_REQUEST, "이미 취소된 입찰입니다"),
-	CANNOT_CANCEL_UNMATCHED(HttpStatus.BAD_REQUEST, "체결 완료(MATCHED) 상태인 입찰만 체결 취소가 가능합니다.");
+	CANNOT_CANCEL_UNMATCHED(HttpStatus.BAD_REQUEST, "체결 완료(MATCHED) 상태인 입찰만 체결 취소가 가능합니다."),
+	UNAUTHORIZED_ADMIN_ACCESS(HttpStatus.FORBIDDEN, "관리자 권한이 필요한 작업입니다."),
+	INVALID_REASON_CODE(HttpStatus.BAD_REQUEST, "유효하지 않은 취소 사유 코드입니다.");
 
 	private final HttpStatus status;
 	private final String message;
