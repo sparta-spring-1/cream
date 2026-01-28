@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.sparta.cream.dto.product.AdminUpdateProductRequest;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -75,13 +77,16 @@ public class Product extends BaseEntity {
 	private LocalDateTime retailDate;
 
 	@Builder
-	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory, String color,
-		String sizeUnit, ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
+	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory,
+		List<ProductImage> imageList, List<ProductOption> productOptionList, String color, String sizeUnit,
+		ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
 		LocalDateTime retailDate) {
 		this.name = name;
 		this.modelNumber = modelNumber;
 		this.brandName = brandName;
 		this.productCategory = productCategory;
+		this.imageList = imageList;
+		this.productOptionList = productOptionList;
 		this.color = color;
 		this.sizeUnit = sizeUnit;
 		this.productStatus = productStatus;
@@ -89,5 +94,27 @@ public class Product extends BaseEntity {
 		this.retailPrice = retailPrice;
 		this.retailDate = retailDate;
 	}
+
+	public void update(AdminUpdateProductRequest request, ProductCategory productCategory,
+		List<ProductImage> imageList, List<ProductOption> productOptionList
+	) {
+		this.name = request.getName();
+		this.modelNumber = request.getModelNumber();
+		this.brandName = request.getBrandName();
+		this.productCategory = productCategory;
+		this.imageList = imageList;
+		this.productOptionList = productOptionList;
+		this.color = request.getColor();
+		this.sizeUnit = request.getSizeUnit();
+		this.productStatus = request.getProductStatus();
+		this.operationStatus = request.getOperationStatus();
+		this.retailPrice = request.getRetailPrice();
+		this.retailDate = request.getRetailDate();
+	}
+
+	public void createOption(List<ProductOption> productOption) {
+		this.productOptionList = productOption;
+	}
+
 }
 
