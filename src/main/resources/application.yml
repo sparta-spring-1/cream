@@ -16,6 +16,12 @@ spring:
       hibernate:
         format_sql: true
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+
 logging:
   level:
     com.sparta.cream: debug
@@ -24,3 +30,9 @@ portone:
   api:
     base-url: https://api.portone.io
     secret: ${PORTONE_API_SECRET}
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:app}
+  access-exp-sec: ${JWT_ACCESS_EXP_SEC:900}
+  refresh-exp-sec: ${JWT_REFRESH_EXP_SEC:1209600}
