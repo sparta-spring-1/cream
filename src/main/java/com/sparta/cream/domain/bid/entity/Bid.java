@@ -164,6 +164,7 @@ public class Bid extends BaseEntity {
 	public void cancelByAdmin(Users admin, String reasonCode,  String comment) {
 		if (admin.getRole() != com.sparta.cream.entity.UserRole.ADMIN) {
 			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+
 		}
 
 		if (this.status == BidStatus.ADMIN_CANCELED) {
