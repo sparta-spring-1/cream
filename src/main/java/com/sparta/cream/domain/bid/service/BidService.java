@@ -9,19 +9,26 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
+import com.sparta.cream.domain.bid.dto.AdminBidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
+import com.sparta.cream.domain.bid.entity.CancelReason;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.entity.UserRole;
+import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.repository.ProductOptionRepository;
+import com.sparta.cream.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 입찰(Bid) 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
@@ -31,12 +38,14 @@ import lombok.RequiredArgsConstructor;
  * @since 2026. 1. 22.
  */
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BidService {
 
 	private final BidRepository bidRepository;
 	private final ProductOptionRepository productOptionRepository;
+	private final UserRepository userRepository;
 
 	/**
 	 * 새로운 입찰(구매 또는 판매)을 등록합니다.
@@ -49,12 +58,14 @@ public class BidService {
 	 */
 	@Transactional
 	public BidResponseDto createBid(Long userId, BidRequestDto requestDto) {
+		Users user = userRepository.findById(userId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
 		ProductOption productOption = productOptionRepository.findById(requestDto.getProductOptionId())
 			.orElseThrow(() -> new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
-
 		Bid bid = Bid.builder()
-			.userId(userId)
+			.user(user)
 			.productOption(productOption)
 			.price(requestDto.getPrice())
 			.type(requestDto.getType())
@@ -62,9 +73,7 @@ public class BidService {
 			.expiresAt(LocalDateTime.now().plusDays(7))
 			.build();
 
-		Bid savedBid = bidRepository.save(bid);
-
-		return new BidResponseDto(savedBid);
+		return new BidResponseDto(bidRepository.save(bid));
 	}
 
 	/**
@@ -141,6 +150,47 @@ public class BidService {
 		bid.cancel(userId);
 
 		return BidCancelResponseDto.from(bid);
+	}
+
+	/**
+	 * 관리자 권한으로 입찰을 강제 취소 처리합니다.
+	 * 입력받은 사유 코드의 유효성 검증후, 해당 입찰의 상태를
+	 * 관리자 취소로 변경하고 취소 이력(관리자ID, 사유, 상세 메모)를 저장합니다.
+	 * @param bidId 취소 처리할 입찰의 고유 식별자
+	 * @param request 취소사유 코드 및 상세 코멘트를 담은 요청 DTOO
+	 * @return 취소된 입찰 정보와 처리 결과가 담긴 응답 DTO
+	 */
+	@Transactional
+	public AdminBidCancelResponseDto cancelBidByAdmin(Long bidId, AdminBidCancelRequestDto request,Long adminId) {
+
+		Users admin = userRepository.findById(adminId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+		if (admin.getRole() != UserRole.ADMIN) {
+			log.warn("권한 없는 사용자의 관리자 기능 접근 시도: userId={}", adminId);
+			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+		}
+
+		try {
+			CancelReason.valueOf(request.getReasonCode());
+		} catch (IllegalArgumentException e) {
+			throw new BusinessException(BidErrorCode.INVALID_REASON_CODE);
+		}
+
+		Bid bid = bidRepository.findById(bidId)
+			.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
+
+		log.info("관리자 취소 시작 - 입찰ID: {}, 관리자: {}", bidId, admin.getName());
+
+		bid.cancelByAdmin(admin,request.getReasonCode(), request.getComment());
+
+		return new AdminBidCancelResponseDto(
+			bid.getId(),
+			bid.getStatus(),
+			admin.getName(),
+			LocalDateTime.now().toString(),
+			request.getReasonCode()
+		);
 	}
 
 }

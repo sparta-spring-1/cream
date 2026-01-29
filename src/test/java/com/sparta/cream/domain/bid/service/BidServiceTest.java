@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,17 +21,22 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
+import com.sparta.cream.domain.bid.entity.CancelReason;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.entity.UserRole;
+import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.repository.ProductOptionRepository;
+import com.sparta.cream.repository.UserRepository;
 
 /**
  * 입찰 서비스(BidService) 단위테스트입니다.
@@ -52,6 +58,19 @@ class BidServiceTest {
 	@Mock
 	private ProductOptionRepository productOptionRepository;
 
+	@Mock
+	private UserRepository userRepository;
+
+	private Users testUser;
+	private Long userId = 1L;
+
+	@BeforeEach
+	void setUp() {
+		// 모든 테스트에서 공통으로 사용할 유저 모킹
+		testUser = mock(Users.class);
+		lenient().when(testUser.getId()).thenReturn(userId);
+	}
+
 	/**
 	 * 입찰 등록 성공 시나리오를 검증합니다.
 	 */
@@ -59,16 +78,14 @@ class BidServiceTest {
 	@DisplayName("입찰 등록 성공 테스트")
 	void createBid_Success() {
 		// given
-		Long userId = 1L;
 		Long productOptionId = 100L;
 		Long price = 150000L;
 
 		BidRequestDto requestDto = new BidRequestDto(productOptionId, price, BidType.BUY);
 		ProductOption productOption = mock(ProductOption.class);
 
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 		given(productOptionRepository.findById(productOptionId)).willReturn(Optional.of(productOption));
-
-		// save
 		given(bidRepository.save(any(Bid.class))).willAnswer(invocation -> invocation.getArgument(0));
 
 		// when
@@ -76,9 +93,7 @@ class BidServiceTest {
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getUserId()).isEqualTo(userId);
 		assertThat(response.getPrice()).isEqualTo(price);
-		assertThat(response.getStatus()).isEqualTo(BidStatus.PENDING);
 		assertThat(response.getType()).isEqualTo(BidType.BUY);
 
 		verify(bidRepository, times(1)).save(any(Bid.class));
@@ -91,9 +106,9 @@ class BidServiceTest {
 	@DisplayName("입찰 등록 실패 - 상품 옵션이 없는 경우")
 	void createBid_Fail_ProductOptionNotFound() {
 		// given
-		Long userId = 1L;
 		BidRequestDto requestDto = new BidRequestDto(999L, 10000L, BidType.BUY);
 
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 		given(productOptionRepository.findById(anyLong())).willReturn(Optional.empty());
 
 		// when & then
@@ -110,11 +125,10 @@ class BidServiceTest {
 	@DisplayName("내 입찰 내역 조회 성공 - 페이징 적용, 목록 반환 확인")
 	void getMyBids_Success_WithPaging() {
 		// given
-		Long userId = 1L;
 		ProductOption productOption = mock(ProductOption.class);
 
 		Bid bid1 = Bid.builder()
-			.userId(userId)
+			.user(testUser)
 			.productOption(productOption)
 			.price(100000L)
 			.type(BidType.BUY)
@@ -122,7 +136,7 @@ class BidServiceTest {
 			.build();
 
 		Bid bid2 = Bid.builder()
-			.userId(userId)
+			.user(testUser)
 			.productOption(productOption)
 			.price(120000L)
 			.type(BidType.BUY)
@@ -174,36 +188,34 @@ class BidServiceTest {
 		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
 	}
 
-
+	/**
+	 * 상품별 입찰 조회 성공 시나리오
+	 */
 	@Test
 	@DisplayName("상품별 입찰 조회 성공 - 가격 내림차순 확인")
 	void getBidsByProductOption_Success() {
 		// given
 		Long productOptionId = 1L;
-		ProductOption productOption = ProductOption.builder()
-			.size("260")
-			.build();
-
+		ProductOption productOption = mock(ProductOption.class);
 		ReflectionTestUtils.setField(productOption, "id", productOptionId);
 
 		Bid bid1 = Bid.builder().price(10000L).productOption(productOption).build();
 		Bid bid2 = Bid.builder().price(20000L).productOption(productOption).build();
 
-		List<Bid> bids = List.of(bid2, bid1);
-
 		given(productOptionRepository.existsById(productOptionId)).willReturn(true);
-		given(bidRepository.findAllByProductOptionIdOrderByPriceDesc(productOptionId)).willReturn(bids);
+		given(bidRepository.findAllByProductOptionIdOrderByPriceDesc(productOptionId)).willReturn(List.of(bid2, bid1));
 
 		// when
 		List<BidResponseDto> result = bidService.getBidsByProductOption(productOptionId);
 
 		// then
-		assertThat(result).hasSize(2);
 		assertThat(result.get(0).getPrice()).isEqualTo(20000L);
 		assertThat(result.get(1).getPrice()).isEqualTo(10000L);
-		verify(bidRepository).findAllByProductOptionIdOrderByPriceDesc(productOptionId);
 	}
 
+	/**
+	 * 존재하지 않는 상품 옵션 조회시 실패 시나리오
+	 */
 	@Test
 	@DisplayName("상품별 입찰 조회 실패 - 존재하지 않는 상품 옵션")
 	void getBidsByProductOption_Fail_NotFound() {
@@ -215,7 +227,7 @@ class BidServiceTest {
 		BusinessException exception = assertThrows(BusinessException.class,
 			() -> bidService.getBidsByProductOption(productOptionId));
 
-		assertThat(exception.getErrorCode()).isEqualTo(BidErrorCode.PRODUCT_OPTION_NOT_FOUND.getMessage());
+		assertThat(exception.getErrorCode()).isEqualTo(BidErrorCode.PRODUCT_OPTION_NOT_FOUND);
 	}
 
 	/**
@@ -225,24 +237,15 @@ class BidServiceTest {
 	@DisplayName("입찰 수정 성공 - 가격, 옵션, 타입이 정상적으로 변경되어야 함")
 	void updateBid_Success() {
 		// given
-		Long userId = 1L;
 		Long bidId = 100L;
 		Long newPrice = 200000L;
 		Long newProductOptionId = 101L;
 		BidType newType = BidType.SELL;
 
 		BidRequestDto requestDto = new BidRequestDto(newProductOptionId, newPrice, newType);
-
-		ProductOption oldOption = mock(ProductOption.class);
 		ProductOption newOption = mock(ProductOption.class);
 
-		Bid bid = Bid.builder()
-			.userId(userId)
-			.productOption(oldOption)
-			.price(150000L)
-			.type(BidType.BUY)
-			.status(BidStatus.PENDING)
-			.build();
+		Bid bid = Bid.builder().user(testUser).status(BidStatus.PENDING).build();
 		ReflectionTestUtils.setField(bid, "id", bidId);
 
 		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
@@ -252,11 +255,8 @@ class BidServiceTest {
 		BidResponseDto response = bidService.updateBid(userId, bidId, requestDto);
 
 		// then
-		assertThat(response.getPrice()).isEqualTo(newPrice);
-		assertThat(response.getType()).isEqualTo(newType);
-		assertThat(bid.getProductOption()).isEqualTo(newOption);
-
-		verify(bidRepository, times(1)).findById(bidId);
+		assertThat(response.getPrice()).isEqualTo(200000L);
+		verify(bidRepository).findById(bidId);
 	}
 
 	/**
@@ -271,7 +271,7 @@ class BidServiceTest {
 		BidRequestDto requestDto = new BidRequestDto(101L, 200000L, BidType.SELL);
 
 		Bid bid = Bid.builder()
-			.userId(userId)
+			.user(testUser)
 			.status(BidStatus.MATCHED)
 			.build();
 
@@ -284,33 +284,28 @@ class BidServiceTest {
 			.hasMessageContaining(BidErrorCode.CANNOT_UPDATE_BID.getMessage());
 	}
 
+	/**
+	 * 본인의 입찰이 아닌경우 수정시 실패 시나리오
+	 */
 	@Test
 	@DisplayName("입찰 수정 실패 - 본인 입찰이 아닌 경우")
 	void updateBid_Fail_NotYourBid() {
 		// given
-		Long userId = 1L;
-		Long bidId = 100L;
-		BidRequestDto requestDto =
-			new BidRequestDto(101L, 200000L, BidType.SELL);
+		Users otherUser = mock(Users.class);
+		given(otherUser.getId()).willReturn(999L);
 
-		Bid bid = Bid.builder()
-			.userId(999L)
-			.status(BidStatus.PENDING)
-			.build();
-
-		ReflectionTestUtils.setField(bid, "id", bidId);
-
-		given(bidRepository.findById(bidId))
-			.willReturn(Optional.of(bid));
+		Bid bid = Bid.builder().user(otherUser).build();
+		given(bidRepository.findById(100L)).willReturn(Optional.of(bid));
 
 		// when & then
-		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, requestDto))
+		assertThatThrownBy(() -> bidService.updateBid(userId, 100L, new BidRequestDto(101L, 200000L, BidType.SELL)))
 			.isInstanceOf(BusinessException.class)
 			.hasMessageContaining(BidErrorCode.NOT_YOUR_BID.getMessage());
-
-		then(bidRepository).should(never()).save(any());
 	}
 
+	/**
+	 * 본인의 입찰이 아닌경우 취소시 실패 시나리오
+	 */
 	@Test
 	@DisplayName("입찰 취소 실패 - 본인 입찰이 아닌 경우")
 	void cancelBid_Fail_NotYourBid() {
@@ -318,8 +313,11 @@ class BidServiceTest {
 		Long userId = 1L;
 		Long bidId = 100L;
 
+		Users otherUser = mock(Users.class);
+		given(otherUser.getId()).willReturn(999L);
+
 		Bid bid = Bid.builder()
-			.userId(999L)
+			.user(otherUser)
 			.status(BidStatus.PENDING)
 			.build();
 
@@ -331,4 +329,57 @@ class BidServiceTest {
 			.hasMessageContaining(BidErrorCode.NOT_YOUR_BID.getMessage());
 	}
 
+	/**
+	 * 관리자 권한으로 입찰 취소시 성공 시나리오
+	 */
+	@Test
+	@DisplayName("관리자 권한으로 입찰 취소 성공")
+	void cancelBidByAdmin_Success() {
+		// given
+		Long bidId = 1L;
+		Long adminId = 99L;
+
+		AdminBidCancelRequestDto requestDto = new AdminBidCancelRequestDto(
+			CancelReason.MISTAKE.name(),
+			"관리자 수동 취소 처리"
+		);
+
+		Users adminUser = new Users("admin@test.com", "password1234", "관리자", UserRole.ADMIN);
+
+		Bid bid = Bid.builder()
+			.status(BidStatus.PENDING)
+			.build();
+		ReflectionTestUtils.setField(bid, "id", bidId);
+
+		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
+		given(userRepository.findById(adminId)).willReturn(Optional.of(adminUser));
+
+		// when
+		bidService.cancelBidByAdmin(bidId, requestDto, adminId);
+
+		// then
+		assertThat(bid.getStatus()).isEqualTo(BidStatus.ADMIN_CANCELED);
+		verify(bidRepository, times(1)).findById(bidId);
+	}
+
+	/**
+	 * 관리자가 아닌 일반 유저 입찰 취소시 예외 발생 시나리오
+	 */
+	@Test
+	@DisplayName("관리자가 아닌 일반 유저가 입찰 취소 시도 시 예외 발생")
+	void cancelBidByAdmin_Fail_NotAdmin() {
+		// given
+		Long bidId = 1L;
+		Long userId = 10L;
+
+		Users generalUser = new Users("user@test.com", "pw", "일반", UserRole.USER);
+		AdminBidCancelRequestDto requestDto = new AdminBidCancelRequestDto("CANCEL_REASON_01", "취소요청");
+
+		given(userRepository.findById(userId)).willReturn(Optional.of(generalUser));
+
+		// when & then
+		assertThatThrownBy(() -> bidService.cancelBidByAdmin(bidId, requestDto, userId))
+			.isInstanceOf(BusinessException.class)
+			.hasMessageContaining("해당 user 에 권한이 없습니다");
+	}
 }

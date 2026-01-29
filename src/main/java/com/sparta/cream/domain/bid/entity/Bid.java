@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
@@ -40,8 +41,9 @@ public class Bid extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false)
-	private Long userId;
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@JoinColumn(name = "user_id", nullable = false)
+	private Users user;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)
 	@JoinColumn(name = "product_option_id", nullable = false)
@@ -63,6 +65,21 @@ public class Bid extends BaseEntity {
 
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime expiresAt;
+
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "admin_id")
+	private Users canceledByAdmin;
+
+	@Column(length = 100)
+	private String adminReason;
+
+	@Column(length = 255)
+	private String adminComment;
+
+
+	public Long getUserId() {
+		return this.user != null ? this.user.getId() : null;
+	}
 
 	/**
 	 * 연관된 상품(Product)의 식별자를 조회합니다
@@ -94,7 +111,7 @@ public class Bid extends BaseEntity {
 	 * 입찰상태가 (PENDING)인 경우에만 취소할수 있습니다.
 	 */
 	public void cancel(Long userId) {
-		if (!this.userId.equals(userId)) {
+		if (!this.user.getId().equals(userId)) {
 			throw new BusinessException(BidErrorCode.NOT_YOUR_BID);
 		}
 
@@ -134,6 +151,30 @@ public class Bid extends BaseEntity {
 		if (this.status != BidStatus.PENDING) {
 			throw new BusinessException(BidErrorCode.CANNOT_UPDATE_BID);
 		}
+	}
+
+	/**
+	 * 관리자 권한으로 입찰을 강제로 취소하고 관련 이력을 기록합니다.
+	 * 이미 관리자에 의해 취소된 입찰인 경우 예외가 발생하며.
+	 * 취소 시 담당 관리자 ID, 사유 코드, 상세 코멘트가 함계 저장됩니다.
+	 * @param admin 취소를 수행한 관리자 식별자
+	 * @param reasonCode 취소 사유 코드
+	 * @param comment 취소와 관련된 관리자 메모(코멘트)
+	 */
+	public void cancelByAdmin(Users admin, String reasonCode,  String comment) {
+		if (admin.getRole() != com.sparta.cream.entity.UserRole.ADMIN) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+
+		}
+
+		if (this.status == BidStatus.ADMIN_CANCELED) {
+			throw new BusinessException(BidErrorCode.BID_ALREADY_CANCELED);
+		}
+
+		this.status = BidStatus.ADMIN_CANCELED;
+		this.canceledByAdmin = admin;
+		this.adminReason = reasonCode;
+		this.adminComment = comment;
 	}
 }
 
