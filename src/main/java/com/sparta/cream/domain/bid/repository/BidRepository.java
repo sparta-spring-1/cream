@@ -5,8 +5,12 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.sparta.cream.domain.bid.entity.Bid;
+import com.sparta.cream.domain.bid.entity.BidStatus;
+import com.sparta.cream.domain.bid.entity.BidType;
 
 /**
  * 입찰(Bid) 도메인을 위한 데이터 접근 저장소입니다.
@@ -22,7 +26,8 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
 	 * @param userId 사용자 식별자
 	 * @return 사용자 전체 입찰 리스트 (과거순 정렬)
 	 */
-	Page<Bid> findAllByUserIdOrderByCreatedAtAsc(Long userId, Pageable pageable);
+	@Query("SELECT b FROM Bid b WHERE b.user.id = :userId ORDER BY b.createdAt ASC")
+	Page<Bid> findAllByUserIdOrderByCreatedAtAsc(@Param("userId") Long userId, Pageable pageable);
 
 	/**
 	 * 특정 상품 옵션에 등록된 모든 입찰 내역을 입찰가 내림차순으로 조회합니다.
