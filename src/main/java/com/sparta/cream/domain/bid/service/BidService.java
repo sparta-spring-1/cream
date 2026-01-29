@@ -13,6 +13,7 @@ import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
 import com.sparta.cream.domain.bid.dto.AdminBidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.entity.CancelReason;
+import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
@@ -46,12 +47,13 @@ public class BidService {
 	private final BidRepository bidRepository;
 	private final ProductOptionRepository productOptionRepository;
 	private final UserRepository userRepository;
+	private final TradeService tradeService;
 
 	/**
-	 * 새로운 입찰(구매 또는 판매)을 등록합니다.
+	 * 새로운 입찰(구매 또는 판매)을 등록하고, 즉시 매칭을 시도합니다.
 	 * 1. 상품 옵션의 존재 여부를 확인합니다.
-	 * 2. 가격이 0보다 큰지 검증합니다.
-	 * 3. 입찰은 기본적으로 대기중(PENDING) 상태로 생성되며, 기본 만료일은 등록 시점으로부터 7일입니다.
+	 * 2. 기본 만료일은 등록 시점으로부터 7일로 설정됩니다.
+	 * 3.등록 완료 후 {@link TradeService#processMatching(Bid)}을 호출하여 체결 가능 여부를 확인합니다.
 	 * @param userId 입찰을 동록하는 사용자 식별자
 	 * @param requestDto 입찰 요청 정보(상품 옵션 ID, 가격 타입등)
 	 * @return 등록된 입찰정보(Response DTO)
@@ -73,7 +75,11 @@ public class BidService {
 			.expiresAt(LocalDateTime.now().plusDays(7))
 			.build();
 
-		return new BidResponseDto(bidRepository.save(bid));
+		Bid savedBid = bidRepository.save(bid);
+
+		tradeService.processMatching(savedBid);
+
+		return new BidResponseDto(savedBid);
 	}
 
 	/**
@@ -131,6 +137,8 @@ public class BidService {
 			.orElseThrow(() -> new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND));
 
 		bid.update(requestDto.getPrice(), newOption, requestDto.getType());
+
+		tradeService.processMatching(bid);
 
 		return new BidResponseDto(bid);
 	}
