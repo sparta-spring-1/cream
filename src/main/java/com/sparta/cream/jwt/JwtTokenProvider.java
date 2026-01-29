@@ -90,5 +90,63 @@ public class JwtTokenProvider {
 			.get("sub", String.class);
 		return Long.parseLong(subject);
 	}
+
+	/**
+	 * JWT 토큰에서 만료 시간 추출
+	 * 토큰의 expiration(exp) 클레임에서 만료 시간을 추출합니다.
+	 *
+	 * @param token JWT 토큰 문자열
+	 * @return 만료 시간 (Instant)
+	 * @throws io.jsonwebtoken.JwtException 토큰 파싱 실패 시 예외 발생
+	 */
+	public Instant getExpirationFromToken(String token) {
+		Long exp = Jwts.parserBuilder()
+			.setSigningKey(key)
+			.build()
+			.parseClaimsJws(token)
+			.getBody()
+			.get("exp", Long.class);
+		return Instant.ofEpochSecond(exp);
+	}
+
+	/**
+	 * JWT 토큰에서 사용자 ID 추출 (만료 검증 무시)
+	 * 로그아웃 등 만료된 토큰도 처리해야 하는 경우에 사용합니다.
+	 * 서명 검증은 수행하지만 만료 시간 검증은 건너뜁니다.
+	 *
+	 * @param token JWT 토큰 문자열
+	 * @return 사용자 ID
+	 * @throws io.jsonwebtoken.JwtException 토큰 파싱 실패 시 예외 발생
+	 */
+	public Long getUserIdFromTokenIgnoringExpiration(String token) {
+		String subject = Jwts.parserBuilder()
+			.setSigningKey(key)
+			.setAllowedClockSkewSeconds(Long.MAX_VALUE / 1000) // 만료 검증 무시
+			.build()
+			.parseClaimsJws(token)
+			.getBody()
+			.get("sub", String.class);
+		return Long.parseLong(subject);
+	}
+
+	/**
+	 * JWT 토큰에서 만료 시간 추출 (만료 검증 무시)
+	 * 로그아웃 등 만료된 토큰도 처리해야 하는 경우에 사용합니다.
+	 * 서명 검증은 수행하지만 만료 시간 검증은 건너뜁니다.
+	 *
+	 * @param token JWT 토큰 문자열
+	 * @return 만료 시간 (Instant)
+	 * @throws io.jsonwebtoken.JwtException 토큰 파싱 실패 시 예외 발생
+	 */
+	public Instant getExpirationFromTokenIgnoringExpiration(String token) {
+		Long exp = Jwts.parserBuilder()
+			.setSigningKey(key)
+			.setAllowedClockSkewSeconds(Long.MAX_VALUE / 1000) // 만료 검증 무시
+			.build()
+			.parseClaimsJws(token)
+			.getBody()
+			.get("exp", Long.class);
+		return Instant.ofEpochSecond(exp);
+	}
 }
 
