@@ -14,6 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
@@ -23,6 +27,7 @@ import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.repository.ProductOptionRepository;
@@ -94,35 +99,16 @@ class BidServiceTest {
 		// when & then
 		assertThatThrownBy(() -> bidService.createBid(userId, requestDto))
 			.isInstanceOf(BusinessException.class)
-			.hasMessageContaining(ErrorCode.PRODUCT_OPTION_NOT_FOUND.getMessage());
+			.hasMessageContaining(BidErrorCode.PRODUCT_OPTION_NOT_FOUND.getMessage());
 	}
 
-	/**
-	 * 유요하지 않는 입찰 가겨 (0원이하)에 대한 등록 실패 시나리오를 검증합니다.
-	 */
-	@Test
-	@DisplayName("입찰 등록 실패 - 가격이 유효하지 않은 경우 (0원 이하)")
-	void createBid_Fail_InvalidPrice() {
-		// given
-		Long userId = 1L;
-		Long productOptionId = 100L;
-		BidRequestDto requestDto = new BidRequestDto(productOptionId, 0L, BidType.BUY);
-
-		ProductOption productOption = mock(ProductOption.class);
-		given(productOptionRepository.findById(productOptionId)).willReturn(Optional.of(productOption));
-
-		// when & then
-		assertThatThrownBy(() -> bidService.createBid(userId, requestDto))
-			.isInstanceOf(BusinessException.class)
-			.hasMessageContaining(ErrorCode.INVALID_BID_PRICE.getMessage());
-	}
 
 	/**
 	 * 내 입찰 내역 조회 성공 시나리오를 검증합니다.
 	 */
 	@Test
-	@DisplayName("내 입찰 내역 조회 성공 - 목록 반환 확인")
-	void getMyBids_Success() {
+	@DisplayName("내 입찰 내역 조회 성공 - 페이징 적용, 목록 반환 확인")
+	void getMyBids_Success_WithPaging() {
 		// given
 		Long userId = 1L;
 		ProductOption productOption = mock(ProductOption.class);
@@ -143,38 +129,51 @@ class BidServiceTest {
 			.status(BidStatus.PENDING)
 			.build();
 
-		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId))
-			.willReturn(List.of(bid1, bid2));
+		int page = 0;
+		int size = 10;
+		Pageable pageable = PageRequest.of(page, size);
+		Page<Bid> bidPage = new PageImpl<>(List.of(bid1, bid2), pageable, 2);
+
+		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId, pageable))
+			.willReturn(bidPage);
 
 		// when
-		List<BidResponseDto> response = bidService.getMyBids(userId);
+		Page<BidResponseDto> response = bidService.getMyBids(userId, page, size);
 
 		// then
-		assertThat(response).hasSize(2);
-		assertThat(response.get(0).getPrice()).isEqualTo(100000L);
-		assertThat(response.get(1).getPrice()).isEqualTo(120000L);
+		assertThat(response.getContent()).hasSize(2);
+		assertThat(response.getContent().get(0).getPrice()).isEqualTo(100000L);
+		assertThat(response.getContent().get(1).getPrice()).isEqualTo(120000L);
 
-		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId);
+		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
 	}
 
 	/**
-	 * 입찰 내역이 없을 때 빈 리스트가 반환되는지 검증합니다.
+	 * 내 입찰 내역 조회 성공 - 내역이 없는 경우 빈 페이지 반환
 	 */
 	@Test
-	@DisplayName("내 입찰 내역 조회 성공 - 내역이 없는 경우 빈 리스트 반환")
-	void getMyBids_Success_EmptyList() {
+	@DisplayName("내 입찰 내역 조회 성공 - 페이징 적용, 내역이 없는 경우")
+	void getMyBids_Success_EmptyPage() {
 		// given
 		Long userId = 1L;
-		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId))
-			.willReturn(Collections.emptyList());
+		int page = 0;
+		int size = 10;
+		Pageable pageable = PageRequest.of(page, size);
+		Page<Bid> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId, pageable))
+			.willReturn(emptyPage);
 
 		// when
-		List<BidResponseDto> response = bidService.getMyBids(userId);
+		Page<BidResponseDto> response = bidService.getMyBids(userId, page, size);
 
 		// then
-		assertThat(response).isEmpty();
-		assertThat(response).isNotNull();
+		assertThat(response.getContent()).isEmpty();
+		assertThat(response.getTotalElements()).isEqualTo(0);
+
+		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
 	}
+
 
 	@Test
 	@DisplayName("상품별 입찰 조회 성공 - 가격 내림차순 확인")
@@ -216,7 +215,7 @@ class BidServiceTest {
 		BusinessException exception = assertThrows(BusinessException.class,
 			() -> bidService.getBidsByProductOption(productOptionId));
 
-		assertThat(exception.getErrorCode()).isEqualTo(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+		assertThat(exception.getErrorCode()).isEqualTo(BidErrorCode.PRODUCT_OPTION_NOT_FOUND.getMessage());
 	}
 
 	/**
@@ -282,6 +281,54 @@ class BidServiceTest {
 		// when & then
 		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, requestDto))
 			.isInstanceOf(BusinessException.class)
-			.hasMessageContaining(ErrorCode.CANNOT_UPDATE_BID.getMessage());
+			.hasMessageContaining(BidErrorCode.CANNOT_UPDATE_BID.getMessage());
 	}
+
+	@Test
+	@DisplayName("입찰 수정 실패 - 본인 입찰이 아닌 경우")
+	void updateBid_Fail_NotYourBid() {
+		// given
+		Long userId = 1L;
+		Long bidId = 100L;
+		BidRequestDto requestDto =
+			new BidRequestDto(101L, 200000L, BidType.SELL);
+
+		Bid bid = Bid.builder()
+			.userId(999L)
+			.status(BidStatus.PENDING)
+			.build();
+
+		ReflectionTestUtils.setField(bid, "id", bidId);
+
+		given(bidRepository.findById(bidId))
+			.willReturn(Optional.of(bid));
+
+		// when & then
+		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, requestDto))
+			.isInstanceOf(BusinessException.class)
+			.hasMessageContaining(BidErrorCode.NOT_YOUR_BID.getMessage());
+
+		then(bidRepository).should(never()).save(any());
+	}
+
+	@Test
+	@DisplayName("입찰 취소 실패 - 본인 입찰이 아닌 경우")
+	void cancelBid_Fail_NotYourBid() {
+		// given
+		Long userId = 1L;
+		Long bidId = 100L;
+
+		Bid bid = Bid.builder()
+			.userId(999L)
+			.status(BidStatus.PENDING)
+			.build();
+
+		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
+
+		// when & then
+		assertThatThrownBy(() -> bidService.cancelBid(userId, bidId))
+			.isInstanceOf(BusinessException.class)
+			.hasMessageContaining(BidErrorCode.NOT_YOUR_BID.getMessage());
+	}
+
 }

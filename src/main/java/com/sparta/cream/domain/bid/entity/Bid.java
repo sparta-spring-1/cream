@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 
@@ -87,9 +88,24 @@ public class Bid extends BaseEntity {
 
 	/**
 	 * 입찰을 취소 상태로 변경합니다.
+	 * 다음 조건을 만족하는 경우에만 취소가 가능합니다/
+	 * 입팔의 소유자가 요청한 사용자와 일치해야합니다/
+	 * 이미 취소된 입찰은 다시 취소할수 없습니다.
+	 * 입찰상태가 (PENDING)인 경우에만 취소할수 있습니다.
 	 */
-	public void cancel() {
-		validatePending();
+	public void cancel(Long userId) {
+		if (!this.userId.equals(userId)) {
+			throw new BusinessException(BidErrorCode.NOT_YOUR_BID);
+		}
+
+		if (this.status == BidStatus.CANCELED) {
+			throw new BusinessException(BidErrorCode.BID_ALREADY_CANCELED);
+		}
+
+		if (this.status != BidStatus.PENDING) {
+			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_NON_PENDING_BID);
+		}
+
 		this.status = BidStatus.CANCELED;
 	}
 
@@ -106,7 +122,7 @@ public class Bid extends BaseEntity {
 	 */
 	public void cancelMatchedBid() {
 		if (this.status != BidStatus.MATCHED) {
-			throw new BusinessException(ErrorCode.CANNOT_CANCEL_UNMATCHED);
+			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_UNMATCHED);
 		}
 		this.status = BidStatus.CANCELED;
 	}
@@ -116,7 +132,7 @@ public class Bid extends BaseEntity {
 	 */
 	private void validatePending() {
 		if (this.status != BidStatus.PENDING) {
-			throw new BusinessException(ErrorCode.CANNOT_UPDATE_BID);
+			throw new BusinessException(BidErrorCode.CANNOT_UPDATE_BID);
 		}
 	}
 }
