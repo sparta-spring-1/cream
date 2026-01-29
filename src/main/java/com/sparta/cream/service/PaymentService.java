@@ -3,12 +3,14 @@ package com.sparta.cream.service;
 import java.time.LocalDate;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
+import com.sparta.cream.entity.Users;
 import com.sparta.cream.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +32,7 @@ public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
 	private final TradeService tradeService;
-	private final UserService userService;
+	private final AuthService authService;
 
 	/**
 	 * 결제 요청을 사전 준비하고 결제 엔티티를 저장합니다.
@@ -43,75 +45,36 @@ public class PaymentService {
 	 * @param userId  	구매자 식별자
 	 * @return 프론트엔드로 전달할 결제 준비 완료 정보(DTO)
 	 */
+	@Transactional
 	public CreatePaymentResponse prepare(Long tradeId, Long userId) {
 
-		Users buyer = userService.findById(userId);
+		Users buyer = authService.findById(userId);
 
 		Trade trade = tradeService.findById(tradeId);
 
 		String merchantUid = "PAY-" + LocalDate.now() + "-" + trade.getId().toString();
 		String productName = trade.getPurchaseBidId().getProductOption().getProduct().getName();
 
-		Payment payment = new Payment(merchantUid, productName, trade.getFinalPrice(), PaymentStatus.READY);
+		Payment payment = new Payment(merchantUid,
+			productName,
+			trade.getFinalPrice(),
+			PaymentStatus.READY,
+			trade,
+			buyer);
+
 		paymentRepository.save(payment);
 
-		return new CreatePaymentResponse(payment.getMerchantUid(),
+		//임시 전화번호
+		String phoneNumber = "010-1234-5678";
+
+		return new CreatePaymentResponse(
+			payment.getId(),
+			payment.getMerchantUid(),
 			payment.getStatus().toString(),
 			productName,
 			payment.getAmount(),
 			buyer.getEmail(),
 			buyer.getName(),
-			buyer.getPhoneNumber());
-	}
-}
-
-class PurchaseBid {
-	public ProductOption getProductOption() {
-		return new ProductOption();
-	}
-}
-
-class ProductOption {
-	public Product getProduct() {
-		return new Product();
-	}
-}
-
-class Product {
-	public String getName() {
-		return "더미 상품 A";
-	}
-}
-
-class Users {
-	String email;
-	Long id;
-
-	Users(String email, Long id) {
-		this.email = email;
-		this.id = id;
-	}
-
-	public Long getId() {
-		return 1L;
-	}
-
-	public String getEmail() {
-		return email;
-	}
-
-	public String getName() {
-		return "테스터";
-	}
-
-	public String getPhoneNumber() {
-		return "010-1234-5678";
-	}
-}
-
-@Service
-class UserService {
-	public Users findById(Long id) {
-		return new Users("tester@example.com", 1L);
+			phoneNumber);
 	}
 }

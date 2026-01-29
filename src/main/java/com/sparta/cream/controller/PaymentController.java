@@ -2,6 +2,7 @@ package com.sparta.cream.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import com.sparta.cream.config.PortOneConfig;
 import com.sparta.cream.dto.request.CreatePaymentRequest;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.PaymentConfigResponse;
+import com.sparta.cream.security.CustomUserDetails;
 import com.sparta.cream.service.PaymentService;
 
 import lombok.RequiredArgsConstructor;
@@ -53,12 +55,13 @@ public class PaymentController {
 	 * </p>
 	 *
 	 * @param request 	결제 준비 요청 데이터 (Trade ID)
+	 * @param user      인증된 사용자 정보
 	 * @return 발급된 merchantUid 및 결제 정보를 담은 응답 객체
 	 */
 	@PostMapping("/prepare")
-	public ResponseEntity<CreatePaymentResponse> preparePayment(@RequestBody CreatePaymentRequest request/*,
-		@AuthenticationPrincipal UserDetails user*/) {
-		CreatePaymentResponse response = paymentService.prepare(request.getTradeId(), 1L/*Long.parseLong(user.getUsername())*/);
+	public ResponseEntity<CreatePaymentResponse> preparePayment(@RequestBody CreatePaymentRequest request,
+		@AuthenticationPrincipal CustomUserDetails user) {
+		CreatePaymentResponse response = paymentService.prepare(request.getTradeId(), user.getId());
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
