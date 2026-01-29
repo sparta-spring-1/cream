@@ -68,6 +68,7 @@ public class BidController {
 
 		Long userId = Long.parseLong(userIdAuth);
 		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
+
 	}
 
 	/**

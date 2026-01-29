@@ -2,6 +2,7 @@ package com.sparta.cream.controller;
 
 import com.sparta.cream.dto.auth.LoginRequestDto;
 import com.sparta.cream.dto.auth.LoginResponseDto;
+import com.sparta.cream.dto.auth.LogoutResponseDto;
 import com.sparta.cream.dto.auth.ReissueResponseDto;
 import com.sparta.cream.dto.auth.SignupRequestDto;
 import com.sparta.cream.dto.auth.SignupResponseDto;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 인증 관련 API를 처리하는 컨트롤러
- * 회원가입 및 로그인 기능을 제공합니다.
+ * 회원가입, 로그인, 토큰 재발급, 로그아웃 기능을 제공합니다.
  *
  * @author 오정빈
  * @version 1.0
@@ -87,6 +88,27 @@ public class AuthController {
 		}
 
 		ReissueResponseDto response = authService.reissue(refreshToken);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
+	}
+
+	/**
+	 * 로그아웃 API
+	 * Refresh Token을 삭제하고 Access Token을 블랙리스트에 등록합니다.
+	 * Authorization 헤더에서 Bearer 토큰을 받아 처리합니다.
+	 *
+	 * @param authorization Authorization 헤더 값 (Bearer {access_token})
+	 * @return 로그아웃 성공 응답 (200 OK) 및 로그아웃 시간
+	 */
+	@PostMapping("/v1/auth/logout")
+	public ResponseEntity<LogoutResponseDto> logout(
+		@RequestHeader(value = "Authorization", required = false) String authorization) {
+		if (authorization == null || authorization.isEmpty() || !authorization.startsWith("Bearer ")) {
+			throw new com.sparta.cream.exception.BusinessException(
+				com.sparta.cream.exception.ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		String accessToken = authorization.substring(7); // "Bearer " 제거
+		LogoutResponseDto response = authService.logout(accessToken);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 }

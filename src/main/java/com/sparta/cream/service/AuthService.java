@@ -2,6 +2,7 @@ package com.sparta.cream.service;
 
 import com.sparta.cream.dto.auth.LoginRequestDto;
 import com.sparta.cream.dto.auth.LoginResponseDto;
+import com.sparta.cream.dto.auth.LogoutResponseDto;
 import com.sparta.cream.dto.auth.ReissueResponseDto;
 import com.sparta.cream.dto.auth.SignupRequestDto;
 import com.sparta.cream.dto.auth.SignupResponseDto;
@@ -10,10 +11,13 @@ import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.jwt.JwtProperties;
 import com.sparta.cream.jwt.JwtTokenProvider;
+import com.sparta.cream.redis.AccessTokenBlacklist;
 import com.sparta.cream.redis.RefreshTokenStore;
 import com.sparta.cream.repository.UserRepository;
 import io.jsonwebtoken.JwtException;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -41,6 +45,7 @@ public class AuthService {
 	private final PasswordEncoder passwordEncoder;
 	private final JwtTokenProvider jwtTokenProvider;
 	private final RefreshTokenStore refreshTokenStore;
+	private final AccessTokenBlacklist accessTokenBlacklist;
 	private final JwtProperties props;
 
 	/**
@@ -162,6 +167,7 @@ public class AuthService {
 	 */
 	@Transactional
 	public ReissueResponseDto reissue(String refreshToken) {
+
 		Long userId;
 		try {
 			userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
@@ -225,6 +231,44 @@ public class AuthService {
 			"Bearer",
 			props.accessExpSec()
 		);
+	}
+
+	/**
+	 * 로그아웃 처리
+	 * Refresh Token을 삭제하고 Access Token을 블랙리스트에 등록합니다.
+	 * Access Token의 남은 만료 시간만큼 블랙리스트에 유지됩니다.
+	 *
+	 * @param accessToken 로그아웃할 사용자의 Access Token
+	 * @return 로그아웃 응답 DTO (로그아웃 시간)
+	 * @throws BusinessException Access Token이 유효하지 않은 경우 AUTH_LOGIN_FAILED 예외 발생
+	 */
+	@Transactional(readOnly = true)
+	public LogoutResponseDto logout(String accessToken) {
+
+		Long userId;
+		try {
+			userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+		} catch (Exception e) {
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		refreshTokenStore.delete(userId);
+
+		Instant expiration;
+		try {
+			expiration = jwtTokenProvider.getExpirationFromToken(accessToken);
+		} catch (Exception e) {
+			throw new BusinessException(ErrorCode.AUTH_LOGIN_FAILED);
+		}
+
+		Instant now = Instant.now();
+		long remainingSeconds = expiration.getEpochSecond() - now.getEpochSecond();
+
+		if (remainingSeconds > 0) {
+			accessTokenBlacklist.add(accessToken, Duration.ofSeconds(remainingSeconds));
+		}
+
+		return new LogoutResponseDto(LocalDateTime.now());
 	}
 
 	/**
