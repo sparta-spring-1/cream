@@ -1,0 +1,28 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/cream?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${LOCAL_DB_USERNAME}
+    password: ${LOCAL_DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600000
+
+portone:
+  api:
+    base-url: https://api.portone.io
+    store-id: ${PORTONE_STORE_ID}
+    channel-key: ${PORTONE_CHANNEL_KEY}
+    secret: ${PORTONE_API_SECRET}
