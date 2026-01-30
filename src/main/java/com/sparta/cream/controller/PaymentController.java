@@ -4,13 +4,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.cream.config.PortOneConfig;
+import com.sparta.cream.dto.request.CompletePaymentRequest;
 import com.sparta.cream.dto.request.CreatePaymentRequest;
+import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.PaymentConfigResponse;
 import com.sparta.cream.security.CustomUserDetails;
@@ -64,5 +67,13 @@ public class PaymentController {
 		CreatePaymentResponse response = paymentService.prepare(request.getTradeId(), user.getId());
 
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
+	}
+
+	@PostMapping("/{paymentId}/complete")
+	public ResponseEntity<CompletePaymentResponse> completePayment(@PathVariable Long paymentId,
+		@RequestBody CompletePaymentRequest request,
+		@AuthenticationPrincipal CustomUserDetails user) {
+		CompletePaymentResponse response = paymentService.complete(paymentId, request, user.getId());
+		return ResponseEntity.ok(response);
 	}
 }

@@ -159,10 +159,12 @@ public class Payment extends BaseEntity {
 		}
     }
 
-    public void completePayment(String impUid, String method) {
-        changeStatus(this.status, PaymentStatus.PAID_SUCCESS);
+    public PaymentHistory completePayment(String impUid, String method, PaymentStatus status) {
+        changeStatus(status, PaymentStatus.PAID_SUCCESS);
         this.impUid = impUid;
 		this.method = method;
         this.paidAt = LocalDateTime.now();
+
+		return new PaymentHistory(status, PaymentStatus.PAID_SUCCESS, this.amount, this);
     }
 }

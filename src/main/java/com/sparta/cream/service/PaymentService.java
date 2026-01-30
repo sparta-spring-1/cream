@@ -1,16 +1,30 @@
 package com.sparta.cream.service;
 
 import java.time.LocalDate;
+import java.util.Map;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
+import com.sparta.cream.config.PortOneConfig;
 import com.sparta.cream.domain.entity.Payment;
+import com.sparta.cream.domain.entity.PaymentHistory;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
+import com.sparta.cream.dto.request.CompletePaymentRequest;
+import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.PaymentErrorCode;
+import com.sparta.cream.repository.PaymentHistoryRepository;
 import com.sparta.cream.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -31,8 +45,10 @@ import lombok.RequiredArgsConstructor;
 public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
+	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final TradeService tradeService;
 	private final AuthService authService;
+	private final PortOneConfig portOneConfig;
 
 	/**
 	 * 결제 요청을 사전 준비하고 결제 엔티티를 저장합니다.
@@ -76,5 +92,60 @@ public class PaymentService {
 			buyer.getEmail(),
 			buyer.getName(),
 			phoneNumber);
+	}
+
+	@Transactional
+	public CompletePaymentResponse complete(Long paymentId, CompletePaymentRequest request, Long userId) {
+		Payment payment = findById(paymentId);
+
+		payment.changeStatus(payment.getStatus(), PaymentStatus.PENDING);
+
+		if (!payment.getMerchantUid().equals(request.getMerchantUid())) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		if (!payment.getUser().getId().equals(userId)) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		try {
+			RestTemplate restTemplate = new RestTemplate();
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
+			HttpEntity<String> entity = new HttpEntity<>(headers);
+
+			String url = portOneConfig.getBaseUrl() + "/payments/" + request.getMerchantUid() + "?storeId="
+				+ portOneConfig.getStoreId();
+			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+			Map<String, Object> body = response.getBody();
+			if (body == null) {
+				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
+			}
+
+			Map<String, Object> amountMap = (Map<String, Object>)body.get("amount");
+			Number totalAmount = (Number)amountMap.get("total");
+
+			if (!payment.getAmount().equals(totalAmount.longValue())) {
+				throw new BusinessException(PaymentErrorCode.PAYMENT_PRICE_MISMATCH);
+			}
+
+			Map<String, Object> methodMap = (Map<String, Object>)body.get("method");
+			String method = methodMap.get("type").toString();
+
+			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
+			paymentHistoryRepository.save(success);
+
+			return new CompletePaymentResponse(payment.getImpUid(), payment.getStatus().toString(),
+				payment.getPaidAt());
+
+		} catch (RestClientException e) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+	}
+
+	public Payment findById(Long id) {
+		return paymentRepository.findById(id).orElseThrow(
+			() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 	}
 }
