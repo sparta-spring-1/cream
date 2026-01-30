@@ -3,6 +3,8 @@ package com.sparta.cream.dto.product;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+
 import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductStatus;
@@ -15,15 +17,15 @@ import lombok.Getter;
 public class AdminGetAllProductResponse {
 	private final List<ProductInfo> productList;
 	private final Boolean hasNext;
-	private final int totalElements;
+	private final long totalElements;
 
-	public static AdminGetAllProductResponse from(List<Product> products, Boolean hasNext, int totalElements) {
+	public static AdminGetAllProductResponse from(Page<Product> pageProducts) {
 		return new AdminGetAllProductResponse(
-			products.stream()
+			pageProducts.getContent().stream()
 				.map(ProductInfo::from)
 				.toList(),
-			hasNext,
-			totalElements
+			pageProducts.hasNext(),
+			pageProducts.getTotalElements()
 		);
 	}
 

@@ -3,6 +3,10 @@ package com.sparta.cream.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -174,19 +178,21 @@ public class ProductService {
 
 	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category, String productSize, Integer minPrice, Integer maxPrice, String keyword) {
 
-		//TODO 페이징 처리
 		//TODO 정렬 조건
 
-		List<Product> products =
+		Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
+
+		Page<Product> productPage =
 			productRepository.searchProducts(
 				brand,
 				category,
 				productSize,
 				minPrice,
 				maxPrice,
-				keyword
+				keyword,
+				pageable
 			);
 
-		return AdminGetAllProductResponse.from(products,null,0);
+		return AdminGetAllProductResponse.from(productPage);
 	}
 }
