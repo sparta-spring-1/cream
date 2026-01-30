@@ -6,15 +6,22 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
 import com.sparta.cream.domain.bid.dto.AdminBidCancelResponseDto;
+import com.sparta.cream.domain.bid.dto.AdminBidMonitoringResponseDto;
+import com.sparta.cream.domain.bid.dto.AdminBidPagingResponseDto;
 import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.entity.CancelReason;
 import com.sparta.cream.domain.notification.service.NotificationService;
+import com.sparta.cream.domain.trade.dto.AdminTradeMonitoringResponseDto;
+import com.sparta.cream.domain.trade.dto.AdminTradePagingResponseDto;
+import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
@@ -50,6 +57,7 @@ public class BidService {
 	private final ProductOptionRepository productOptionRepository;
 	private final UserRepository userRepository;
 	private final TradeService tradeService;
+	private final TradeRepository tradeRepository;
 	private final NotificationService notificationService;
 
 	/**
@@ -211,4 +219,89 @@ public class BidService {
 		);
 	}
 
+	/**
+	 * 관리자 입찰 모니터링 목록을 조회합니다.
+	 * 상품, 카테고리, 입찰 상태, 입찰 타입, 특정 유저 등의
+	 * 선택적 필터 조건을 기반으로 입찰 데이터를 조회하며,
+	 * 페이징 처리된 결과를 관리자용 DTO 형태로 반환합니다.
+	 * 해당 메서드는 조회 전용 기능으로 {@code readOnly = true} 트랜잭션으로 실행됩니다.
+	 *
+	 * @param productId 조회할 상품 ID
+	 * @param categoryId 조회할 카테고리 ID
+	 * @param status 입찰 상태
+	 * @param type 입찰 타입
+	 * @param userId 특정 유저의 입찰 내역 조회 시 사용
+	 * @param page 조회할 페이지 번호
+	 * @return 관리자 입찰 모니터링 페이징 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public AdminBidPagingResponseDto getBidMonitoringList(Long productId,Long categoryId, String status, String type,Long userId, int page) {
+		Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
+
+		Page<Bid> bidPage = bidRepository.findAllByMonitoringFilter(productId, categoryId, status, type, pageable, userId);
+
+		List<AdminBidMonitoringResponseDto> items = bidPage.getContent().stream()
+			.map(bid -> AdminBidMonitoringResponseDto.builder()
+				.bidId(bid.getId())
+				.userId(bid.getUser().getId())
+				.userName(bid.getUser().getName())
+				.productId(bid.getProductOption().getProduct().getId())
+				.productName(bid.getProductOption().getProduct().getName())
+				.categoryId(bid.getProductOption().getProduct().getProductCategory().getId())
+				.categoryName(bid.getProductOption().getProduct().getProductCategory().getName())
+				.price(bid.getPrice().longValue())
+				.type(bid.getType().name())
+				.status(bid.getStatus().name())
+				.createdAt(bid.getCreatedAt())
+				.build())
+			.toList();
+
+		AdminBidPagingResponseDto.PagingInfo pagingInfo = new AdminBidPagingResponseDto.PagingInfo(
+			bidPage.getNumber(),
+			bidPage.getTotalElements(),
+			bidPage.hasNext()
+		);
+
+		return new AdminBidPagingResponseDto(items, pagingInfo);
+	}
+
+	/**
+	 * 관리자 실시간 거래(Trade) 체결 모니터링 목록을 조회합니다.
+	 * 거래 상태 및 특정 유저 조건을 기준으로
+	 * 체결된 거래 내역을 조회하여 관리자용 DTO로 변환합니다.
+	 * 판매/구매 입찰 정보가 누락된 경우를 고려하여
+	 * 안전하게 값을 처리하도록 구성되어 있습니다.
+	 *
+	 * @param status 거래 상태
+	 * @param userId 특정 유저의 거래 내역 조회 시 사용
+	 * @param page 조회할 페이지 번호
+	 * @return 관리자 거래 모니터링 페이징 응답 DTO
+	 */
+	@Transactional(readOnly = true)
+	public AdminTradePagingResponseDto getTradeMonitoringList(String status, Long userId, Integer page) {
+		Pageable pageable = PageRequest.of(page, 10);
+		Page<Trade> tradePage = tradeRepository.findAllByTradeFilter(status, userId, pageable);
+
+		List<AdminTradeMonitoringResponseDto> items = tradePage.getContent().stream()
+			.map(t -> {
+				Bid sBid = t.getSaleBidId();
+				Bid pBid = t.getPurchaseBidId();
+
+				return AdminTradeMonitoringResponseDto.builder()
+					.tradeId(t.getId())
+					.productName(sBid != null && sBid.getProductOption() != null
+						? sBid.getProductOption().getProduct().getName() : "상품정보없음")
+					.price(t.getFinalPrice())
+					.status(t.getStatus() != null ? t.getStatus().name() : "상태없음")
+					.sellerName(sBid != null && sBid.getUser() != null ? sBid.getUser().getName() : "판매자없음")
+					.buyerName(pBid != null && pBid.getUser() != null ? pBid.getUser().getName() : "구매자없음")
+					.createdAt(t.getCreatedAt())
+					.build();
+			})
+			.toList();
+
+		return new AdminTradePagingResponseDto(items,
+			new AdminTradePagingResponseDto.PagingInfo(tradePage.getNumber(), tradePage.getTotalElements(), tradePage.hasNext())
+		);
+	}
 }
