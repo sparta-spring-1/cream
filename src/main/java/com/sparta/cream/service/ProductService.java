@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
+import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
 import com.sparta.cream.entity.Product;
@@ -169,5 +170,23 @@ public class ProductService {
 
 		// 상품 삭제
 		product.softDelete();
+	}
+
+	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category, String productSize, Integer minPrice, Integer maxPrice, String keyword) {
+
+		//TODO 페이징 처리
+		//TODO 정렬 조건
+
+		List<Product> products =
+			productRepository.searchProducts(
+				brand,
+				category,
+				productSize,
+				minPrice,
+				maxPrice,
+				keyword
+			);
+
+		return AdminGetAllProductResponse.from(products,null,0);
 	}
 }
