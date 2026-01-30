@@ -176,6 +176,21 @@ public class ProductService {
 		product.softDelete();
 	}
 
+	/**
+	 * 관리자 권한으로 상품 목록을 조회합니다.
+	 * 브랜드, 카테고리 등의 조건을 기반으로 상품을 검색하며 페이징 처리된 결과를 반환합니다.
+	 *
+	 * @param page 조회할 페이지 번호 (0부터 시작)
+	 * @param pageSize 페이지당 조회할 상품 개수
+	 * @param sort 정렬 조건
+	 * @param brand 브랜드 필터 조건
+	 * @param category 카테고리 ID 필터 조건
+	 * @param productSize 상품 사이즈 필터 조건
+	 * @param minPrice 최소 가격 필터 조건
+	 * @param maxPrice 최대 가격 필터 조건
+	 * @param keyword 상품명 검색 키워드
+	 * @return 관리자 상품 목록 조회 응답 DTO
+	 */
 	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category, String productSize, Integer minPrice, Integer maxPrice, String keyword) {
 
 		//TODO 정렬 조건
