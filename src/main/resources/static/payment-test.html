@@ -73,27 +73,51 @@
         <h4>2. Payment Test</h4>
         <div class="alert alert-warning" id="authWarning">로그인이 필요합니다.</div>
         
-        <div class="hidden" id="paymentForm">
+        <div id="paymentForm" class="hidden">
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label class="form-label">Store ID</label>
-                    <input class="form-control" id="storeId" readonly type="text">
+                    <input class="form-control" id="storeId" type="text" readonly>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Channel Key</label>
-                    <input class="form-control" id="channelKey" readonly type="text">
+                    <input class="form-control" id="channelKey" type="text" readonly>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Trade ID</label>
                 <div class="input-group">
-                    <input class="form-control" id="tradeId" placeholder="Trade ID" type="number" value="1">
+                    <input class="form-control" id="tradeId" type="number" value="1" placeholder="Trade ID">
                     <button class="btn btn-primary" id="btnStartPayment">결제 시작 (Full Flow)</button>
                 </div>
                 <div class="form-text">입력한 Trade ID로 결제 준비 -> PG창 -> 검증(Complete)까지 진행합니다.</div>
             </div>
         </div>
+    </div>
+
+    <!-- 3. 환불 테스트 섹션 -->
+    <div class="section-box hidden" id="refundSection">
+        <h4>3. Refund Test</h4>
+        <div class="row g-2 mb-3">
+            <div class="col-md-3">
+                <label class="form-label">Internal Payment ID</label>
+                <input type="text" class="form-control" id="refundPaymentId" readonly>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trade ID</label>
+                <input type="number" class="form-control" id="refundTradeId" readonly>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Refund Reason</label>
+                <input type="text" class="form-control" id="refundReason" value="단순 변심">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Amount</label>
+                <input type="number" class="form-control" id="refundAmount">
+            </div>
+        </div>
+        <button class="btn btn-danger w-100" id="btnRefund">환불 요청 (Refund)</button>
     </div>
 
     <!-- 로그 출력 박스 -->
@@ -287,6 +311,13 @@
             if(completeRes.ok) {
                 const completeData = await completeRes.json();
                 log(`✅ 최종 결제 검증 성공! Status: ${completeData.status}`);
+                
+                // 환불 섹션 활성화 및 데이터 세팅
+                document.getElementById('refundSection').classList.remove('hidden');
+                document.getElementById('refundPaymentId').value = prepareData.id;
+                document.getElementById('refundTradeId').value = tradeId;
+                document.getElementById('refundAmount').value = prepareData.amount;
+                
                 alert('결제 및 검증이 모두 성공했습니다.');
             } else {
                 const errText = await completeRes.text();
@@ -296,6 +327,48 @@
 
         } catch(e) {
             log(`결제 프로세스 에러: ${e.message}`);
+        }
+    });
+
+    // --- 4. Refund Flow ---
+    document.getElementById('btnRefund').addEventListener('click', async () => {
+        if(!accessToken) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
+        const paymentId = document.getElementById('refundPaymentId').value;
+        const tradeId = document.getElementById('refundTradeId').value;
+        const reason = document.getElementById('refundReason').value;
+        const amount = document.getElementById('refundAmount').value;
+
+        log(`[Refund] 환불 요청 시작 (Payment ID: ${paymentId})...`);
+        
+        try {
+            const res = await fetch(`/v1/payments/${paymentId}/refund`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ 
+                    tradeId: Number(tradeId),
+                    reason: reason,
+                    amount: Number(amount)
+                })
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                log(`✅ 환불 성공! Refund ID: ${data.refundId}, Status: ${data.status}`);
+                alert('환불 처리가 완료되었습니다.');
+            } else {
+                const errText = await res.text();
+                log(`❌ 환불 실패: ${errText}`);
+                alert('환불 실패! 로그를 확인하세요.');
+            }
+        } catch(e) {
+            log(`환불 요청 에러: ${e.message}`);
         }
     });
 
