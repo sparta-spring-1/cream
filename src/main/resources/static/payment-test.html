@@ -3,150 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>PortOne V2 Payment Test</title>
+    <title>Cream Payment & Auth Test</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <style>
-        .container { max-width: 600px; margin-top: 50px; }
-        .result-box { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; display: none; }
+        .container { max-width: 800px; margin-top: 30px; }
+        .section-box { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .result-box { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; height: 300px; overflow-y: auto; font-family: monospace; font-size: 0.9em; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 class="mb-4">PortOne V2 결제 테스트 (Security OFF)</h2>
-    
-    <div class="mb-3">
-        <label class="form-label" for="storeId">Store ID (PortOne V2)</label>
-        <input class="form-control" id="storeId" placeholder="store-..." type="text" value="">
-        <div class="form-text">포트원 관리자 콘솔에서 확인 가능한 Store ID를 입력하세요.</div>
+    <h2 class="mb-4 text-center">Cream Payment & Auth Test</h2>
+
+    <!-- 1. 인증 섹션 -->
+    <div class="section-box">
+        <h4>1. Authentication</h4>
+        <ul class="nav nav-tabs mb-3" id="authTab" role="tablist">
+            <li class="nav-item">
+                <button class="nav-link active" data-bs-target="#login" data-bs-toggle="tab" id="login-tab" type="button">Login</button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-bs-target="#signup" data-bs-toggle="tab" id="signup-tab" type="button">Signup</button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- 로그인 폼 -->
+            <div class="tab-pane fade show active" id="login">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <input class="form-control" id="loginEmail" placeholder="Email" type="email" value="user@example.com">
+                    </div>
+                    <div class="col-md-5">
+                        <input class="form-control" id="loginPassword" placeholder="Password" type="password" value="password123!">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-primary w-100" id="btnLogin">Login</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div class="tab-pane fade" id="signup">
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input class="form-control" id="signupEmail" placeholder="Email" type="email">
+                    </div>
+                    <div class="col-md-4">
+                        <input class="form-control" id="signupPassword" placeholder="Password" type="password">
+                    </div>
+                    <div class="col-md-2">
+                        <input class="form-control" id="signupName" placeholder="Name" type="text">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-success w-100" id="btnSignup">Signup</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-2 text-muted" id="authStatus">Status: Not Logged In</div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="tradeId">Trade ID</label>
-        <input class="form-control" id="tradeId" placeholder="1" type="number" value="1">
-        <div class="form-text">결제를 진행할 거래(Trade) ID를 입력하세요.</div>
+    <!-- 2. 결제 테스트 섹션 -->
+    <div class="section-box">
+        <h4>2. Payment Test</h4>
+        <div class="alert alert-warning" id="authWarning">로그인이 필요합니다.</div>
+        
+        <div class="hidden" id="paymentForm">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Store ID</label>
+                    <input class="form-control" id="storeId" readonly type="text">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Channel Key</label>
+                    <input class="form-control" id="channelKey" readonly type="text">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Trade ID</label>
+                <div class="input-group">
+                    <input class="form-control" id="tradeId" placeholder="Trade ID" type="number" value="1">
+                    <button class="btn btn-primary" id="btnStartPayment">결제 시작 (Full Flow)</button>
+                </div>
+                <div class="form-text">입력한 Trade ID로 결제 준비 -> PG창 -> 검증(Complete)까지 진행합니다.</div>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label class="form-label" for="channelKey">Channel Key (Optional)</label>
-        <input class="form-control" id="channelKey" placeholder="channel-key-..." type="text" value="">
-        <div class="form-text">특정 채널을 지정하려면 입력하세요.</div>
-    </div>
-
-    <button class="btn btn-primary w-100" id="btnPrepare">결제 준비 및 요청 (Prepare & Request)</button>
-
+    <!-- 로그 출력 박스 -->
     <div class="result-box" id="resultBox">
-        <h5>결과:</h5>
-        <pre id="resultOutput"></pre>
+        <strong>Logs:</strong><br>
+        <span id="logContent"></span>
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const btnPrepare = document.getElementById('btnPrepare');
-    const resultBox = document.getElementById('resultBox');
-    const resultOutput = document.getElementById('resultOutput');
+    let accessToken = null;
 
-    // 페이지 로드 시 Config 조회
-    window.addEventListener('DOMContentLoaded', async () => {
+    // --- Logger ---
+    function log(msg) {
+        const time = new Date().toLocaleTimeString();
+        const el = document.getElementById('logContent');
+        el.innerHTML += `[${time}] ${msg}<br>`;
+        document.getElementById('resultBox').scrollTop = document.getElementById('resultBox').scrollHeight;
+        console.log(`[${time}] ${msg}`);
+    }
+
+    function setAuthStatus(email) {
+        document.getElementById('authStatus').innerText = `Status: Logged in as ${email}`;
+        document.getElementById('authStatus').classList.add('text-success');
+        document.getElementById('authWarning').classList.add('hidden');
+        document.getElementById('paymentForm').classList.remove('hidden');
+    }
+
+    // --- 1. Signup ---
+    document.getElementById('btnSignup').addEventListener('click', async () => {
+        const email = document.getElementById('signupEmail').value;
+        const password = document.getElementById('signupPassword').value;
+        const name = document.getElementById('signupName').value;
+
+        if(!email || !password || !name) {
+            alert('모든 필드를 입력해주세요.');
+            return;
+        }
+
+        log(`회원가입 요청: ${email}`);
         try {
-            const response = await fetch('/v1/payments/config');
-            if (response.ok) {
-                const config = await response.json();
-                if (config.storeId) {
-                    document.getElementById('storeId').value = config.storeId;
-                    console.log("Store ID loaded:", config.storeId);
-                }
-                if (config.channelKey) {
-                    document.getElementById('channelKey').value = config.channelKey;
-                    console.log("Channel Key loaded:", config.channelKey);
-                }
+            const res = await fetch('/v1/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, name })
+            });
+            
+            if(res.ok) {
+                log('회원가입 성공! 로그인해주세요.');
+                alert('회원가입 성공!');
+                // Switch to login tab
+                document.querySelector('#login-tab').click();
+                document.getElementById('loginEmail').value = email;
+            } else {
+                const err = await res.json();
+                log(`회원가입 실패: ${JSON.stringify(err)}`);
             }
-        } catch (error) {
-            console.error("Failed to load payment config:", error);
+        } catch(e) {
+            log(`Network Error: ${e.message}`);
         }
     });
 
-    btnPrepare.addEventListener('click', async () => {
-        const storeId = document.getElementById('storeId').value;
+    // --- 2. Login ---
+    document.getElementById('btnLogin').addEventListener('click', async () => {
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+
+        log(`로그인 요청: ${email}`);
+        try {
+            const res = await fetch('/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                accessToken = data.accessToken;
+                log('로그인 성공! Token 획득.');
+                setAuthStatus(email);
+                loadPaymentConfig(); // 로그인 성공 시 config 로드
+            } else {
+                const err = await res.json();
+                log(`로그인 실패: ${JSON.stringify(err)}`);
+                alert('로그인 실패');
+            }
+        } catch(e) {
+            log(`Network Error: ${e.message}`);
+        }
+    });
+
+    // --- Load Config ---
+    async function loadPaymentConfig() {
+        if (!accessToken) return; // 토큰 없으면 호출 안 함
+
+        try {
+            const res = await fetch('/v1/payments/config', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if(res.ok) {
+                const data = await res.json();
+                document.getElementById('storeId').value = data.storeId;
+                document.getElementById('channelKey').value = data.channelKey;
+                log(`Payment Config 로드 완료: StoreID=${data.storeId}`);
+            } else {
+                log(`Config 로드 실패: ${res.status}`);
+            }
+        } catch(e) {
+            log(`Config 로드 실패: ${e.message}`);
+        }
+    }
+
+    // --- 3. Payment Flow ---
+    document.getElementById('btnStartPayment').addEventListener('click', async () => {
+        if(!accessToken) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+
         const tradeId = document.getElementById('tradeId').value;
+        const storeId = document.getElementById('storeId').value;
         const channelKey = document.getElementById('channelKey').value;
 
-        if (!storeId) {
-            alert('Store ID를 입력해주세요.');
-            return;
-        }
-
-        if (!tradeId) {
-            alert('Trade ID를 입력해주세요.');
-            return;
-        }
-
-        addLog("1. 결제 준비 요청 중... (POST /v1/payments/prepare)");
-        
+        // Step 1: Prepare
+        log(`[Step 1] 결제 준비 요청 (TradeID: ${tradeId})...`);
+        let prepareData;
         try {
-            const headers = {
-                'Content-Type': 'application/json'
-            };
-
-            const response = await fetch('/v1/payments/prepare', {
+            const res = await fetch('/v1/payments/prepare', {
                 method: 'POST',
-                headers: headers,
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
                 body: JSON.stringify({ tradeId: Number(tradeId) })
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server Error: ${response.status} - ${errorText}`);
-            }
+            if(!res.ok) throw new Error(await res.text());
+            prepareData = await res.json();
+            log(`결제 준비 완료: MerchantUID=${prepareData.paymentId}, Amount=${prepareData.amount}`);
+        } catch(e) {
+            log(`결제 준비 실패: ${e.message}`);
+            return;
+        }
 
-            const data = await response.json();
-            addLog(`2. 결제 준비 완료: Payment ID = ${data.paymentId}, Amount = ${data.amount}`);
-
-            addLog("3. PortOne 결제 창 호출 중...");
-            
-            const paymentRequest = {
+        // Step 2: PortOne Payment
+        log(`[Step 2] 포트원 결제 창 호출...`);
+        try {
+            const paymentParams = {
                 storeId: storeId,
-                paymentId: data.paymentId,
-                orderName: data.productName,
-                totalAmount: data.amount,
+                paymentId: prepareData.paymentId,
+                orderName: prepareData.productName,
+                totalAmount: prepareData.amount,
                 currency: "CURRENCY_KRW",
                 payMethod: "CARD",
                 customer: {
-                    email: data.email,
-                    fullName: data.customerName,
-                    phoneNumber: data.customerPhoneNumber
+                    email: prepareData.email,
+                    fullName: prepareData.customerName,
+                    phoneNumber: prepareData.customerPhoneNumber
                 }
             };
+            if(channelKey) paymentParams.channelKey = channelKey;
 
-            if (channelKey) {
-                paymentRequest.channelKey = channelKey;
+            const portoneRes = await PortOne.requestPayment(paymentParams);
+
+            if(portoneRes.code != null) {
+                // 결제 실패/취소
+                log(`결제 실패/취소: [${portoneRes.code}] ${portoneRes.message}`);
+                return;
             }
+            
+            log(`포트원 결제 성공! txId=${portoneRes.txId}, paymentId=${portoneRes.paymentId}`);
+            
+            // Step 3: Complete (Verify)
+            log(`[Step 3] 서버 검증 요청 (Complete)...`);
+            const completeRes = await fetch(`/v1/payments/${prepareData.id}/complete`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ 
+                    impUid: portoneRes.txId, // PortOne V2에서는 paymentId가 impUid 역할
+                    merchantUid: prepareData.paymentId 
+                })
+            });
 
-            const paymentResponse = await PortOne.requestPayment(paymentRequest);
-
-            if (paymentResponse.code != null) {
-                addLog(`4. 결제 실패: [${paymentResponse.code}] ${paymentResponse.message}`);
-                alert(`결제 실패: ${paymentResponse.message}`);
+            if(completeRes.ok) {
+                const completeData = await completeRes.json();
+                log(`✅ 최종 결제 검증 성공! Status: ${completeData.status}`);
+                alert('결제 및 검증이 모두 성공했습니다.');
             } else {
-                addLog(`4. 결제 성공! Payment ID: ${paymentResponse.paymentId}`);
-                console.log(paymentResponse);
-                alert(`결제 성공! Payment ID: ${paymentResponse.paymentId}`);
+                const errText = await completeRes.text();
+                log(`❌ 서버 검증 실패: ${errText}`);
+                alert('서버 검증 실패! 로그를 확인하세요.');
             }
 
-        } catch (error) {
-            console.error(error);
-            addLog(`Error: ${error.message}`);
-            alert(`오류 발생: ${error.message}`);
+        } catch(e) {
+            log(`결제 프로세스 에러: ${e.message}`);
         }
     });
 
-    function addLog(message) {
-        resultBox.style.display = 'block';
-        const timestamp = new Date().toLocaleTimeString();
-        resultOutput.innerText += `[${timestamp}] ${message}\n`;
-    }
 </script>
-
 </body>
 </html>

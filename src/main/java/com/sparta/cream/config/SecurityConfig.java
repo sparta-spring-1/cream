@@ -1,17 +1,19 @@
 package com.sparta.cream.config;
 
-import com.sparta.cream.jwt.JwtProperties;
-import com.sparta.cream.jwt.JwtTokenProvider;
-import com.sparta.cream.security.JwtAuthenticationFilter;
-import com.sparta.cream.security.SecurityErrorHandlers;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.*;
+import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.sparta.cream.jwt.JwtProperties;
+import com.sparta.cream.jwt.JwtTokenProvider;
+import com.sparta.cream.security.JwtAuthenticationFilter;
+import com.sparta.cream.security.SecurityErrorHandlers;
 
 /**
  * Spring Security 설정 클래스
@@ -70,7 +72,9 @@ public class SecurityConfig {
 				.accessDeniedHandler(securityErrorHandlers)
 			)
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue", "/v1/admin/**").permitAll()
+				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue", "/v1/auth/logout",
+					"/v1/admin/**").permitAll()
+				.requestMatchers("/payment-test.html").permitAll()
 				.anyRequest().authenticated()
 			);
 
