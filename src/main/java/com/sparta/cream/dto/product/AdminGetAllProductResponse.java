@@ -28,29 +28,5 @@ public class AdminGetAllProductResponse {
 			pageProducts.getTotalElements()
 		);
 	}
-
-	@Getter
-	@AllArgsConstructor
-	public static class ProductInfo {
-
-		private Long productId;
-		private String name;
-		private String modelNumber;
-		private Long categoryId;
-		private BigDecimal retail_price;
-		private ProductStatus productStatus;
-		private OperationStatus operationStatus;
-
-		public static ProductInfo from(Product product) {
-			return new ProductInfo(product.getId(),
-				product.getName(),
-				product.getModelNumber(),
-				product.getProductCategory().getId(),
-				product.getRetailPrice(),
-				product.getProductStatus(),
-				product.getOperationStatus()
-			);
-		}
-	}
 }
 
