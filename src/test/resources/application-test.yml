@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/testdb?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: testuser
+    password: testpassword
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: test-password
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+jwt:
+  secret: test-secret-key-at-least-256-bits-long-for-test-purposes
+  issuer: test-issuer
+  access-exp-sec: 900
+  refresh-exp-sec: 1209600
+
+portone:
+  api:
+    base-url: https://api.portone.io
+    store-id: test-store-id
+    secret: test-secret
+    channel-key: test-channel-key
