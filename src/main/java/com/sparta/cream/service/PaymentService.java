@@ -15,17 +15,22 @@ import org.springframework.web.client.RestTemplate;
 import com.sparta.cream.config.PortOneConfig;
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.entity.PaymentHistory;
+import com.sparta.cream.domain.entity.Refund;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.dto.request.CompletePaymentRequest;
+import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
+import com.sparta.cream.dto.response.RefundPaymentResponse;
+import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.PaymentErrorCode;
 import com.sparta.cream.repository.PaymentHistoryRepository;
 import com.sparta.cream.repository.PaymentRepository;
+import com.sparta.cream.repository.RefundRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,6 +51,7 @@ public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
 	private final PaymentHistoryRepository paymentHistoryRepository;
+	private final RefundRepository refundRepository;
 	private final TradeService tradeService;
 	private final AuthService authService;
 	private final PortOneConfig portOneConfig;
@@ -57,8 +63,8 @@ public class PaymentService {
 	 * 결제 상태를 READY로 설정하여 DB에 기록합니다.
 	 * </p>
 	 *
-	 * @param tradeId 	거래 식별자
-	 * @param userId  	구매자 식별자
+	 * @param tradeId    거래 식별자
+	 * @param userId    구매자 식별자
 	 * @return 프론트엔드로 전달할 결제 준비 완료 정보(DTO)
 	 */
 	@Transactional
@@ -141,6 +147,54 @@ public class PaymentService {
 
 		} catch (RestClientException e) {
 			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+	}
+
+	@Transactional
+	public RefundPaymentResponse refund(Long paymentId, RefundPaymentRequest request, Long userId) {
+		Payment payment = findById(paymentId);
+		Users user = authService.findById(userId);
+		Users seller = authService.findById(payment.getTrade().getSaleBidId().getUser().getId());
+
+		if (!userId.equals(seller.getId()) && !(user.getRole()
+			== UserRole.ADMIN)) {
+			throw new BusinessException(PaymentErrorCode.UNAUTHORIZED_REFUND);
+		}
+
+		if (request.getAmount() > payment.getAmount()) {
+			throw new BusinessException(PaymentErrorCode.REFUND_AMOUNT_EXCEEDED);
+		}
+
+		try {
+			RestTemplate restTemplate = new RestTemplate();
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
+			headers.set("Content-Type", "application/json");
+
+			String url = portOneConfig.getBaseUrl() + "/payments/" + payment.getMerchantUid() + "/cancel";
+
+			Map<String, Object> requestBody = Map.of(
+				"storeId", portOneConfig.getStoreId(),
+				"amount", request.getAmount(),
+				"reason", request.getReason(),
+				"currentCancellableAmount", payment.getAmount(),
+				"refundEmail", seller.getEmail()
+			);
+
+			HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
+
+			restTemplate.postForEntity(url, requestEntity, Map.class);
+
+			PaymentHistory history = payment.refund();
+			paymentHistoryRepository.save(history);
+
+			Refund refund = new Refund(request.getReason(), request.getAmount(), history);
+			refundRepository.save(refund);
+
+			return new RefundPaymentResponse(refund.getId(), refund.getAmount(), payment.getStatus().toString());
+
+		} catch (RestClientException e) {
+			throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
 		}
 	}
 

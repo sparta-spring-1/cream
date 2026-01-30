@@ -13,9 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sparta.cream.config.PortOneConfig;
 import com.sparta.cream.dto.request.CompletePaymentRequest;
 import com.sparta.cream.dto.request.CreatePaymentRequest;
+import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.PaymentConfigResponse;
+import com.sparta.cream.dto.response.RefundPaymentResponse;
 import com.sparta.cream.security.CustomUserDetails;
 import com.sparta.cream.service.PaymentService;
 
@@ -24,12 +26,12 @@ import lombok.RequiredArgsConstructor;
 /**
  * 결제 관련 API 요청을 처리하는 컨트롤러입니다.
  * <p>
- * 결제 사전 준비(Prepare) 등
+ * 결제 사전 준비(Prepare), 결제 검증 및 완료(Complete) 등
  * 결제 프로세스와 관련된 HTTP 요청을 처리합니다.
  * </p>
  *
  * @author 변채주
- * @version 1.0
+ * @version 1.1
  * @since 2026. 01. 26.
  */
 @RestController
@@ -69,11 +71,30 @@ public class PaymentController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+	/**
+	 * 결제 완료 요청을 검증하고 처리합니다.
+	 * <p>
+	 * PortOne 결제 완료 후 호출되며, 결제 정보 검증 및 DB 상태 업데이트를 수행합니다.
+	 * </p>
+	 *
+	 * @param paymentId 내부 DB 결제 식별자
+	 * @param request   결제 완료 요청 정보 (impUid, merchantUid)
+	 * @param user      인증된 사용자 정보 (본인 확인용)
+	 * @return 성공 시 200 OK
+	 */
 	@PostMapping("/{paymentId}/complete")
 	public ResponseEntity<CompletePaymentResponse> completePayment(@PathVariable Long paymentId,
 		@RequestBody CompletePaymentRequest request,
 		@AuthenticationPrincipal CustomUserDetails user) {
 		CompletePaymentResponse response = paymentService.complete(paymentId, request, user.getId());
+		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/{paymentId}/refund")
+	public ResponseEntity<RefundPaymentResponse> refundPayment(@PathVariable Long paymentId,
+		@RequestBody RefundPaymentRequest request,
+		@AuthenticationPrincipal CustomUserDetails user) {
+		RefundPaymentResponse response = paymentService.refund(paymentId, request, user.getId());
 		return ResponseEntity.ok(response);
 	}
 }
