@@ -158,4 +158,11 @@ public class Payment extends BaseEntity {
 			throw new BusinessException(PaymentErrorCode.PAYMENT_ALREADY_PAID);
 		}
     }
+
+    public void completePayment(String impUid, String method) {
+        changeStatus(this.status, PaymentStatus.PAID_SUCCESS);
+        this.impUid = impUid;
+		this.method = method;
+        this.paidAt = LocalDateTime.now();
+    }
 }
