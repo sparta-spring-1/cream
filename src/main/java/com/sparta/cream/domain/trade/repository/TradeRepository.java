@@ -15,5 +15,5 @@ import com.sparta.cream.domain.trade.entity.Trade;
  * @since 2026. 1. 28.
  */
 @Repository
-public interface TradeRepository extends JpaRepository<Trade, Long> {
+public interface TradeRepository extends JpaRepository<Trade, Long>, TradeRepositoryCustom {
 }
