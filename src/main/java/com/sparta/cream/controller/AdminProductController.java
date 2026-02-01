@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.dto.product.AdminGetAllProductResponse;
+import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
 import com.sparta.cream.service.ProductService;
@@ -42,7 +43,7 @@ public class AdminProductController {
 		@PathVariable Long productId,
 		@RequestBody @Valid AdminUpdateProductRequest request
 	) {
-		AdminUpdateProductResponse response = productService.updateProduct(productId,request);
+		AdminUpdateProductResponse response = productService.updateProduct(productId, request);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 
@@ -67,7 +68,14 @@ public class AdminProductController {
 		@RequestParam(required = false) String keyword
 	) {
 		AdminGetAllProductResponse response =
-			productService.getAllProduct(page,pageSize,sort,brand,category,productSize,minPrice,maxPrice,keyword);
+			productService.getAllProduct(page, pageSize, sort, brand, category, productSize, minPrice, maxPrice,
+				keyword);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
+	}
+
+	@GetMapping("/{productId}")
+	public ResponseEntity<AdminGetOneProductResponse> getOneProduct(@PathVariable Long productId) {
+		AdminGetOneProductResponse response = productService.getOneProduct(productId);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 }

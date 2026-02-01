@@ -1,6 +1,7 @@
 package com.sparta.cream.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,4 +49,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		@Param("keyword") String keyword,
 		Pageable pageable
 	);
+
+	@Query(
+		value = "select * from product where id = :id",
+		nativeQuery = true
+	)
+	Optional<Product> findByIdIncludingDeleted(Long id);
 }

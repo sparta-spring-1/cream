@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.dto.product.AdminGetAllProductResponse;
+import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
 import com.sparta.cream.entity.Product;
@@ -209,5 +210,13 @@ public class ProductService {
 			);
 
 		return AdminGetAllProductResponse.from(productPage);
+	}
+
+	public AdminGetOneProductResponse getOneProduct(Long productId) {
+		//삭제된 상품을 포함하여 조회
+		Product product = productRepository.findByIdIncludingDeleted(productId)
+			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
+
+		return AdminGetOneProductResponse.from(product);
 	}
 }
