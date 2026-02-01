@@ -39,8 +39,8 @@ public class AdminUpdateProductResponse {
 	private final OperationStatus operationStatus;
 	private final BigDecimal retailPrice;
 	private final LocalDateTime retailDate;
-	private final LocalDateTime createAt;
-	private final LocalDateTime updateAt;
+	private final LocalDateTime createdAt;
+	private final LocalDateTime updatedAt;
 
 	public static AdminUpdateProductResponse from(Product product) {
 		return new AdminUpdateProductResponse(
@@ -49,8 +49,8 @@ public class AdminUpdateProductResponse {
 			product.getModelNumber(),
 			product.getBrandName(),
 			product.getProductCategory().getId(),
-			getImageIds(product),
-			getOptions(product),
+			product.getImageIds(),
+			product.getOptionSizes(),
 			product.getColor(),
 			product.getSizeUnit(),
 			product.getProductStatus(),
@@ -62,21 +62,4 @@ public class AdminUpdateProductResponse {
 		);
 	}
 
-	private static List<Long> getImageIds(Product product) {
-		if(product.getImageList() == null || product.getImageList().isEmpty()) {
-			return Collections.emptyList();
-		}
-		return product.getImageList().stream()
-			.map(ProductImage::getId)
-			.toList();
-	}
-
-	private static List<String> getOptions(Product product) {
-		if(product.getProductOptionList() == null || product.getProductOptionList().isEmpty()) {
-			return Collections.emptyList();
-		}
-		return product.getProductOptionList().stream()
-			.map(ProductOption::getSize)
-			.toList();
-	}
 }
