@@ -212,6 +212,14 @@ public class ProductService {
 		return AdminGetAllProductResponse.from(productPage);
 	}
 
+	/**
+	 * 관리자 권한으로 상품 단건을 조회합니다.
+	 * 일반 사용자 조회와 달리 Soft Delete 처리된 상품도 함께 조회합니다.
+	 *
+	 * @param productId 조회할 상품의 ID
+	 * @return 삭제 여부와 관계없이 조회된 상품 정보를 담은 응답 DTO
+	 * @throws BusinessException 상품이 존재하지 않을 경우 발생
+	 */
 	public AdminGetOneProductResponse getOneProduct(Long productId) {
 		//삭제된 상품을 포함하여 조회
 		Product product = productRepository.findByIdIncludingDeleted(productId)

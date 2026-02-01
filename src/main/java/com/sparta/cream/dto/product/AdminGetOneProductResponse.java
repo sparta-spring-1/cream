@@ -11,6 +11,13 @@ import com.sparta.cream.entity.ProductStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 관리자 상품 단건 조회 API의 응답 DTO입니다.
+ * 상품의 기본 정보뿐만 아니라 상태 정보,가격 등 관리자가 확인해야 하는 모든 정보를 포함합니다.
+ *
+ * @author heoarim
+ * @since 2026. 2. 2
+ */
 @Getter
 @AllArgsConstructor
 public class AdminGetOneProductResponse {

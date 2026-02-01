@@ -2,13 +2,10 @@ package com.sparta.cream.dto.product;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
-import com.sparta.cream.entity.ProductImage;
-import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.ProductStatus;
 
 import lombok.AllArgsConstructor;
