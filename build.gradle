@@ -44,6 +44,10 @@ dependencies {
 
     implementation 'io.portone:server-sdk:0.23.0'
 
+    //AWS S3
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter:3.1.1'
+    implementation 'software.amazon.awssdk:s3:2.41.19'
+
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
 }
