@@ -10,6 +10,7 @@ import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.exception.BusinessException;
@@ -32,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 public class TradeService {
 	private final BidRepository bidRepository;
 	private final TradeRepository tradeRepository;
+	private final NotificationService notificationService;
 
 	/**
 	 * 단일 입찰에 대한 즉시 매칭을 시도합니다.
@@ -85,8 +87,10 @@ public class TradeService {
 	}
 
 	/**
-	 * 두 입찰의 매칭이 확정되었을때 실제 거래를 실행합니다.
-	 * 입찰 상태를 {@link BidStatus#MATCHED}로 변경하고, {@link Trade} 객체를 생성하여 저장합니다.
+	 * 두 입찰의 매칭이 확정되었을때 실제 거래래를 실행하고 당사자들에게 알림을 발송합니다
+	 * 1. 두입찰 객체의 상태를 (MATCHED)로 변경합니다
+	 * 2.거래정보를 생성하고 영속화합니다.
+	 * 3.NotificationService를 호출하여 구매자에게는 체결알림을, 판매자에게는 판매완료 및 결제 안내 알림을 각각 발송합니다/
 	 *
 	 * @param newBid 기준이 되는 입찰 객체
 	 * @param matchedBid 매칭된 대상 입찰 객체
@@ -103,6 +107,18 @@ public class TradeService {
 
 			Trade trade = new Trade(purchase, sale, tradePrice);
 			tradeRepository.save(trade);
+
+			notificationService.createNotification(
+				purchase.getUser().getId(),
+				String.format("축하합니다! %s 상품의 거래가 %d원에 체결되었습니다.",
+					purchase.getProductOption().getProduct().getName(), tradePrice)
+			);
+
+			// 2. 판매자에게 알림 (sale 입찰의 유저)
+			notificationService.createNotification(
+				sale.getUser().getId(),
+				String.format("등록하신 판매 입찰 상품이 결제 완료되어 %d원에 거래가 체결되었습니다.", tradePrice)
+			);
 
 			System.out.println("체결 성공!");
 			System.out.println("- 구매 입찰 ID: " + trade.getPurchaseBidId().getId());
