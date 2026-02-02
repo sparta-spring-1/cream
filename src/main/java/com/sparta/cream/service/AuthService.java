@@ -1,5 +1,18 @@
 package com.sparta.cream.service;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisSystemException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.sparta.cream.dto.auth.LoginRequestDto;
 import com.sparta.cream.dto.auth.LoginResponseDto;
 import com.sparta.cream.dto.auth.LogoutResponseDto;
@@ -14,20 +27,10 @@ import com.sparta.cream.jwt.JwtTokenProvider;
 import com.sparta.cream.redis.AccessTokenBlacklist;
 import com.sparta.cream.redis.RefreshTokenStore;
 import com.sparta.cream.repository.UserRepository;
+
 import io.jsonwebtoken.JwtException;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.dao.QueryTimeoutException;
-import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.RedisSystemException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 인증 관련 비즈니스 로직을 처리하는 서비스
@@ -269,6 +272,12 @@ public class AuthService {
 		}
 
 		return new LogoutResponseDto(LocalDateTime.now());
+	}
+
+	public Users findById(Long userId) {
+		Users user = userRepository.findById(userId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.AUTH_LOGIN_FAILED));
+		return user;
 	}
 
 	/**

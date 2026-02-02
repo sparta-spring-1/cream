@@ -1,14 +1,30 @@
 package com.sparta.cream.service;
 
 import java.time.LocalDate;
+import java.util.Map;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
+import com.sparta.cream.config.PortOneConfig;
 import com.sparta.cream.domain.entity.Payment;
+import com.sparta.cream.domain.entity.PaymentHistory;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
+import com.sparta.cream.dto.request.CompletePaymentRequest;
+import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
+import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.PaymentErrorCode;
+import com.sparta.cream.repository.PaymentHistoryRepository;
 import com.sparta.cream.repository.PaymentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -29,8 +45,10 @@ import lombok.RequiredArgsConstructor;
 public class PaymentService {
 
 	private final PaymentRepository paymentRepository;
+	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final TradeService tradeService;
-	private final UserService userService;
+	private final AuthService authService;
+	private final PortOneConfig portOneConfig;
 
 	/**
 	 * 결제 요청을 사전 준비하고 결제 엔티티를 저장합니다.
@@ -43,75 +61,91 @@ public class PaymentService {
 	 * @param userId  	구매자 식별자
 	 * @return 프론트엔드로 전달할 결제 준비 완료 정보(DTO)
 	 */
+	@Transactional
 	public CreatePaymentResponse prepare(Long tradeId, Long userId) {
 
-		Users buyer = userService.findById(userId);
+		Users buyer = authService.findById(userId);
 
 		Trade trade = tradeService.findById(tradeId);
 
 		String merchantUid = "PAY-" + LocalDate.now() + "-" + trade.getId().toString();
 		String productName = trade.getPurchaseBidId().getProductOption().getProduct().getName();
 
-		Payment payment = new Payment(merchantUid, productName, trade.getFinalPrice(), PaymentStatus.READY);
+		Payment payment = new Payment(merchantUid,
+			productName,
+			trade.getFinalPrice(),
+			PaymentStatus.READY,
+			trade,
+			buyer);
+
 		paymentRepository.save(payment);
 
-		return new CreatePaymentResponse(payment.getMerchantUid(),
+		//임시 전화번호
+		String phoneNumber = "010-1234-5678";
+
+		return new CreatePaymentResponse(
+			payment.getId(),
+			payment.getMerchantUid(),
 			payment.getStatus().toString(),
 			productName,
 			payment.getAmount(),
 			buyer.getEmail(),
 			buyer.getName(),
-			buyer.getPhoneNumber());
-	}
-}
-
-class PurchaseBid {
-	public ProductOption getProductOption() {
-		return new ProductOption();
-	}
-}
-
-class ProductOption {
-	public Product getProduct() {
-		return new Product();
-	}
-}
-
-class Product {
-	public String getName() {
-		return "더미 상품 A";
-	}
-}
-
-class Users {
-	String email;
-	Long id;
-
-	Users(String email, Long id) {
-		this.email = email;
-		this.id = id;
+			phoneNumber);
 	}
 
-	public Long getId() {
-		return 1L;
+	@Transactional
+	public CompletePaymentResponse complete(Long paymentId, CompletePaymentRequest request, Long userId) {
+		Payment payment = findById(paymentId);
+
+		payment.changeStatus(payment.getStatus(), PaymentStatus.PENDING);
+
+		if (!payment.getMerchantUid().equals(request.getMerchantUid())) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		if (!payment.getUser().getId().equals(userId)) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		try {
+			RestTemplate restTemplate = new RestTemplate();
+			HttpHeaders headers = new HttpHeaders();
+			headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
+			HttpEntity<String> entity = new HttpEntity<>(headers);
+
+			String url = portOneConfig.getBaseUrl() + "/payments/" + request.getMerchantUid() + "?storeId="
+				+ portOneConfig.getStoreId();
+			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+
+			Map<String, Object> body = response.getBody();
+			if (body == null) {
+				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
+			}
+
+			Map<String, Object> amountMap = (Map<String, Object>)body.get("amount");
+			Number totalAmount = (Number)amountMap.get("total");
+
+			if (!payment.getAmount().equals(totalAmount.longValue())) {
+				throw new BusinessException(PaymentErrorCode.PAYMENT_PRICE_MISMATCH);
+			}
+
+			Map<String, Object> methodMap = (Map<String, Object>)body.get("method");
+			String method = methodMap.get("type").toString();
+
+			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
+			paymentHistoryRepository.save(success);
+
+			return new CompletePaymentResponse(payment.getImpUid(), payment.getStatus().toString(),
+				payment.getPaidAt());
+
+		} catch (RestClientException e) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
 	}
 
-	public String getEmail() {
-		return email;
-	}
-
-	public String getName() {
-		return "테스터";
-	}
-
-	public String getPhoneNumber() {
-		return "010-1234-5678";
-	}
-}
-
-@Service
-class UserService {
-	public Users findById(Long id) {
-		return new Users("tester@example.com", 1L);
+	public Payment findById(Long id) {
+		return paymentRepository.findById(id).orElseThrow(
+			() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 	}
 }

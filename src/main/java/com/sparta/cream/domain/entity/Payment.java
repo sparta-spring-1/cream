@@ -3,7 +3,9 @@ package com.sparta.cream.domain.entity;
 import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.status.PaymentStatus;
+import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.entity.BaseEntity;
+import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.PaymentErrorCode;
 
@@ -11,9 +13,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -61,7 +67,6 @@ public class Payment extends BaseEntity {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
-    /* TODO 연관관계 설정
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "trade_id")
     private Trade trade;
@@ -69,7 +74,6 @@ public class Payment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;
-    */
 
     /**
      * 결제 준비(Prepare) 단계에서 사용되는 생성자입니다.
@@ -79,11 +83,13 @@ public class Payment extends BaseEntity {
      * @param amount      결제 금액
      * @param status      초기 상태 (READY)
      */
-    public Payment(String merchantUid, String productName, Long amount, PaymentStatus status) {
+    public Payment(String merchantUid, String productName, Long amount, PaymentStatus status, Trade trade, Users user) {
         this.merchantUid = merchantUid;
         this.productName = productName;
         this.amount = amount;
         this.status = status;
+		this.trade = trade;
+        this.user = user;
     }
 
     /**
@@ -98,7 +104,15 @@ public class Payment extends BaseEntity {
      * @param paidAt      	결제 완료 일시
      */
     @Builder
-    private Payment(String merchantUid, String impUid, String productName, Long amount, PaymentStatus status, String method, LocalDateTime paidAt) {
+    private Payment(String merchantUid,
+		String impUid,
+		String productName,
+		Long amount,
+		PaymentStatus status,
+		String method,
+		LocalDateTime paidAt,
+		Trade trade,
+		Users user) {
         this.merchantUid = merchantUid;
         this.impUid = impUid;
         this.productName = productName;
@@ -106,6 +120,8 @@ public class Payment extends BaseEntity {
         this.status = status;
         this.method = method;
         this.paidAt = paidAt;
+		this.trade = trade;
+		this.user = user;
     }
 
     /**
@@ -141,5 +157,14 @@ public class Payment extends BaseEntity {
 			(newStatus == PaymentStatus.PENDING || newStatus == PaymentStatus.READY)) {
 			throw new BusinessException(PaymentErrorCode.PAYMENT_ALREADY_PAID);
 		}
+    }
+
+    public PaymentHistory completePayment(String impUid, String method, PaymentStatus status) {
+        PaymentHistory changed = changeStatus(status, PaymentStatus.PAID_SUCCESS);
+        this.impUid = impUid;
+		this.method = method;
+        this.paidAt = LocalDateTime.now();
+
+		return changed;
     }
 }
