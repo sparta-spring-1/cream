@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
@@ -44,6 +45,9 @@ class TradeServiceTest {
 
 	@Mock
 	private TradeRepository tradeRepository;
+
+	@Mock
+	private NotificationService notificationService;
 
 	/**
 	 * 동일한 상품 옵션에 대해 구매가와 판매자가 일치할 경우 성공케이스
@@ -114,13 +118,22 @@ class TradeServiceTest {
 	 */
 	private ProductOption createOption(Long id) {
 		try {
+			com.sparta.cream.entity.Product product = com.sparta.cream.entity.Product.builder()
+				.name("임시 상품명")
+				.build();
+
+			ReflectionTestUtils.setField(product, "id", 100L);
+
 			java.lang.reflect.Constructor<ProductOption> constructor = ProductOption.class.getDeclaredConstructor();
 			constructor.setAccessible(true);
 			ProductOption option = constructor.newInstance();
+
 			ReflectionTestUtils.setField(option, "id", id);
+			ReflectionTestUtils.setField(option, "product", product);
+
 			return option;
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("테스트용 ProductOption 생성 실패", e);
 		}
 	}
 
