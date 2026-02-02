@@ -51,10 +51,10 @@ public class BidController {
 	 */
 	@PostMapping
 	public ResponseEntity<BidResponseDto> createBid(
-		@AuthenticationPrincipal UserDetails userIdAuth,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userIdAuth.getUsername());
+		Long userId = Long.parseLong(userDetails.getUsername());
 		return ResponseEntity.ok(bidService.createBid(userId, requestDto));
 	}
 
@@ -64,11 +64,11 @@ public class BidController {
 	 */
 	@GetMapping("/me")
 	public ResponseEntity<Page<BidResponseDto>> getMyBids(
-		@AuthenticationPrincipal CustomUserDetails userIdAuth,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 
-		Long userId = Long.parseLong(userIdAuth.getUsername());
+		Long userId = Long.parseLong(userDetails.getUsername());
 		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
 
 	}
@@ -98,11 +98,11 @@ public class BidController {
 	 */
 	@PatchMapping("/{bidId}")
 	public ResponseEntity<BidResponseDto> updateBid(
-		@AuthenticationPrincipal UserDetails userIdAuth,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable Long bidId,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userIdAuth.getUsername());
+		Long userId = Long.parseLong(userDetails.getUsername());
 
 		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
 	}
@@ -116,10 +116,10 @@ public class BidController {
 	 */
 	@DeleteMapping("/{bidId}")
 	public ResponseEntity<BidCancelResponseDto> cancelBid(
-		@AuthenticationPrincipal UserDetails userIdAuth,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable Long bidId
 	) {
-		Long userId = Long.parseLong(userIdAuth.getUsername());
+		Long userId = Long.parseLong(userDetails.getUsername());
 		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
 	}
 
