@@ -29,6 +29,8 @@ import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.entity.CancelReason;
 import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.domain.notification.service.NotificationService;
+import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.entity.Users;
@@ -57,6 +59,12 @@ class BidServiceTest {
 
 	@Mock
 	private ProductOptionRepository productOptionRepository;
+
+	@Mock
+	private NotificationService notificationService;
+
+	@Mock
+	private TradeService tradeService;
 
 	@Mock
 	private UserRepository userRepository;
