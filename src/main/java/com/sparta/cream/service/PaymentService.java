@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.status.PaymentStatus;
+import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.service.TradeService;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.repository.PaymentRepository;
 
@@ -63,22 +65,6 @@ public class PaymentService {
 	}
 }
 
-// 테스트를 위한 dummy Data
-// Entity 취합 후 삭제(리팩토링) 예정
-class Trade {
-	public Long getId() {
-		return 1L;
-	}
-
-	public Long getFinalPrice() {
-		return 5000L;
-	}
-
-	public PurchaseBid getPurchaseBidId() {
-		return new PurchaseBid();
-	}
-}
-
 class PurchaseBid {
 	public ProductOption getProductOption() {
 		return new ProductOption();
@@ -120,13 +106,6 @@ class Users {
 
 	public String getPhoneNumber() {
 		return "010-1234-5678";
-	}
-}
-
-@Service
-class TradeService {
-	public Trade findById(Long id) {
-		return new Trade();
 	}
 }
 

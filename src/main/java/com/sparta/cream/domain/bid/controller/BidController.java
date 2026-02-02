@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -19,6 +20,7 @@ import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
 import com.sparta.cream.domain.bid.service.BidService;
+import com.sparta.cream.security.CustomUserDetails;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -49,10 +51,10 @@ public class BidController {
 	 */
 	@PostMapping
 	public ResponseEntity<BidResponseDto> createBid(
-		@AuthenticationPrincipal String userIdAuth,
+		@AuthenticationPrincipal UserDetails userIdAuth,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userIdAuth);
+		Long userId = Long.parseLong(userIdAuth.getUsername());
 		return ResponseEntity.ok(bidService.createBid(userId, requestDto));
 	}
 
@@ -62,11 +64,11 @@ public class BidController {
 	 */
 	@GetMapping("/me")
 	public ResponseEntity<Page<BidResponseDto>> getMyBids(
-		@AuthenticationPrincipal String userIdAuth,
+		@AuthenticationPrincipal CustomUserDetails userIdAuth,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 
-		Long userId = Long.parseLong(userIdAuth);
+		Long userId = Long.parseLong(userIdAuth.getUsername());
 		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
 
 	}
@@ -96,11 +98,11 @@ public class BidController {
 	 */
 	@PatchMapping("/{bidId}")
 	public ResponseEntity<BidResponseDto> updateBid(
-		@AuthenticationPrincipal String userIdAuth,
+		@AuthenticationPrincipal UserDetails userIdAuth,
 		@PathVariable Long bidId,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userIdAuth);
+		Long userId = Long.parseLong(userIdAuth.getUsername());
 
 		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
 	}
@@ -114,10 +116,10 @@ public class BidController {
 	 */
 	@DeleteMapping("/{bidId}")
 	public ResponseEntity<BidCancelResponseDto> cancelBid(
-		@AuthenticationPrincipal String userIdAuth,
+		@AuthenticationPrincipal UserDetails userIdAuth,
 		@PathVariable Long bidId
 	) {
-		Long userId = Long.parseLong(userIdAuth);
+		Long userId = Long.parseLong(userIdAuth.getUsername());
 		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
 	}
 
