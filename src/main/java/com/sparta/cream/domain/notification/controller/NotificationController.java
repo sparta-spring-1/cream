@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.sparta.cream.domain.notification.dto.NotificationPageResponseDto;
 import com.sparta.cream.domain.notification.service.NotificationQueryService;
-import com.sparta.cream.jwt.JwtTokenProvider;
 import com.sparta.cream.security.CustomUserDetails;
 
 import lombok.RequiredArgsConstructor;
@@ -27,20 +26,20 @@ import lombok.RequiredArgsConstructor;
 public class NotificationController {
 
 	private final NotificationQueryService notificationQueryService;
-	private final JwtTokenProvider jwtTokenProvider;
 
 	/**
 	 * 알림 목록 조회 API
 	 * Authorization 헤더의 Bearer Access Token을 검증한 뒤 사용자 알림 목록을 조회합니다.
-	 *
+	 * <p>
 	 * Header:
 	 * - Content-Type: application/json
 	 * - Authorization: Bearer {access_token}
-	 *
+	 * </p>
+	 * <p>
 	 * Query Parameters:
 	 * - page: 페이지 번호 (기본값: 0)
 	 * - size: 페이지 크기 (기본값: 10)
-	 *
+	 * </p>
 	 * @param userDetails 인증된 사용자 정보
 	 * @param page 페이지 번호
 	 * @param size 페이지 크기
