@@ -19,7 +19,7 @@ import com.sparta.cream.domain.bid.entity.BidType;
  * @author kimsehyun
  * @since 2026. 1. 22.
  */
-public interface BidRepository extends JpaRepository<Bid, Long> {
+public interface BidRepository extends JpaRepository<Bid, Long> , BidRepositoryCustom {
 
 	/**
 	 * 특정 사용자가 등록한 모든 입찰 내역을 생성일자 오름차순으로 조회합니다.

@@ -12,16 +12,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 관리자 상품 수정 결과를 반환하기 위한 응답 DTO 클래스입니다.
- * 관리자가 상품 수정 API를 호출한 후,
- * 수정된 상품의 최신 상태를 응답으로 전달하기 위해 사용됩니다.
+ * 관리자 상품 단건 조회 API의 응답 DTO입니다.
+ * 상품의 기본 정보뿐만 아니라 상태 정보,가격 등 관리자가 확인해야 하는 모든 정보를 포함합니다.
  *
  * @author heoarim
- * @since 2026. 1. 27
+ * @since 2026. 2. 2
  */
 @Getter
 @AllArgsConstructor
-public class AdminUpdateProductResponse {
+public class AdminGetOneProductResponse {
 
 	private final Long id;
 	private final String name;
@@ -39,8 +38,8 @@ public class AdminUpdateProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminUpdateProductResponse from(Product product) {
-		return new AdminUpdateProductResponse(
+	public static AdminGetOneProductResponse from(Product product) {
+		return new AdminGetOneProductResponse(
 			product.getId(),
 			product.getName(),
 			product.getModelNumber(),
@@ -58,5 +57,4 @@ public class AdminUpdateProductResponse {
 			product.getUpdatedAt()
 		);
 	}
-
 }
