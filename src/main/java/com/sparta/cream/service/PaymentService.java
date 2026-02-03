@@ -19,6 +19,7 @@ import com.sparta.cream.domain.entity.Refund;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
+import com.sparta.cream.dto.portone.PortOnePaymentResponse;
 import com.sparta.cream.dto.request.CompletePaymentRequest;
 import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
@@ -119,22 +120,18 @@ public class PaymentService {
 
 			String url = portOneConfig.getBaseUrl() + "/payments/" + request.getMerchantUid() + "?storeId="
 				+ portOneConfig.getStoreId();
-			ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
+			ResponseEntity<PortOnePaymentResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity, PortOnePaymentResponse.class);
 
-			Map<String, Object> body = response.getBody();
+			PortOnePaymentResponse body = response.getBody();
 			if (body == null) {
 				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
 			}
 
-			Map<String, Object> amountMap = (Map<String, Object>)body.get("amount");
-			Number totalAmount = (Number)amountMap.get("total");
-
-			if (!payment.getAmount().equals(totalAmount.longValue())) {
+			if (!payment.getAmount().equals(body.getAmount().getTotal())) {
 				throw new BusinessException(PaymentErrorCode.PAYMENT_PRICE_MISMATCH);
 			}
 
-			Map<String, Object> methodMap = (Map<String, Object>)body.get("method");
-			String method = methodMap.get("type").toString();
+			String method = body.getMethod().getType();
 
 			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
 			paymentHistoryRepository.save(success);
