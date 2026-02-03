@@ -86,9 +86,6 @@ public class PaymentService {
 
 		paymentRepository.save(payment);
 
-		//임시 전화번호
-		String phoneNumber = "010-1234-5678";
-
 		return new CreatePaymentResponse(
 			payment.getId(),
 			payment.getMerchantUid(),
@@ -97,7 +94,7 @@ public class PaymentService {
 			payment.getAmount(),
 			buyer.getEmail(),
 			buyer.getName(),
-			phoneNumber);
+			buyer.getPhoneNumber());
 	}
 
 	@Transactional

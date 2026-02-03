@@ -1,6 +1,12 @@
 package com.sparta.cream.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -26,7 +32,11 @@ public class Users extends BaseEntity {
 	private String password;
 
 	@Column(nullable = false, length = 255)
+
 	private String name;
+
+	@Column(nullable = false, length = 20, unique = true)
+	private String phoneNumber;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
@@ -39,11 +49,13 @@ public class Users extends BaseEntity {
 	 * @param email 사용자 이메일
 	 * @param password 암호화된 비밀번호
 	 * @param name 사용자 이름
+	 * @param phoneNumber 사용자 전화번호
 	 */
-	public Users(String email, String password, String name) {
+	public Users(String email, String password, String name, String phoneNumber) {
 		this.email = email;
 		this.password = password;
 		this.name = name;
+		this.phoneNumber = phoneNumber;
 		this.role = UserRole.USER;
 	}
 
@@ -55,10 +67,11 @@ public class Users extends BaseEntity {
 	 * @param name 사용자 이름
 	 * @param role 사용자 역할
 	 */
-	public Users(String email, String password, String name, UserRole role) {
+	public Users(String email, String password, String name, String phoneNumber, UserRole role) {
 		this.email = email;
 		this.password = password;
 		this.name = name;
+		this.phoneNumber = phoneNumber;
 		this.role = role;
 	}
 }
