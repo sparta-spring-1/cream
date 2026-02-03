@@ -1,21 +1,16 @@
 package com.sparta.cream.service;
 
 import java.time.LocalDate;
-import java.util.Map;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
-import com.sparta.cream.config.PortOneConfig;
+import com.sparta.cream.client.PortOneApiClient;
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.entity.PaymentHistory;
 import com.sparta.cream.domain.entity.Refund;
+import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
@@ -53,9 +48,11 @@ public class PaymentService {
 	private final PaymentRepository paymentRepository;
 	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final RefundRepository refundRepository;
+
+	private final NotificationService notificationService;
 	private final TradeService tradeService;
 	private final AuthService authService;
-	private final PortOneConfig portOneConfig;
+	private final PortOneApiClient portOneApiClient;
 
 	/**
 	 * 결제 요청을 사전 준비하고 결제 엔티티를 저장합니다.
@@ -113,16 +110,8 @@ public class PaymentService {
 		}
 
 		try {
-			RestTemplate restTemplate = new RestTemplate();
-			HttpHeaders headers = new HttpHeaders();
-			headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
-			HttpEntity<String> entity = new HttpEntity<>(headers);
+			PortOnePaymentResponse body = portOneApiClient.getPayment(request.getMerchantUid());
 
-			String url = portOneConfig.getBaseUrl() + "/payments/" + request.getMerchantUid() + "?storeId="
-				+ portOneConfig.getStoreId();
-			ResponseEntity<PortOnePaymentResponse> response = restTemplate.exchange(url, HttpMethod.GET, entity, PortOnePaymentResponse.class);
-
-			PortOnePaymentResponse body = response.getBody();
 			if (body == null) {
 				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
 			}
@@ -135,6 +124,10 @@ public class PaymentService {
 
 			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
 			paymentHistoryRepository.save(success);
+
+			String message = String.format("%s 상품이 %d원에 결제 완료되었습니다.", payment.getProductName(), payment.getAmount());
+
+			notificationService.createNotification(userId, message);
 
 			return new CompletePaymentResponse(payment.getImpUid(), payment.getStatus().toString(),
 				payment.getPaidAt());
@@ -160,24 +153,8 @@ public class PaymentService {
 		}
 
 		try {
-			RestTemplate restTemplate = new RestTemplate();
-			HttpHeaders headers = new HttpHeaders();
-			headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
-			headers.set("Content-Type", "application/json");
-
-			String url = portOneConfig.getBaseUrl() + "/payments/" + payment.getMerchantUid() + "/cancel";
-
-			Map<String, Object> requestBody = Map.of(
-				"storeId", portOneConfig.getStoreId(),
-				"amount", request.getAmount(),
-				"reason", request.getReason(),
-				"currentCancellableAmount", payment.getAmount(),
-				"refundEmail", seller.getEmail()
-			);
-
-			HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, headers);
-
-			restTemplate.postForEntity(url, requestEntity, Map.class);
+			portOneApiClient.cancelPayment(payment.getMerchantUid(), request.getAmount(), request.getReason(),
+				payment.getAmount(), seller.getEmail());
 
 			PaymentHistory history = payment.refund();
 			paymentHistoryRepository.save(history);
