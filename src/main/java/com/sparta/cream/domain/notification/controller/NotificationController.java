@@ -1,19 +1,18 @@
 package com.sparta.cream.domain.notification.controller;
 
-import com.sparta.cream.domain.notification.dto.NotificationPageResponseDto;
-import com.sparta.cream.domain.notification.service.NotificationQueryService;
-import com.sparta.cream.exception.BusinessException;
-import com.sparta.cream.exception.ErrorCode;
-import com.sparta.cream.jwt.JwtTokenProvider;
-import io.jsonwebtoken.JwtException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.sparta.cream.domain.notification.dto.NotificationPageResponseDto;
+import com.sparta.cream.domain.notification.service.NotificationQueryService;
+import com.sparta.cream.jwt.JwtTokenProvider;
+import com.sparta.cream.security.CustomUserDetails;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 알림 조회 API를 처리하는 컨트롤러입니다.
@@ -42,35 +41,18 @@ public class NotificationController {
 	 * - page: 페이지 번호 (기본값: 0)
 	 * - size: 페이지 크기 (기본값: 10)
 	 *
-	 * @param authorization Authorization 헤더 값
+	 * @param userDetails 인증된 사용자 정보
 	 * @param page 페이지 번호
 	 * @param size 페이지 크기
 	 * @return 페이징된 알림 목록 응답 DTO
 	 */
 	@GetMapping("/notification")
 	public ResponseEntity<NotificationPageResponseDto> getNotifications(
-		@RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization,
+		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size
 	) {
-		// Access Token 검증
-		if (authorization == null || !authorization.startsWith("Bearer ")) {
-			throw new BusinessException(ErrorCode.AUTH_UNAUTHORIZED);
-		}
-
-		String token = authorization.substring("Bearer ".length()).trim();
-		if (token.isEmpty()) {
-			throw new BusinessException(ErrorCode.AUTH_UNAUTHORIZED);
-		}
-
-		Long userId;
-		try {
-			userId = jwtTokenProvider.getUserIdFromToken(token);
-		} catch (JwtException | IllegalArgumentException e) {
-			throw new BusinessException(ErrorCode.AUTH_INVALID_TOKEN);
-		}
-
-		NotificationPageResponseDto response = notificationQueryService.getNotifications(userId, page, size);
+		NotificationPageResponseDto response = notificationQueryService.getNotifications(userDetails.getId(), page, size);
 		return ResponseEntity.ok(response);
 	}
 }
