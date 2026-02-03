@@ -3,6 +3,7 @@ package com.sparta.cream.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.hibernate.annotations.SQLRestriction;
@@ -128,6 +129,24 @@ public class Product extends BaseEntity {
 		super.softDelete();
 		imageList.forEach(BaseEntity::softDelete);
 		productOptionList.forEach(BaseEntity::softDelete);
+	}
+
+	public List<Long> getImageIds() {
+		if(this.imageList == null || this.imageList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		return this.imageList.stream()
+			.map(ProductImage::getId)
+			.toList();
+	}
+
+	public List<String> getOptionSizes() {
+		if(this.productOptionList == null || this.productOptionList.isEmpty()) {
+			return Collections.emptyList();
+		}
+		return this.productOptionList.stream()
+			.map(ProductOption::getSize)
+			.toList();
 	}
 }
 
