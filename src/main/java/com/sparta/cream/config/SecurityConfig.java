@@ -72,7 +72,7 @@ public class SecurityConfig {
 				.accessDeniedHandler(securityErrorHandlers)
 			)
 			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue", "/v1/auth/logout",
+				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
 					"/v1/admin/**").permitAll()
 				.requestMatchers("/payment-test.html").permitAll()
 				.anyRequest().authenticated()
