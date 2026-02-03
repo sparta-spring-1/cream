@@ -1,6 +1,8 @@
 package com.sparta.cream.domain.notification.repository;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import com.sparta.cream.domain.notification.entity.Notification;
 
@@ -21,4 +23,12 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 	 * @return 전송 대기 상태인 알림 리스트
 	 */
 	List<Notification> findAllByIsSentFalse();
+
+	/**
+	 * 특정 사용자의 알림 목록을 생성일시 내림차순으로 페이징 조회합니다.
+	 * @param userId 사용자 ID
+	 * @param pageable 페이징 정보
+	 * @return 사용자 알림 목록 (페이징)
+	 */
+	Page<Notification> findAllByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 }
