@@ -114,7 +114,6 @@ public class TradeService {
 					purchase.getProductOption().getProduct().getName(), tradePrice)
 			);
 
-			// 2. 판매자에게 알림 (sale 입찰의 유저)
 			notificationService.createNotification(
 				sale.getUser().getId(),
 				String.format("등록하신 판매 입찰 상품이 결제 완료되어 %d원에 거래가 체결되었습니다.", tradePrice)

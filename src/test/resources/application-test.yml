@@ -40,3 +40,4 @@ portone:
     store-id: test-store-id
     secret: test-secret
     channel-key: test-channel-key
+
