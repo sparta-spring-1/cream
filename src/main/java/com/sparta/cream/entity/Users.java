@@ -1,12 +1,8 @@
 package com.sparta.cream.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -32,7 +28,6 @@ public class Users extends BaseEntity {
 	private String password;
 
 	@Column(nullable = false, length = 255)
-
 	private String name;
 
 	@Column(nullable = false, length = 20, unique = true)
@@ -41,6 +36,10 @@ public class Users extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private UserRole role;
+
+	@Column(name = "bid_blocked_until")
+	private LocalDateTime bidBlockedUntil;
+
 
 	/**
 	 * 사용자 생성자
@@ -74,5 +73,23 @@ public class Users extends BaseEntity {
 		this.phoneNumber = phoneNumber;
 		this.role = role;
 	}
+
+	/**
+	 * 입찰 취소 패널티를 적용합니다.
+	 * 현재 시점 시준으로 3일간 입찰등록이 제한됩니다.
+	 */
+	public void applyBidPenalty() {
+		this.bidBlockedUntil = LocalDateTime.now().plusDays(3);
+	}
+
+	/**
+	 * 현재 입찰등록이 제환된 상태인지 확인합니다.
+	 * @return
+	 */
+	public boolean isBidBlocked() {
+		return bidBlockedUntil != null && bidBlockedUntil.isAfter(LocalDateTime.now());
+	}
+
+
 }
 

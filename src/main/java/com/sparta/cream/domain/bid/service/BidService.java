@@ -62,10 +62,11 @@ public class BidService {
 
 	/**
 	 * 새로운 입찰(구매 또는 판매)을 등록하고, 즉시 매칭을 시도합니다.
-	 * 1. 상품 옵션의 존재 여부를 확인합니다.
-	 * 2. 기본 만료일은 등록 시점으로부터 7일로 설정됩니다.
-	 * 3 입찰 등록 성공시, 해당 사용자에게 마이페이지 알림을 발송합니다.
-	 * 4. 등록 완료후 {@link com.sparta.cream.domain.trade.service.TradeService#processMatching(Bid)}을
+	 * 1.패널티 유저인지 확인합니다.
+	 * 2. 상품 옵션의 존재 여부를 확인합니다.
+	 * 3. 기본 만료일은 등록 시점으로부터 7일로 설정됩니다.
+	 * 4 입찰 등록 성공시, 해당 사용자에게 마이페이지 알림을 발송합니다.
+	 * 5. 등록 완료후 {@link com.sparta.cream.domain.trade.service.TradeService#processMatching(Bid)}을
 	 * 호출하여 즉시 체결 가능한 상대 입찰이 있는지 확인합니다.
 	 * @param userId 입찰을 동록하는 사용자 식별자
 	 * @param requestDto 입찰 요청 정보(상품 옵션 ID, 가격 타입등)
@@ -75,6 +76,10 @@ public class BidService {
 	public BidResponseDto createBid(Long userId, BidRequestDto requestDto) {
 		Users user = userRepository.findById(userId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+		if (user.isBidBlocked()) {
+			throw new BusinessException(BidErrorCode.BID_BLOCKED_BY_PENALTY);
+		}
 
 		ProductOption productOption = productOptionRepository.findById(requestDto.getProductOptionId())
 			.orElseThrow(() -> new BusinessException(BidErrorCode.PRODUCT_OPTION_NOT_FOUND));
@@ -135,6 +140,7 @@ public class BidService {
 	/**
 	 * 기존 입찰 정보를 수정합니다
 	 * 입찰 가격, 상품옵션, 입찰 타입(구매/판매)을 변경할수 있습니다.
+	 * 패널티 유저인지 확인합니다.
 	 * 대기(PENDING) 상태인 입찰만 수정이 가능합니다.
 	 * 수정 권한은 해당 입찰을 등록한 본인에게만 잇습니다.
 	 * @param userId 수정하는 사용자
@@ -144,6 +150,13 @@ public class BidService {
 	 */
 	@Transactional
 	public BidResponseDto updateBid(Long userId, Long bidId, BidRequestDto requestDto) {
+		Users user = userRepository.findById(userId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+		if (user.isBidBlocked()) {
+			throw new BusinessException(BidErrorCode.BID_BLOCKED_BY_PENALTY);
+		}
+
 		Bid bid = bidRepository.findById(bidId)
 			.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
 

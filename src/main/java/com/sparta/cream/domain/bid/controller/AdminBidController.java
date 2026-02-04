@@ -31,7 +31,6 @@ import java.util.Map;
 public class AdminBidController {
 
 	private final BidService bidService;
-	private final TradeRepository tradeRepository;
 
 	/**
 	 * 관리자 권한으로 특정  입찰을 강제 취소합니다.
