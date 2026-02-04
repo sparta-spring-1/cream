@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.entity.BaseEntity;
+import com.sparta.cream.exception.BidErrorCode;
+import com.sparta.cream.exception.BusinessException;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -70,5 +72,21 @@ public class Trade extends BaseEntity {
 		this.status = TradeStatus.PAYMENT_COMPLETED;
 		this.completedAt = LocalDateTime.now();
 	}
+
+	/**
+	 * 거래의 결제 상태를 취소 상태로 변경합니다
+	 * 이미 취소된 거래를 다시 호출할경우 예외 발생
+	 */
+	public void cancelPayment() {
+		if (this.status == TradeStatus.PAYMENT_CANCELED) {
+			throw new BusinessException(BidErrorCode.ALREADY_CANCELED_TRADE);
+		}
+		if (this.status == TradeStatus.PAYMENT_COMPLETED) {
+			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_TRADE);
+		}
+
+		this.status = TradeStatus.PAYMENT_CANCELED;
+	}
+
 }
 
