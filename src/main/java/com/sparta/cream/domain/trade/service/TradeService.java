@@ -146,14 +146,7 @@ public class TradeService {
 		Trade trade = tradeRepository.findById(tradeId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
 
-		if (trade.getStatus() == TradeStatus.PAYMENT_CANCELED) {
-			throw new BusinessException(BidErrorCode.ALREADY_CANCELED_TRADE);
-		}
-
-		if (trade.getStatus() == TradeStatus.PAYMENT_COMPLETED) {
-			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_TRADE);
-		}
-
+		trade.cancelPayment();
 
 		Bid purchaseBid = trade.getPurchaseBidId();
 		Bid saleBid = trade.getSaleBidId();
@@ -168,7 +161,6 @@ public class TradeService {
 		Bid cancelBid = isBuyer ? purchaseBid : saleBid;
 		Bid victimBid = isBuyer ? saleBid : purchaseBid;
 
-		trade.cancelPayment();
 		cancelBid.cancelByTrade();
 		victimBid.restoreToPending();
 
