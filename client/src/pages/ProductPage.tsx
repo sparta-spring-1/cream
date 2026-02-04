@@ -1,7 +1,7 @@
 import { ChevronDown, Bookmark } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { productApi, AdminGetOneProductResponse } from '../api/product';
+import { productApi, type AdminGetOneProductResponse } from '../api/product';
 
 const ProductPage = () => {
     const { id } = useParams();

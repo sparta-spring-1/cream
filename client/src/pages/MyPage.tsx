@@ -1,7 +1,7 @@
 import { Settings, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { authApi } from '../api/auth';
-import { MeResponse } from '../types/auth';
+import { type MeResponse } from '../types/auth';
 
 const MyPage = () => {
     const [user, setUser] = useState<MeResponse | null>(null);

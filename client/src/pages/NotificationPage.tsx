@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { notificationApi, NotificationResponse } from '../api/notification';
+import { notificationApi, type NotificationResponse } from '../api/notification';
 
 const NotificationPage = () => {
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
