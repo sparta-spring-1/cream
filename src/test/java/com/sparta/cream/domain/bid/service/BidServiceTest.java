@@ -69,7 +69,7 @@ class BidServiceTest {
 	private UserRepository userRepository;
 
 	private Users testUser;
-	private Long userId = 1L;
+	private final Long userId = 1L;
 
 	@BeforeEach
 	void setUp() {
@@ -385,7 +385,7 @@ class BidServiceTest {
 			"관리자 수동 취소 처리"
 		);
 
-		Users adminUser = new Users("admin@test.com", "password1234", "관리자", UserRole.ADMIN);
+		Users adminUser = new Users("admin@test.com", "password1234", "관리자", "010-1234-5678", UserRole.ADMIN);
 
 		Bid bid = Bid.builder()
 			.status(BidStatus.PENDING)
@@ -413,7 +413,7 @@ class BidServiceTest {
 		Long bidId = 1L;
 		Long userId = 10L;
 
-		Users generalUser = new Users("user@test.com", "pw", "일반", UserRole.USER);
+		Users generalUser = new Users("user@test.com", "pw", "일반", "010-1234-5678", UserRole.USER);
 		AdminBidCancelRequestDto requestDto = new AdminBidCancelRequestDto("CANCEL_REASON_01", "취소요청");
 
 		given(userRepository.findById(userId)).willReturn(Optional.of(generalUser));

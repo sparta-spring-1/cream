@@ -30,6 +30,9 @@ public class Users extends BaseEntity {
 	@Column(nullable = false, length = 255)
 	private String name;
 
+	@Column(nullable = false, length = 20, unique = true)
+	private String phoneNumber;
+
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
 	private UserRole role;
@@ -45,11 +48,13 @@ public class Users extends BaseEntity {
 	 * @param email 사용자 이메일
 	 * @param password 암호화된 비밀번호
 	 * @param name 사용자 이름
+	 * @param phoneNumber 사용자 전화번호
 	 */
-	public Users(String email, String password, String name) {
+	public Users(String email, String password, String name, String phoneNumber) {
 		this.email = email;
 		this.password = password;
 		this.name = name;
+		this.phoneNumber = phoneNumber;
 		this.role = UserRole.USER;
 	}
 
@@ -61,10 +66,11 @@ public class Users extends BaseEntity {
 	 * @param name 사용자 이름
 	 * @param role 사용자 역할
 	 */
-	public Users(String email, String password, String name, UserRole role) {
+	public Users(String email, String password, String name, String phoneNumber, UserRole role) {
 		this.email = email;
 		this.password = password;
 		this.name = name;
+		this.phoneNumber = phoneNumber;
 		this.role = role;
 	}
 
