@@ -70,7 +70,7 @@ public class AuthService {
 		String encoded = passwordEncoder.encode(req.getPassword());
 		Users user;
 		try {
-			user = userRepository.save(new Users(req.getEmail(), encoded, req.getName()));
+			user = userRepository.save(new Users(req.getEmail(), encoded, req.getName(), req.getPhoneNumber()));
 		} catch (DataIntegrityViolationException e) {
 			log.error("회원가입 실패: 데이터 무결성 위반 - email={}, error={}", req.getEmail(), e.getMessage());
 			throw new BusinessException(ErrorCode.AUTH_EMAIL_DUPLICATED);

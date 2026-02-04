@@ -34,5 +34,9 @@ public class SignupRequestDto {
 	@NotBlank
 	@Size(max = 50)
 	private String name;
+
+	@NotBlank
+	@Size(max = 20)
+	private String phoneNumber;
 }
 

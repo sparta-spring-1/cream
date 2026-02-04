@@ -41,3 +41,10 @@ portone:
     secret: test-secret
     channel-key: test-channel-key
 
+aws:
+  s3:
+    access-key: test-access-key
+    secret-key: test-secret-key
+    bucket-name: test-bucket
+  region: ap-northeast-2
+
