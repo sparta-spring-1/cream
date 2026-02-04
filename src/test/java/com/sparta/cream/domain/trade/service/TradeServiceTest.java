@@ -2,7 +2,6 @@ package com.sparta.cream.domain.trade.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,15 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.sparta.cream.domain.notification.service.NotificationService;
-import com.sparta.cream.domain.trade.entity.TradeStatus;
-import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.entity.TradeStatus;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.UserRole;
@@ -373,6 +370,7 @@ class TradeServiceTest {
 			"test" + userId + "@test.com",
 			"pw",
 			"user" + userId,
+			"010-1234-5678",
 			UserRole.USER
 		);
 		ReflectionTestUtils.setField(user, "id", userId);
