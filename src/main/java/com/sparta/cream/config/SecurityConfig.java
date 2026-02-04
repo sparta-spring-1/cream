@@ -58,29 +58,42 @@ public class SecurityConfig {
 	 */
 	@Bean
 	public SecurityFilterChain filterChain(
-		HttpSecurity http,
-		JwtAuthenticationFilter jwtAuthenticationFilter,
-		SecurityErrorHandlers securityErrorHandlers
-	) throws Exception {
+			HttpSecurity http,
+			JwtAuthenticationFilter jwtAuthenticationFilter,
+			SecurityErrorHandlers securityErrorHandlers) throws Exception {
 		http
-			.csrf(csrf -> csrf.disable())
-			.httpBasic(httpBasic -> httpBasic.disable())
-			.formLogin(formLogin -> formLogin.disable())
-			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(eh -> eh
-				.authenticationEntryPoint(securityErrorHandlers)
-				.accessDeniedHandler(securityErrorHandlers)
-			)
-			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
-					"/v1/admin/**").permitAll()
-				.requestMatchers("/payment-test.html").permitAll()
-				.anyRequest().authenticated()
-			);
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.csrf(csrf -> csrf.disable())
+				.httpBasic(httpBasic -> httpBasic.disable())
+				.formLogin(formLogin -> formLogin.disable())
+				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(eh -> eh
+						.authenticationEntryPoint(securityErrorHandlers)
+						.accessDeniedHandler(securityErrorHandlers))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
+								"/v1/admin/**")
+						.permitAll()
+						.requestMatchers("/payment-test.html").permitAll()
+						.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}
-}
 
+	@Bean
+	public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+		org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
+		configuration.addAllowedOriginPattern("http://localhost:*"); // 기존 로컬 포트 허용
+		configuration.addAllowedOrigin("http://3.38.101.128"); // EC2 퍼블릭 IP 주소 허용
+		configuration.addAllowedMethod("*");
+		configuration.addAllowedHeader("*");
+		configuration.setAllowCredentials(true);
+		configuration.setMaxAge(3600L);
+
+		org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+		source.registerCorsConfiguration("/**", configuration);
+		return source;
+	}
+}
