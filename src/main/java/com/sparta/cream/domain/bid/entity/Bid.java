@@ -176,5 +176,26 @@ public class Bid extends BaseEntity {
 		this.adminReason = reasonCode;
 		this.adminComment = comment;
 	}
+
+	/**
+	 * 체결된 입찰을 거래 취소로 인해 취소 상태로 변경합니다.
+	 */
+	public void cancelByTrade() {
+		if (this.status != BidStatus.MATCHED) {
+			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_UNMATCHED);
+		}
+		this.status = BidStatus.CANCELED;
+	}
+
+	/**
+	 * 체결 취소로 인해 상대방 입찰을 다시 대기 상태로 복구합니다.
+	 */
+	public void restoreToPending() {
+		if (this.status != BidStatus.MATCHED) {
+			throw new BusinessException(BidErrorCode.INVALID_BID_STATUS);
+		}
+		this.status = BidStatus.PENDING;
+	}
+
 }
 
