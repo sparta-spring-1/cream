@@ -58,15 +58,16 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
 			.orderBy(t.id.desc())
 			.fetch();
 
-		long total = queryFactory
-			.selectFrom(t)
+		Long total = queryFactory
+			.select(t.count()) // QTrade 인스턴스인 't'의 count를 구함
+			.from(t)
 			.where(
 				eqStatus(status),
 				eqUserId(userId)
 			)
-			.fetchCount();
+			.fetchOne();
 
-		return new PageImpl<>(content, pageable, total);
+		return new PageImpl<>(content, pageable, total != null ? total : 0L);
 	}
 
 	/**
