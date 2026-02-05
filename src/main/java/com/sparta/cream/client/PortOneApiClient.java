@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class PortOneApiClient {
 
 	private final PortOneConfig portOneConfig;
-	private final RestTemplate restTemplate = new RestTemplate();
+	private final RestTemplate restTemplate;
 
 	public PortOnePaymentResponse getPayment(String merchantUid) {
 		HttpHeaders headers = new HttpHeaders();
