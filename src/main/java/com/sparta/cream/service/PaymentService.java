@@ -21,6 +21,7 @@ import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.RefundPaymentResponse;
+import com.sparta.cream.dto.response.YourPaymentListResponse;
 import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
@@ -178,4 +179,15 @@ public class PaymentService {
 	public List<Payment> getByStatus(PaymentStatus status) {
 		return paymentRepository.findByStatus(status);
 	}
+
+	@Transactional(readOnly = true)
+	public List<YourPaymentListResponse> getAllPayment(Long userId) {
+		List<YourPaymentListResponse> list = paymentRepository.findAllByUserId(userId).stream()
+			.map(YourPaymentListResponse::from)
+			.toList();
+
+		return list;
+	}
+
+
 }
