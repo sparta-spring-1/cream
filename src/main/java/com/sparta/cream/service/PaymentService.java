@@ -1,6 +1,7 @@
 package com.sparta.cream.service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -172,5 +173,9 @@ public class PaymentService {
 	public Payment findById(Long id) {
 		return paymentRepository.findById(id).orElseThrow(
 			() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+	}
+
+	public List<Payment> getByStatus(PaymentStatus status) {
+		return paymentRepository.findByStatus(status);
 	}
 }
