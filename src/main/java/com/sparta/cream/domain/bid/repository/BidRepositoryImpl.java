@@ -64,8 +64,9 @@ public class BidRepositoryImpl implements BidRepositoryCustom {
 			.orderBy(bid.createdAt.desc())
 			.fetch();
 
-		long total = queryFactory
-			.selectFrom(bid)
+		Long total = queryFactory
+			.select(bid.count()) // bid.count()로 변경
+			.from(bid)           // selectFrom 대신 from 사용
 			.where(
 				eqProductId(productId),
 				eqCategoryId(categoryId),
@@ -73,9 +74,9 @@ public class BidRepositoryImpl implements BidRepositoryCustom {
 				eqType(type),
 				eqUserId(userId)
 			)
-			.fetchCount();
+			.fetchOne();
 
-		return new PageImpl<>(content, pageable, total);
+		return new PageImpl<>(content, pageable, total != null ? total : 0L);
 	}
 
 	/**

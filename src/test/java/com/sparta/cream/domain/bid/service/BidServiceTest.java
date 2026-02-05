@@ -255,6 +255,9 @@ class BidServiceTest {
 		Bid bid = Bid.builder().user(testUser).status(BidStatus.PENDING).build();
 		ReflectionTestUtils.setField(bid, "id", bidId);
 
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+		given(testUser.isBidBlocked()).willReturn(false);
+
 		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
 		given(productOptionRepository.findById(newProductOptionId)).willReturn(Optional.of(newOption));
 
@@ -277,6 +280,9 @@ class BidServiceTest {
 		Long bidId = 100L;
 		BidRequestDto requestDto = new BidRequestDto(101L, 200000L, BidType.SELL);
 
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+		given(testUser.isBidBlocked()).willReturn(false);
+
 		Bid bid = Bid.builder()
 			.user(testUser)
 			.status(BidStatus.MATCHED)
@@ -298,16 +304,44 @@ class BidServiceTest {
 	@DisplayName("입찰 수정 실패 - 본인 입찰이 아닌 경우")
 	void updateBid_Fail_NotYourBid() {
 		// given
-		Users otherUser = mock(Users.class);
-		given(otherUser.getId()).willReturn(999L);
+		Long bidId = 100L;
+		Long otherUserId = 999L;
 
-		Bid bid = Bid.builder().user(otherUser).build();
-		given(bidRepository.findById(100L)).willReturn(Optional.of(bid));
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+		given(testUser.isBidBlocked()).willReturn(false);
+
+		Users otherUser = mock(Users.class);
+		given(otherUser.getId()).willReturn(otherUserId);
+
+		Bid bid = Bid.builder()
+			.user(otherUser)
+			.status(BidStatus.PENDING)
+			.build();
+
+		ReflectionTestUtils.setField(bid, "id", bidId);
+
+		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
 
 		// when & then
-		assertThatThrownBy(() -> bidService.updateBid(userId, 100L, new BidRequestDto(101L, 200000L, BidType.SELL)))
+		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, new BidRequestDto(101L, 200000L, BidType.SELL)))
 			.isInstanceOf(BusinessException.class)
 			.hasMessageContaining(BidErrorCode.NOT_YOUR_BID.getMessage());
+	}
+
+	/**
+	 * 패널티로 인한 유저가 입찰 수정시 싶패 테스트
+	 */
+	@Test
+	@DisplayName("입찰 수정 실패 - 패널티로 인해 입찰이 차단된 유저")
+	void updateBid_Fail_PenaltyUser() {
+		// given
+		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+		given(testUser.isBidBlocked()).willReturn(true); // 차단된 유저로 설정
+
+		// when & then
+		assertThatThrownBy(() -> bidService.updateBid(userId, 1L, new BidRequestDto(100L, 200000L, BidType.SELL)))
+			.isInstanceOf(BusinessException.class)
+			.hasMessageContaining(BidErrorCode.BID_BLOCKED_BY_PENALTY.getMessage());
 	}
 
 	/**

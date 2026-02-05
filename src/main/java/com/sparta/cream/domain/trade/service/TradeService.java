@@ -12,7 +12,10 @@ import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.entity.TradeStatus;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
+import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 
@@ -124,6 +127,55 @@ public class TradeService {
 			System.out.println("- 판매 입찰 ID: " + trade.getSaleBidId().getId());
 			System.out.println("- 체결 금액: " + trade.getFinalPrice());
 		});
+	}
+
+	/**
+	 * 체결된 거래를 취소하는 로직입니다.
+	 * 구매자 또는 판매자 중 체결 당사자가 거래를 취소할 수 있으며,
+	 * 취소로직
+	 * 1.요청 사용자가 구매자인지 판매자인지 판단
+	 * 2.취소를 요청한 체결은 입찰 상태로 변경
+	 * 3.거래 상태를 CANCELED로 변경
+	 * 4.취소 요청 사용자에게 입찰 제한 패널티(3일)를 적용
+	 * 5.취소 사용자 . 상대방에게 알림을 전송
+	 * @param tradeId 취소할 거래의 ID
+	 * @param requestUserId 거래 취소를 요청한 사용자 ID
+	 */
+	@Transactional
+	public void cancelTrade(Long tradeId, Long requestUserId) {
+		Trade trade = tradeRepository.findById(tradeId)
+			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+
+		trade.cancelPayment();
+
+		Bid purchaseBid = trade.getPurchaseBidId();
+		Bid saleBid = trade.getSaleBidId();
+
+		boolean isBuyer = purchaseBid.getUser().getId().equals(requestUserId);
+		boolean isSeller = saleBid.getUser().getId().equals(requestUserId);
+
+		if (!isBuyer && !isSeller) {
+			throw new BusinessException(ErrorCode.ACCESS_DENIED);
+		}
+
+		Bid cancelBid = isBuyer ? purchaseBid : saleBid;
+		Bid victimBid = isBuyer ? saleBid : purchaseBid;
+
+		cancelBid.cancelByTrade();
+		victimBid.restoreToPending();
+
+		Users cancelUser = cancelBid.getUser();
+		cancelUser.applyBidPenalty();
+
+		notificationService.createNotification(
+			cancelUser.getId(),
+			"체결을 취소하여 3일간 입찰 등록이 제한됩니다."
+		);
+
+		notificationService.createNotification(
+			victimBid.getUser().getId(),
+			"상대방의 체결 취소로 입찰이 다시 대기 상태로 전환되었습니다."
+		);
 	}
 
 	/**
