@@ -190,6 +190,7 @@ public class PaymentService {
 		return paymentList;
 	}
 
+	@Transactional(readOnly = true)
 	public PaymentDetailsResponse getDetails(Long paymentId, Long userId) {
 		Payment payment = findById(paymentId);
 		Users user = authService.findById(userId);
