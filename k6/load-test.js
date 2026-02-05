@@ -6,5 +6,5 @@ export const options = {
 };
 
 export default function () {
-    http.get("http://host.docker.internal:8080/v1/auth/signup");
+    http.get("http://spring-app:8080/payment-test.html");
 }
