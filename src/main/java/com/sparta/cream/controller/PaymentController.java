@@ -19,6 +19,7 @@ import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.PaymentConfigResponse;
+import com.sparta.cream.dto.response.PaymentDetailsResponse;
 import com.sparta.cream.dto.response.RefundPaymentResponse;
 import com.sparta.cream.dto.response.YourPaymentListResponse;
 import com.sparta.cream.security.CustomUserDetails;
@@ -107,4 +108,10 @@ public class PaymentController {
 		return ResponseEntity.ok(response);
 	}
 
+	@GetMapping("/{paymentId}")
+	public ResponseEntity<PaymentDetailsResponse> getPaymentDetails(@PathVariable Long paymentId,
+		@AuthenticationPrincipal CustomUserDetails user) {
+		PaymentDetailsResponse response = paymentService.getDetails(paymentId, user.getId());
+		return ResponseEntity.ok(response);
+	}
 }

@@ -20,6 +20,7 @@ import com.sparta.cream.dto.request.CompletePaymentRequest;
 import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
+import com.sparta.cream.dto.response.PaymentDetailsResponse;
 import com.sparta.cream.dto.response.RefundPaymentResponse;
 import com.sparta.cream.dto.response.YourPaymentListResponse;
 import com.sparta.cream.entity.UserRole;
@@ -182,12 +183,21 @@ public class PaymentService {
 
 	@Transactional(readOnly = true)
 	public List<YourPaymentListResponse> getAllPayment(Long userId) {
-		List<YourPaymentListResponse> list = paymentRepository.findAllByUserId(userId).stream()
+		List<YourPaymentListResponse> paymentList = paymentRepository.findAllByUserId(userId).stream()
 			.map(YourPaymentListResponse::from)
 			.toList();
 
-		return list;
+		return paymentList;
 	}
 
+	public PaymentDetailsResponse getDetails(Long paymentId, Long userId) {
+		Payment payment = findById(paymentId);
+		Users user = authService.findById(userId);
 
+		if(!(payment.getUser().getId().equals(user.getId()))) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		return PaymentDetailsResponse.from(payment);
+	}
 }
