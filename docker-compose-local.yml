@@ -1,6 +1,6 @@
 services:
   spring-app:
-    image: ${DOCKER_USERNAME}/cream:${IMAGE_TAG:-dev}
+    image: ${DOCKER_USERNAME}/cream:${IMAGE_TAG:-local}
     container_name: cream-app
     restart: always
     environment:
