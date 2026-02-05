@@ -75,7 +75,7 @@ public class SecurityConfig {
 					"/v1/admin/**")
 				.permitAll()
 				.requestMatchers("/payment-test.html").permitAll()
-				.requestMatchers("/actuator/prometheus").permitAll()
+				.requestMatchers("/actuator/**").permitAll()
 				.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
