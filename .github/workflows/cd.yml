@@ -52,6 +52,10 @@ jobs:
             PORTONE_STORE_ID=${{ secrets.PORTONE_STORE_ID }}
             PORTONE_API_SECRET=${{ secrets.PORTONE_API_SECRET }}
             PORTONE_CHANNEL_KEY=${{ secrets.PORTONE_CHANNEL_KEY }}
+            AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
             EOF
             
             mv docker-compose-app.yml docker-compose.yml

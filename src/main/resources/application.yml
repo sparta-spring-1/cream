@@ -54,3 +54,12 @@ jwt:
   issuer: ${JWT_ISSUER:app}
   access-exp-sec: ${JWT_ACCESS_EXP_SEC:900}
   refresh-exp-sec: ${JWT_REFRESH_EXP_SEC:1209600}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus # 프로메테우스용 데이터만 노출
+  endpoint:
+    prometheus:
+      enabled: true
