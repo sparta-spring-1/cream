@@ -1,0 +1,65 @@
+name: CD - Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: [ "CI - Build and Push to Docker Hub" ]
+    types:
+      - completed
+    branches:
+      - main
+
+env:
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/cream
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    if: ${{ github.event_run.conclusion == 'success' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=latest" >> $GITHUB_ENV
+
+      - name: Transfer docker-compose-app.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose-app.yml"
+          target: "~/"
+
+      - name: Deploy to Public EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cat > .env << EOF
+            DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            IMAGE_TAG=${{ env.IMAGE_TAG }}
+            DB_HOST=${{ secrets.PRIVATE_DB_HOST }}
+            REDIS_HOST=${{ secrets.PRIVATE_REDIS_HOST }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DATABASE_NAME=${{ secrets.DATABASE_NAME }}
+            JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+            PORTONE_STORE_ID=${{ secrets.PORTONE_STORE_ID }}
+            PORTONE_API_SECRET=${{ secrets.PORTONE_API_SECRET }}
+            PORTONE_CHANNEL_KEY=${{ secrets.PORTONE_CHANNEL_KEY }}
+            AWS_ACCESS_KEY=${{ secrets.AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY=${{ secrets.AWS_SECRET_KEY }}
+            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            EOF
+            
+            mv docker-compose-app.yml docker-compose.yml
+            docker-compose down
+            docker-compose pull spring-app
+            docker-compose up -d spring-app
+            docker image prune -af

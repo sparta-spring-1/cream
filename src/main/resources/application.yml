@@ -1,0 +1,65 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/cream?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: ${LOCAL_DB_USERNAME}
+    password: ${LOCAL_DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+
+  servlet:
+    multipart:
+      enabled: true # 멀티파트 업로드 지원여부 (default: true)
+      file-size-threshold: 0B # 파일을 디스크에 저장하지 않고 메모리에 저장하는 최소 크기 (default: 0B)
+      location: ${user.dir}/uploads/tmp # 업로드된 파일이 임시로 저장되는 디스크 위치 (default: WAS가 결정)
+      max-file-size: 100MB # 한개 파일의 최대 사이즈 (default: 1MB)
+      max-request-size: 100MB # 한개 요청의 최대 사이즈 (default: 10MB)
+
+aws:
+  s3:
+    access-key: ${AWS_ACCESS_KEY}
+    secret-key: ${AWS_SECRET_KEY}
+    bucket-name: ${BUCKET_NAME}
+  region: ${AWS_REGION}
+
+logging:
+  level:
+    com.sparta.cream: debug
+
+portone:
+  api:
+    base-url: https://api.portone.io
+    store-id: ${PORTONE_STORE_ID}
+    channel-key: ${PORTONE_CHANNELKEY}
+    secret: ${PORTONE_API_SECRET:}
+
+jwt:
+  secret: ${JWT_SECRET}
+  issuer: ${JWT_ISSUER:app}
+  access-exp-sec: ${JWT_ACCESS_EXP_SEC:900}
+  refresh-exp-sec: ${JWT_REFRESH_EXP_SEC:1209600}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: prometheus # 프로메테우스용 데이터만 노출
+  endpoint:
+    prometheus:
+      enabled: true
