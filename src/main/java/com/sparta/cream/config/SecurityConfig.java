@@ -58,24 +58,25 @@ public class SecurityConfig {
 	 */
 	@Bean
 	public SecurityFilterChain filterChain(
-			HttpSecurity http,
-			JwtAuthenticationFilter jwtAuthenticationFilter,
-			SecurityErrorHandlers securityErrorHandlers) throws Exception {
+		HttpSecurity http,
+		JwtAuthenticationFilter jwtAuthenticationFilter,
+		SecurityErrorHandlers securityErrorHandlers) throws Exception {
 		http
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-				.csrf(csrf -> csrf.disable())
-				.httpBasic(httpBasic -> httpBasic.disable())
-				.formLogin(formLogin -> formLogin.disable())
-				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(eh -> eh
-						.authenticationEntryPoint(securityErrorHandlers)
-						.accessDeniedHandler(securityErrorHandlers))
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
-								"/v1/admin/**")
-						.permitAll()
-						.requestMatchers("/payment-test.html").permitAll()
-						.anyRequest().authenticated());
+			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+			.csrf(csrf -> csrf.disable())
+			.httpBasic(httpBasic -> httpBasic.disable())
+			.formLogin(formLogin -> formLogin.disable())
+			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.exceptionHandling(eh -> eh
+				.authenticationEntryPoint(securityErrorHandlers)
+				.accessDeniedHandler(securityErrorHandlers))
+			.authorizeHttpRequests(auth -> auth
+				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
+					"/v1/admin/**")
+				.permitAll()
+				.requestMatchers("/payment-test.html").permitAll()
+				.requestMatchers("/actuator/prometheus").permitAll()
+				.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
