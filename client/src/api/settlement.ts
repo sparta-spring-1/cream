@@ -17,6 +17,7 @@ export interface SettlementDetailsResponse {
     settledAt: string | null;
     productName: string;
     tradeId: number;
+    paymentId: number;
 }
 
 export const getSettlements = async () => {

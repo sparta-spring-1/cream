@@ -52,5 +52,17 @@ export const paymentApi = {
     getDetails: async (paymentId: number) => {
         const response = await client.get(`/v1/payments/${paymentId}`);
         return response.data;
+    },
+
+    // Refund
+    refund: async (paymentId: number, data: RefundRequest) => {
+        const response = await client.post(`/v1/payments/${paymentId}/refund`, data);
+        return response.data;
     }
 };
+
+export interface RefundRequest {
+    tradeId: number;
+    reason: string;
+    amount: number;
+}

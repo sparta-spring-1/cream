@@ -19,6 +19,7 @@ public class SettlementDetailsResponse {
     private final LocalDateTime settledAt;
     private final String productName;
     private final Long tradeId;
+    private final Long paymentId;
 
     public static SettlementDetailsResponse from(Settlement settlement) {
         return new SettlementDetailsResponse(settlement.getId(),
@@ -28,6 +29,7 @@ public class SettlementDetailsResponse {
                 settlement.getStatus(),
                 settlement.getSettledAt(),
                 settlement.getPayment().getTrade().getSaleBidId().getProductOption().getProduct().getName(),
-                settlement.getPayment().getTrade().getId());
+                settlement.getPayment().getTrade().getId(),
+                settlement.getPayment().getId());
     }
 }
