@@ -2,10 +2,14 @@ import { Settings, ShoppingBag } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { authApi } from '../api/auth';
 import { type MeResponse } from '../types/auth';
+import MyPaymentHistory from '../components/mypage/MyPaymentHistory';
+import MyBidHistory from '../components/mypage/MyBidHistory';
 
 const MyPage = () => {
     const [user, setUser] = useState<MeResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+    const [buyTab, setBuyTab] = useState<'bid' | 'payment'>('payment'); // 'bid' or 'payment'
 
     useEffect(() => {
         authApi.me()
@@ -28,8 +32,8 @@ const MyPage = () => {
                     <nav className="flex flex-col gap-4 text-gray-500">
                         <div className="flex flex-col gap-2">
                             <h3 className="font-bold text-black mb-1">쇼핑 정보</h3>
-                            <a href="#" className="hover:text-black">구매 내역</a>
-                            <a href="#" className="hover:text-black">판매 내역</a>
+                            <button onClick={() => { setActiveTab('buy'); setBuyTab('payment'); }} className={`text-left hover:text-black ${activeTab === 'buy' ? 'text-black font-bold' : ''}`}>구매 내역</button>
+                            <button onClick={() => setActiveTab('sell')} className={`text-left hover:text-black ${activeTab === 'sell' ? 'text-black font-bold' : ''}`}>판매 내역</button>
                             <a href="#" className="hover:text-black">보관 판매</a>
                             <a href="#" className="hover:text-black">관심 상품</a>
                         </div>
@@ -63,19 +67,19 @@ const MyPage = () => {
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-4 mb-10">
                         {/* Buying */}
-                        <div className="p-6 bg-gray-50 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                        <div onClick={() => setActiveTab('buy')} className={`p-6 rounded-xl text-center cursor-pointer transition-colors ${activeTab === 'buy' ? 'bg-gray-100' : 'bg-gray-50 hover:bg-gray-100'}`}>
                             <h3 className="text-gray-500 text-sm mb-2">구매 내역</h3>
                             <div className="text-xl font-bold flex flex-col items-center gap-1">
-                                0
-                                <span className="text-xs font-normal text-gray-400">진행중</span>
+                                -
+                                <span className="text-xs font-normal text-gray-400">전체</span>
                             </div>
                         </div>
                         {/* Selling */}
-                        <div className="p-6 bg-gray-50 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
+                        <div onClick={() => setActiveTab('sell')} className={`p-6 rounded-xl text-center cursor-pointer transition-colors ${activeTab === 'sell' ? 'bg-gray-100' : 'bg-gray-50 hover:bg-gray-100'}`}>
                             <h3 className="text-gray-500 text-sm mb-2">판매 내역</h3>
                             <div className="text-xl font-bold flex flex-col items-center gap-1">
-                                0
-                                <span className="text-xs font-normal text-gray-400">진행중</span>
+                                -
+                                <span className="text-xs font-normal text-gray-400">전체</span>
                             </div>
                         </div>
                         {/* Wishlist */}
@@ -88,13 +92,39 @@ const MyPage = () => {
                         </div>
                     </div>
 
-                    {/* Recent History Placeholder */}
+                    {/* Content Section */}
                     <div>
-                        <h3 className="font-bold text-lg mb-4">최근 거래 내역</h3>
-                        <div className="py-20 flex flex-col items-center justify-center border-t border-b border-gray-100">
-                            <ShoppingBag className="text-gray-300 mb-4" size={48} />
-                            <p className="text-gray-500">거래 내역이 없습니다.</p>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-lg">
+                                {activeTab === 'buy' ? '구매 내역' : '판매 내역'}
+                            </h3>
+                            {activeTab === 'buy' && (
+                                <div className="flex bg-gray-100 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setBuyTab('payment')}
+                                        className={`px-3 py-1 text-sm rounded-md ${buyTab === 'payment' ? 'bg-white shadow-sm font-bold' : 'text-gray-500'}`}
+                                    >
+                                        결제 완료
+                                    </button>
+                                    <button
+                                        onClick={() => setBuyTab('bid')}
+                                        className={`px-3 py-1 text-sm rounded-md ${buyTab === 'bid' ? 'bg-white shadow-sm font-bold' : 'text-gray-500'}`}
+                                    >
+                                        구매 입찰
+                                    </button>
+                                </div>
+                            )}
                         </div>
+
+                        {activeTab === 'buy' ? (
+                            buyTab === 'payment' ? <MyPaymentHistory /> : <MyBidHistory />
+                        ) : (
+                            // For Sell tab, we reuse BidHistory but filtered?
+                            // Currently MyBidHistory shows all. 
+                            // Ideally passed a filter prop, but for MVP we show all (with type indicator).
+                            // Let's reuse MyBidHistory for now as it shows type (BUY/SELL).
+                            <MyBidHistory />
+                        )}
                     </div>
                 </div>
             </div>
