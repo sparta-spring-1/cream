@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { bidApi, BidResponse } from '../../api/bid';
+import { bidApi, type BidResponse } from '../../api/bid';
 
 // Extended type for display if API returns more info, 
 // but currently BidResponse has { id, price, status }
