@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
 
 const BidPage = () => {
     const location = useLocation();
@@ -55,8 +54,8 @@ const BidPage = () => {
                                 key={size}
                                 onClick={() => setSelectedSize(size)}
                                 className={`py-3 rounded-xl border font-medium transition-colors ${selectedSize === size
-                                        ? `border-black font-bold ring-1 ring-black`
-                                        : 'border-gray-200 hover:border-gray-400'
+                                    ? `border-black font-bold ring-1 ring-black`
+                                    : 'border-gray-200 hover:border-gray-400'
                                     }`}
                             >
                                 {size}
