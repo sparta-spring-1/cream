@@ -120,6 +120,14 @@ const MyPage = () => {
                 <aside className="w-48 hidden md:block">
                     <h2 className="font-bold text-2xl mb-6 cursor-pointer" onClick={() => setActiveTab('overview')}>마이 페이지</h2>
                     <nav className="flex flex-col gap-4 text-gray-500">
+                        {user.role === 'ADMIN' && (
+                            <button
+                                onClick={() => window.location.href = '/admin'}
+                                className="text-left text-red-500 font-bold hover:text-red-600 mb-2"
+                            >
+                                관리자 대시보드
+                            </button>
+                        )}
                         <div className="flex flex-col gap-2">
                             <h3 className="font-bold text-black mb-1">쇼핑 정보</h3>
                             <button onClick={() => setActiveTab('buying')} className={`text-left hover:text-black ${activeTab === 'buying' ? 'text-black font-bold' : ''}`}>구매 내역</button>

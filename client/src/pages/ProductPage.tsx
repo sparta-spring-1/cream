@@ -118,14 +118,14 @@ const ProductPage = () => {
                             </div>
 
                             <div className="flex gap-4">
-                                <Link to="/bids/buy" className="flex-1 bg-[#ef6253] hover:bg-[#d95245] text-white rounded-xl h-14 flex items-center no-underline">
+                                <Link to={`/bids/buy?productId=${product.id}`} className="flex-1 bg-[#ef6253] hover:bg-[#d95245] text-white rounded-xl h-14 flex items-center no-underline">
                                     <div className="w-1/3 border-r border-white/20 h-full flex items-center justify-center font-bold">구매</div>
                                     <div className="w-2/3 px-4 flex flex-col items-start">
                                         <span className="text-lg font-bold">{displayPrice}</span>
                                         <span className="text-[10px] opacity-80">구매 입찰가</span>
                                     </div>
                                 </Link>
-                                <Link to="/bids/sell" className="flex-1 bg-[#41b979] hover:bg-[#38a36a] text-white rounded-xl h-14 flex items-center no-underline">
+                                <Link to={`/bids/sell?productId=${product.id}`} className="flex-1 bg-[#41b979] hover:bg-[#38a36a] text-white rounded-xl h-14 flex items-center no-underline">
                                     <div className="w-1/3 border-r border-white/20 h-full flex items-center justify-center font-bold">판매</div>
                                     <div className="w-2/3 px-4 flex flex-col items-start">
                                         <span className="text-lg font-bold">{displayPrice}</span>
