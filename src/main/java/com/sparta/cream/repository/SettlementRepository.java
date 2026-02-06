@@ -9,4 +9,7 @@ import com.sparta.cream.domain.status.SettlementStatus;
 
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
     List<Settlement> findByStatus(SettlementStatus status);
+
+    List<Settlement> findAllBySellerId(Long sellerId);
+
 }
