@@ -19,8 +19,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 	boolean existsByModelNumber(String modelNumber);
 
-	List<Product> findByModelNumber(String modelNumber);
-
 	@Query(
 		value = """
             SELECT DISTINCT p

@@ -227,7 +227,7 @@ public class ProductService {
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
 		List<String> options = product.getOptionSizes();
-		List<Long> imageIds = product.getImageIds();;
+		List<Long> imageIds = product.getImageIds();
 
 		return AdminGetOneProductResponse.from(product,options,imageIds);
 
