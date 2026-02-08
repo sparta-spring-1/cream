@@ -220,11 +220,16 @@ public class ProductService {
 	 * @return 삭제 여부와 관계없이 조회된 상품 정보를 담은 응답 DTO
 	 * @throws BusinessException 상품이 존재하지 않을 경우 발생
 	 */
+	@Transactional(readOnly = true)
 	public AdminGetOneProductResponse getOneProduct(Long productId) {
 		//삭제된 상품을 포함하여 조회
-		Product product = productRepository.findByIdIncludingDeleted(productId)
+		Product product = productRepository.findByIdIncludingDeletedWithGraph(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		return AdminGetOneProductResponse.from(product);
+		List<String> options = product.getOptionSizes();
+		List<Long> imageIds = product.getImageIds();;
+
+		return AdminGetOneProductResponse.from(product,options,imageIds);
+
 	}
 }

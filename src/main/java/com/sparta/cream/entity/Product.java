@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.BatchSize;
 
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.exception.BusinessException;
@@ -37,7 +37,6 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"model_number", "brand_name"})
 	}
 )
-@SQLRestriction("is_deleted = false")
 public class Product extends BaseEntity {
 
 	@Id
@@ -58,9 +57,11 @@ public class Product extends BaseEntity {
 	private ProductCategory productCategory;
 
 	@OneToMany(mappedBy = "product")
+	@BatchSize(size = 50)
 	private List<ProductImage> imageList = new ArrayList<>();
 
 	@OneToMany(mappedBy = "product")
+	@BatchSize(size = 50)
 	private List<ProductOption> productOptionList = new ArrayList<>();
 
 	@Column(length = 30)
