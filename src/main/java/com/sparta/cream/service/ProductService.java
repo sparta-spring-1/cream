@@ -16,12 +16,15 @@ import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
+import com.sparta.cream.entity.ProductImage;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ProductErrorCode;
 import com.sparta.cream.repository.ProductCategoryRepository;
+import com.sparta.cream.repository.ProductImageRepository;
 import com.sparta.cream.repository.ProductOptionRepository;
 import com.sparta.cream.repository.ProductRepository;
 
@@ -53,6 +56,7 @@ public class ProductService {
 	private final ProductRepository productRepository;
 	private final ProductCategoryRepository productCategoryRepository;
 	private final ProductOptionRepository productOptionRepository;
+	private final ProductImageRepository productImageRepository;
 
 	/**
 	 * 관리자 상품을 신규로 생성한다.
@@ -83,8 +87,6 @@ public class ProductService {
 			.name(request.getName())
 			.brandName(request.getBrandName())
 			.modelNumber(request.getModelNumber())
-			.imageList(null)
-			.productOptionList(null)
 			.retailDate(request.getRetailDate())
 			.retailPrice(request.getRetailPrice())
 			.sizeUnit(request.getSizeUnit())
@@ -107,7 +109,6 @@ public class ProductService {
 
 		}
 		productOptionRepository.saveAll(newOptions);
-		product.createOption(newOptions);
 
 		return AdminCreateProductResponse.from(savedProduct);
 	}
@@ -125,9 +126,11 @@ public class ProductService {
 	 * @return 수정된 상품 정보를 담은 응답 DTO
 	 * @throws BusinessException 상품 또는 카테고리가 존재하지 않는 경우
 	 */
+
+
 	@Transactional
 	public AdminUpdateProductResponse updateProduct(Long productId, AdminUpdateProductRequest request) {
-		Product oldProduct = productRepository.findById(productId)
+		Product product = productRepository.findById(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
 		ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
@@ -138,9 +141,9 @@ public class ProductService {
 		// 상품 옵션 수정
 		List<ProductOption> newOptions = new ArrayList<>();
 		for (String size : request.getOptions()) {
-			if (!productOptionRepository.existsByProductAndSize(oldProduct, size)) {
+			if (!productOptionRepository.existsByProductAndSize(product, size)) {
 				ProductOption productOption = ProductOption.builder()
-					.product(oldProduct)
+					.product(product)
 					.size(size)
 					.build();
 
@@ -152,12 +155,11 @@ public class ProductService {
 		}
 		List<ProductOption> savedOptions = productOptionRepository.saveAll(newOptions);
 
-		oldProduct.update(request, category, null, savedOptions);
+		product.update(request, category);
 
-		Product newProduct = productRepository.save(oldProduct);
-
-		return AdminUpdateProductResponse.from(newProduct);
+		return AdminUpdateProductResponse.from(product,null,null);
 	}
+
 
 	/**
 	 * 상품을 소프트 삭제 처리한다.
@@ -170,8 +172,17 @@ public class ProductService {
 	@Transactional
 	public void deleteProduct(Long productId) {
 
+		// 상품 조회
 		Product product = productRepository.findById(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
+
+		// 상품 옵션 삭제
+		List<ProductOption> options = productOptionRepository.findAllByProduct(product);
+		options.forEach(BaseEntity::softDelete);
+
+		// 상품 이미지 삭제
+		List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
+		imageIds.forEach(BaseEntity::softDelete);
 
 		// 상품 삭제
 		product.softDelete();
@@ -192,7 +203,8 @@ public class ProductService {
 	 * @param keyword 상품명 검색 키워드
 	 * @return 관리자 상품 목록 조회 응답 DTO
 	 */
-	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category, String productSize, Integer minPrice, Integer maxPrice, String keyword) {
+	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category,
+		String productSize, Integer minPrice, Integer maxPrice, String keyword) {
 
 		//TODO 정렬 조건
 
@@ -226,10 +238,10 @@ public class ProductService {
 		Product product = productRepository.findByIdIncludingDeletedWithGraph(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		List<String> options = product.getOptionSizes();
-		List<Long> imageIds = product.getImageIds();
+		List<String> options = productOptionRepository.findSizesByProductId(productId);
+		List<Long> imageIds = productImageRepository.findIdsByProductId(productId);
 
-		return AdminGetOneProductResponse.from(product,options,imageIds);
+		return AdminGetOneProductResponse.from(product, options, imageIds);
 
 	}
 }

@@ -23,10 +23,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		value = """
             SELECT DISTINCT p
             FROM Product p
-            LEFT JOIN p.productOptionList po
             WHERE (:brand IS NULL OR p.brandName = :brand)
               AND (:category IS NULL OR p.productCategory.id = :category)
-              AND (:productSize IS NULL OR po.size = :productSize)
               AND (:minPrice IS NULL OR p.retailPrice >= :minPrice)
               AND (:maxPrice IS NULL OR p.retailPrice <= :maxPrice)
               AND (:keyword IS NULL OR p.name LIKE CONCAT('%', :keyword, '%'))
@@ -34,10 +32,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		countQuery = """
             SELECT COUNT(DISTINCT p)
             FROM Product p
-            LEFT JOIN p.productOptionList po
             WHERE (:brand IS NULL OR p.brandName = :brand)
               AND (:category IS NULL OR p.productCategory.id = :category)
-              AND (:productSize IS NULL OR po.size = :productSize)
               AND (:minPrice IS NULL OR p.retailPrice >= :minPrice)
               AND (:maxPrice IS NULL OR p.retailPrice <= :maxPrice)
               AND (:keyword IS NULL OR p.name LIKE CONCAT('%', :keyword, '%'))
