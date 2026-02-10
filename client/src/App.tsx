@@ -7,6 +7,7 @@ import BidPage from './pages/BidPage';
 import PaymentPage from './pages/PaymentPage';
 import MyPage from './pages/MyPage';
 import NotificationPage from './pages/NotificationPage';
+import AdminPage from './pages/AdminPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
             <Route path="/payment" element={<PaymentPage />} />
             <Route path="/me" element={<MyPage />} />
             <Route path="/notifications" element={<NotificationPage />} />
+            <Route path="/admin" element={<AdminPage />} /> {/* Added Admin Route */}
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSettlements, getSettlementDetails } from '../../api/settlement';
 import type { SettlementListResponse, SettlementDetailsResponse } from '../../api/settlement';
+import { paymentApi } from '../../api/payment';
 import { ChevronRight, X } from 'lucide-react';
 
 const MySettlementHistory = () => {
@@ -33,6 +34,35 @@ const MySettlementHistory = () => {
             setIsModalOpen(true);
         } catch (err: any) {
             alert(err.response?.data?.message || '상세 정보를 불러오는데 실패했습니다.');
+        }
+    };
+
+    const handleRefund = async () => {
+        if (!selectedSettlement) return;
+
+        const reason = prompt("환불 사유를 입력해주세요:");
+        if (reason === null) return; // Cancelled
+        if (!reason.trim()) {
+            alert("환불 사유를 입력해야 합니다.");
+            return;
+        }
+
+        if (!confirm(`정말로 환불하시겠습니까? \n금액: ${selectedSettlement.totalAmount.toLocaleString()}원`)) {
+            return;
+        }
+
+        try {
+            await paymentApi.refund(selectedSettlement.paymentId, {
+                tradeId: selectedSettlement.tradeId,
+                amount: selectedSettlement.totalAmount, // Full refund
+                reason: reason
+            });
+            alert("환불이 완료되었습니다.");
+            closeModal();
+            fetchSettlements(); // Refresh list
+        } catch (err: any) {
+            console.error(err);
+            alert(err.response?.data?.message || '환불 처리에 실패했습니다.');
         }
     };
 
@@ -124,10 +154,23 @@ const MySettlementHistory = () => {
                             </div>
                         </div>
 
-                        <div className="mt-6 text-center">
+                        <div className="mt-6 flex flex-col gap-2">
+                            {/* Refund Button - Only visible if COMPLETED? Or always allowed if policy permits? 
+                                Assuming refund is possible on completed deals or pending ones for test/admin purposes.
+                                But 'settlement' implies deal is done. 
+                                Let's allow refund on 'PENDING' too if needed, but usually 'COMPLETED' means money is sent.
+                                However, user asked for 'refund' feature here. Let's make it always visible or check status if logic requires.
+                                For now, adding it unconditionally as requested for the feature.
+                             */}
+                            <button
+                                onClick={handleRefund}
+                                className="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600 w-full font-bold"
+                            >
+                                환불 요청
+                            </button>
                             <button
                                 onClick={closeModal}
-                                className="bg-black text-white px-6 py-2 rounded hover:bg-gray-800 w-full"
+                                className="bg-gray-200 text-gray-800 px-6 py-2 rounded hover:bg-gray-300 w-full"
                             >
                                 닫기
                             </button>
