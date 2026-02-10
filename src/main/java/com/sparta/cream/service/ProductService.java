@@ -1,7 +1,11 @@
 package com.sparta.cream.service;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.dto.product.AdminCreateProductResponse;
 import com.sparta.cream.dto.product.AdminCreateProductRequest;
 import com.sparta.cream.dto.product.AdminGetAllProductResponse;
@@ -57,7 +62,7 @@ public class ProductService {
 	private final ProductCategoryRepository productCategoryRepository;
 	private final ProductOptionRepository productOptionRepository;
 	private final ProductImageRepository productImageRepository;
-
+	private final BidRepository bidRepository;
 	/**
 	 * 관리자 상품을 신규로 생성한다.
 	 *
@@ -126,8 +131,6 @@ public class ProductService {
 	 * @return 수정된 상품 정보를 담은 응답 DTO
 	 * @throws BusinessException 상품 또는 카테고리가 존재하지 않는 경우
 	 */
-
-
 	@Transactional
 	public AdminUpdateProductResponse updateProduct(Long productId, AdminUpdateProductRequest request) {
 		Product product = productRepository.findById(productId)
@@ -137,29 +140,46 @@ public class ProductService {
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
 
 		// TODO 상품 이미지 수정
+		// TODO 입찰 정보가 있는 상품은 수정할 수 없음
 
 		// 상품 옵션 수정
-		List<ProductOption> newOptions = new ArrayList<>();
-		for (String size : request.getOptions()) {
-			if (!productOptionRepository.existsByProductAndSize(product, size)) {
-				ProductOption productOption = ProductOption.builder()
-					.product(product)
-					.size(size)
-					.build();
 
-				newOptions.add(productOption);
-			} else {
-				ProductOption oldOption = productOptionRepository.findByProductAndSize(oldProduct, size);
-				newOptions.add(oldOption);
-			}
-		}
-		List<ProductOption> savedOptions = productOptionRepository.saveAll(newOptions);
+		// 1. 기존 옵션 조회 (이미 영속성 컨텍스트에 관리됨)
+		List<ProductOption> existingOptions = productOptionRepository.findAllByProduct(product);
 
+		// 2. 요청된 사이즈들을 Set으로 변환 (비교 속도 향상 및 중복 방지)
+		Set<String> requestedSizes = new HashSet<>(request.getOptions());
+		Set<String> existingSizes = existingOptions.stream()
+			.map(ProductOption::getSize)
+			.collect(Collectors.toSet());
+
+		// 3. 삭제 로직: 기존에 있었는데 요청에는 없는 사이즈 -> Soft Delete
+		existingOptions.stream()
+			.filter(option -> !requestedSizes.contains(option.getSize()))
+			.forEach(ProductOption::softDelete);
+
+		// 4. 추가 로직: 요청에는 있는데 기존에는 없었던 사이즈 -> New Entity
+		List<ProductOption> newOptions = requestedSizes.stream()
+			.filter(size -> !existingSizes.contains(size))
+			.map(size -> ProductOption.builder()
+				.product(product)
+				.size(size)
+				.build())
+			.toList();
+
+		productOptionRepository.saveAll(newOptions);
+
+		// 5. 상품 기본 정보 업데이트
 		product.update(request, category);
 
-		return AdminUpdateProductResponse.from(product,null,null);
-	}
+		// 응답용 사이즈 목록 (기존 유지 + 신규)
+		List<String> finalSizes = Stream.concat(
+			existingOptions.stream().filter(o -> requestedSizes.contains(o.getSize())).map(ProductOption::getSize),
+			newOptions.stream().map(ProductOption::getSize)
+		).toList();
 
+		return AdminUpdateProductResponse.from(product, null, finalSizes);
+	}
 
 	/**
 	 * 상품을 소프트 삭제 처리한다.
