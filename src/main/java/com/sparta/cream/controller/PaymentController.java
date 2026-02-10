@@ -1,5 +1,7 @@
 package com.sparta.cream.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -17,7 +19,9 @@ import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
 import com.sparta.cream.dto.response.PaymentConfigResponse;
+import com.sparta.cream.dto.response.PaymentDetailsResponse;
 import com.sparta.cream.dto.response.RefundPaymentResponse;
+import com.sparta.cream.dto.response.YourPaymentListResponse;
 import com.sparta.cream.security.CustomUserDetails;
 import com.sparta.cream.service.PaymentService;
 
@@ -59,7 +63,7 @@ public class PaymentController {
 	 * 서버 DB에 결제 준비 상태의 Payment를 생성하고 merchantUid를 발급합니다.
 	 * </p>
 	 *
-	 * @param request 	결제 준비 요청 데이터 (Trade ID)
+	 * @param request    결제 준비 요청 데이터 (Trade ID)
 	 * @param user      인증된 사용자 정보
 	 * @return 발급된 merchantUid 및 결제 정보를 담은 응답 객체
 	 */
@@ -95,6 +99,19 @@ public class PaymentController {
 		@RequestBody RefundPaymentRequest request,
 		@AuthenticationPrincipal CustomUserDetails user) {
 		RefundPaymentResponse response = paymentService.refund(paymentId, request, user.getId());
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping
+	public ResponseEntity<List<YourPaymentListResponse>> allPayment(@AuthenticationPrincipal CustomUserDetails user) {
+		List<YourPaymentListResponse> response = paymentService.getAllPayment(user.getId());
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping("/{paymentId}")
+	public ResponseEntity<PaymentDetailsResponse> getPaymentDetails(@PathVariable Long paymentId,
+		@AuthenticationPrincipal CustomUserDetails user) {
+		PaymentDetailsResponse response = paymentService.getDetails(paymentId, user.getId());
 		return ResponseEntity.ok(response);
 	}
 }

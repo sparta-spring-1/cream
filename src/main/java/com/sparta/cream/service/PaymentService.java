@@ -1,6 +1,7 @@
 package com.sparta.cream.service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,9 @@ import com.sparta.cream.dto.request.CompletePaymentRequest;
 import com.sparta.cream.dto.request.RefundPaymentRequest;
 import com.sparta.cream.dto.response.CompletePaymentResponse;
 import com.sparta.cream.dto.response.CreatePaymentResponse;
+import com.sparta.cream.dto.response.PaymentDetailsResponse;
 import com.sparta.cream.dto.response.RefundPaymentResponse;
+import com.sparta.cream.dto.response.YourPaymentListResponse;
 import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
@@ -172,5 +175,30 @@ public class PaymentService {
 	public Payment findById(Long id) {
 		return paymentRepository.findById(id).orElseThrow(
 			() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+	}
+
+	public List<Payment> getByStatus(PaymentStatus status) {
+		return paymentRepository.findByStatus(status);
+	}
+
+	@Transactional(readOnly = true)
+	public List<YourPaymentListResponse> getAllPayment(Long userId) {
+		List<YourPaymentListResponse> paymentList = paymentRepository.findAllByUserId(userId).stream()
+			.map(YourPaymentListResponse::from)
+			.toList();
+
+		return paymentList;
+	}
+
+	@Transactional(readOnly = true)
+	public PaymentDetailsResponse getDetails(Long paymentId, Long userId) {
+		Payment payment = findById(paymentId);
+		Users user = authService.findById(userId);
+
+		if(!(payment.getUser().getId().equals(user.getId()))) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+
+		return PaymentDetailsResponse.from(payment);
 	}
 }
