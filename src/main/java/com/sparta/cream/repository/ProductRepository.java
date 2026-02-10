@@ -55,4 +55,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		nativeQuery = true
 	)
 	Optional<Product> findByIdIncludingDeleted(Long id);
+
+	Optional<Product> findByIdAndDeletedAtIsNull(Long productId);
 }

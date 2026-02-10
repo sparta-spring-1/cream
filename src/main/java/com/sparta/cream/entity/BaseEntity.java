@@ -23,10 +23,9 @@ public class BaseEntity {
 	@LastModifiedDate
 	private LocalDateTime updatedAt;
 
-	@Column(nullable = false)
-	protected boolean isDeleted = false;
+	protected LocalDateTime deletedAt;
 
 	public void softDelete() {
-		this.isDeleted = true;
+		this.deletedAt = LocalDateTime.now();
 	}
 }
