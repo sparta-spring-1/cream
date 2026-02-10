@@ -1,8 +1,7 @@
 services:
-  spring-app:
+  spring-app-blue:
     image: ${DOCKER_USERNAME}/cream:${IMAGE_TAG:-latest}
-    container_name: cream-app
-    restart: always
+    container_name: cream-app-blue
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST}:3306/${DATABASE_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
@@ -23,21 +22,33 @@ services:
       BUCKET_NAME: ${BUCKET_NAME}
       AWS_REGION: ${AWS_REGION}
     ports:
-      - "8080:8080"
+      - "8081:8080"
     networks:
       - cream-network
 
-  react-app:
-    build: ./client
-    container_name: cream-frontend
-    restart: always
+  spring-app-green:
+    image: ${DOCKER_USERNAME}/cream:${IMAGE_TAG:-latest}
+    container_name: cream-app-green
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://${DB_HOST}:3306/${DATABASE_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+
+      SPRING_DATA_REDIS_HOST: ${REDIS_HOST}
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+      SPRING_DATA_REDIS_PORT: 6379
+
+      PORTONE_STORE_ID: ${PORTONE_STORE_ID}
+      PORTONE_API_SECRET: ${PORTONE_API_SECRET}
+      PORTONE_CHANNELKEY: ${PORTONE_CHANNEL_KEY}
+
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET_KEY}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      BUCKET_NAME: ${BUCKET_NAME}
+      AWS_REGION: ${AWS_REGION}
     ports:
-      - "80:80"
-    depends_on:
-      - spring-app
+      - "8082:8080"
     networks:
       - cream-network
-
-networks:
-  cream-network:
-    driver: bridge

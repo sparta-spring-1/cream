@@ -1,4 +1,4 @@
-name: CD - Deploy to EC2
+name: CD - Deploy(Blue/Green) to EC2
 
 on:
   workflow_run:
@@ -32,13 +32,25 @@ jobs:
           source: "docker-compose-app.yml"
           target: "~/"
 
-      - name: Deploy to Public EC2
+      - name: Deploy to Public EC2(inactive container)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            CURRENT_PORT=$(cat /etc/nginx/conf.d/service-url.inc | grep -oP ':\K[0-9]+(?=;)' | tr -d '\n')
+            
+            if [ "$CURRENT_PORT" == "8081" ]; then
+              NEXT_NAME="green"
+              NEXT_PORT="8082"
+            else
+              NEXT_NAME="blue"
+              NEXT_PORT="8081"
+            fi
+            
+            DEPLOY_SERVICE_NAME="spring-app-${{ NEXT_NAME }}"
+            
             cat > .env << EOF
             DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
             IMAGE_TAG=${{ env.IMAGE_TAG }}
@@ -59,7 +71,21 @@ jobs:
             EOF
             
             mv docker-compose-app.yml docker-compose.yml
-            docker-compose down
-            docker-compose pull spring-app
-            docker-compose up -d spring-app
-            docker image prune -af
+
+            docker-compose pull ${DEPLOY_SERVICE_NAME}
+            docker-compose up -d ${DEPLOY_SERVICE_NAME}
+            
+            for i in $(seq 1 10); do
+            if curl -f http://127.0.0.1:${{ NEXT_PORT }}/actuator/health > /dev/null; then
+            echo "Health check passed"
+            break
+            fi
+            if [ $i -eq 10 ] then
+            echo "Health check failed"
+            exit 1
+            sleep 5
+            done
+
+            echo "set \$service_url http://127.0.0.1:${{ NEXT_PORT }};" | sudo tee /etc/nginx/conf.d/service-url.inc
+            sudo nginx -t
+            sudo nginx -s reload
