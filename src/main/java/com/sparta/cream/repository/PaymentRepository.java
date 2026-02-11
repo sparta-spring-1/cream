@@ -1,8 +1,10 @@
 package com.sparta.cream.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.status.PaymentStatus;
@@ -18,9 +20,11 @@ import com.sparta.cream.domain.status.PaymentStatus;
  * @since 2026. 01. 26.
  */
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-	// boolean existsByTradeId(Long tradeId);
-	// Optional<Payment> findByTradeId(Long tradeId);
 
     List<Payment> findByStatus(PaymentStatus status);
 	List<Payment> findAllByUserId(Long userId);
+
+	@Query("SELECT p FROM Payment p JOIN FETCH p.user u WHERE p.id = :id AND u.id = :userId")
+	Optional<Payment> findPaymentWithUserByIdAndUserId(Long id, Long userId);
 }
+

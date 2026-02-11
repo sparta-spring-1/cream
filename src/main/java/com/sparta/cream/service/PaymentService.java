@@ -192,12 +192,8 @@ public class PaymentService {
 
 	@Transactional(readOnly = true)
 	public PaymentDetailsResponse getDetails(Long paymentId, Long userId) {
-		Payment payment = findById(paymentId);
-		Users user = authService.findById(userId);
-
-		if(!(payment.getUser().getId().equals(user.getId()))) {
-			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
-		}
+		Payment payment = paymentRepository.findPaymentWithUserByIdAndUserId(paymentId, userId)
+			.orElseThrow(() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 
 		return PaymentDetailsResponse.from(payment);
 	}
