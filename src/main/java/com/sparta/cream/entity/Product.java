@@ -56,6 +56,11 @@ public class Product extends BaseEntity {
 	@JoinColumn(name = "category_id")
 	private ProductCategory productCategory;
 
+	@OneToMany
+	@JoinColumn(name = "product_id")
+	@BatchSize(size = 50)
+	private List<ProductImage> imageList = new ArrayList<>();
+
 	@Column(length = 30)
 	private String color;
 
@@ -77,13 +82,14 @@ public class Product extends BaseEntity {
 
 	@Builder
 	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory,
-		String color, String sizeUnit,
+		List<ProductImage> imageList, String color, String sizeUnit,
 		ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
 		LocalDateTime retailDate) {
 		this.name = name;
 		this.modelNumber = modelNumber;
 		this.brandName = brandName;
 		this.productCategory = productCategory;
+		this.imageList = imageList;
 		this.color = color;
 		this.sizeUnit = sizeUnit;
 		this.productStatus = productStatus;
