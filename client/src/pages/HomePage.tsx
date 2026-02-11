@@ -1,5 +1,5 @@
-import {ArrowRight, Zap} from 'lucide-react';
-import {Link} from 'react-router-dom';
+import { ArrowRight, Zap, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
     // Mock Data for frontend-only

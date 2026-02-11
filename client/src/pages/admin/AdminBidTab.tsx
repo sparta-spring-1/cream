@@ -27,13 +27,16 @@ const AdminBidTab = () => {
     }, [page]);
 
     const handleCancel = async (id: number) => {
-        const reason = prompt("취소 사유를 입력하세요 (예: 관리자 직권 취소)");
-        if (!reason) return;
+        const reasonCode = prompt("취소 사유 코드를 입력하세요 (예: ADMIN_CANCEL, ABUSIVE_BID)", "ADMIN_CANCEL");
+        if (!reasonCode) return;
+
+        const comment = prompt("취소 상세 사유를 입력하세요");
+        if (!comment) return;
 
         try {
             await adminApi.cancelBid(id, {
-                reasonCode: "ADMIN_CANCEL",
-                comment: reason
+                reasonCode: reasonCode,
+                comment: comment
             });
             alert("입찰이 취소되었습니다.");
             fetchBids();
