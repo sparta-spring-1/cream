@@ -81,9 +81,10 @@ jobs:
             echo "Health check passed"
             break
             fi
-            if [ $i -eq 10 ] then
+            if [ $i -eq 10 ]; then
             echo "Health check failed"
             exit 1
+            fi
             sleep 5
             done
 
