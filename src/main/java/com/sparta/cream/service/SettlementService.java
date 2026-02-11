@@ -1,5 +1,8 @@
 package com.sparta.cream.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -65,21 +68,16 @@ public class SettlementService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<SettlementListResponse> getSettlements(Long userId) {
-		List<SettlementListResponse> settlementList = settlementRepository.findAllBySellerId(userId).stream()
-			.map(SettlementListResponse::from)
-			.toList();
+	public Page<SettlementListResponse> getSettlements(Long userId, Pageable pageable) {
+		Page<SettlementListResponse> settlementList = settlementRepository.findAllSettlementsWithDetailsBySellerId(userId, pageable)
+			.map(SettlementListResponse::from);
 		return settlementList;
 	}
 
 	@Transactional(readOnly = true)
 	public SettlementDetailsResponse getSettlement(Long userId, Long settlementId) {
-		Settlement settlement = settlementRepository.findById(settlementId)
+		Settlement settlement = settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)
 			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-		if (!settlement.getSeller().getId().equals(userId)) {
-			throw new BusinessException(ErrorCode.ACCESS_DENIED);
-		}
 
 		return SettlementDetailsResponse.from(settlement);
 	}

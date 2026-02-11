@@ -1,5 +1,10 @@
 package com.sparta.cream.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
@@ -24,8 +29,10 @@ public class SettlementController {
 	private final SettlementService settlementService;
 
 	@GetMapping
-	public ResponseEntity<List<SettlementListResponse>> getSettlements(@AuthenticationPrincipal CustomUserDetails user) {
-		List<SettlementListResponse> response = settlementService.getSettlements(user.getId());
+	public ResponseEntity<Page<SettlementListResponse>> getSettlements(
+		@AuthenticationPrincipal CustomUserDetails user,
+		@PageableDefault(sort = "settledAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		Page<SettlementListResponse> response = settlementService.getSettlements(user.getId(), pageable);
 		return ResponseEntity.ok(response);
 	}
 
