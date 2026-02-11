@@ -38,7 +38,7 @@ public class AdminGetOneProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminGetOneProductResponse from(Product product, List<String> opions, List<Long> imageIds) {
+	public static AdminGetOneProductResponse from(Product product, List<String> options, List<Long> imageIds) {
 		return new AdminGetOneProductResponse(
 			product.getId(),
 			product.getName(),
@@ -46,7 +46,7 @@ public class AdminGetOneProductResponse {
 			product.getBrandName(),
 			product.getProductCategory().getId(),
 			imageIds,
-			opions,
+			options,
 			product.getColor(),
 			product.getSizeUnit(),
 			product.getProductStatus(),
