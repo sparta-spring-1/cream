@@ -16,7 +16,9 @@ import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.dto.product.GetAllProductResponse;
 import com.sparta.cream.dto.product.GetOneProductResponse;
+import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
 import com.sparta.cream.entity.ProductOption;
@@ -211,6 +213,46 @@ public class ProductService {
 			);
 
 		return AdminGetAllProductResponse.from(productPage);
+	}
+
+	/**
+	 * 상품 목록을 조회합니다.
+	 * 브랜드, 카테고리 등의 조건을 기반으로 상품을 검색하며 페이징 처리된 결과를 반환합니다.
+	 *
+	 * @param page 조회할 페이지 번호 (0부터 시작)
+	 * @param pageSize 페이지당 조회할 상품 개수
+	 * ProductSearchCondition 다중 필터 조건 dto
+	 * @return 상품 목록 조회 응답 DTO
+	 */
+	public GetAllProductResponse getAllPublicProduct(int page, int pageSize, ProductSearchCondition condition) {
+
+		Sort sort = Sort.by("id").descending();
+		if(condition.getSort()!=null) {
+			sort = condition.getSort().getSort();
+		}
+
+		Pageable pageable = PageRequest.of(page, pageSize, sort);
+
+		Long categoryId = null;
+
+		if(condition.getCategory() != null) {
+			ProductCategory productCategory = productCategoryRepository.findByName(condition.getCategory())
+											.orElseThrow(()-> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
+			categoryId = productCategory.getId();
+		}
+
+		Page<Product> productPage =
+			productRepository.searchProducts(
+				condition.getBrandName(),
+				categoryId,
+				condition.getProductSize(),
+				condition.getMinPrice(),
+				condition.getMaxPrice(),
+				condition.getKeyword(),
+				pageable
+			);
+
+		return GetAllProductResponse.from(productPage);
 	}
 
 	/**
