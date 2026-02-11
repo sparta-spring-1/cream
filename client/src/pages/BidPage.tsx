@@ -1,31 +1,73 @@
-import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { productApi, type AdminGetOneProductResponse } from '../api/product';
+import { bidApi } from '../api/bid';
+
+// Hardcoded mapping for demonstration since backend doesn't return Option IDs yet
+const OPTION_ID_MAP: Record<string, number> = {
+    '230': 1, '240': 2, '250': 3, '260': 4, '270': 5, '280': 6,
+    'S': 7, 'M': 8, 'L': 9, 'XL': 10
+};
 
 const BidPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const productId = searchParams.get('productId');
     const isSell = location.pathname.includes('/sell');
 
+    const [product, setProduct] = useState<AdminGetOneProductResponse | null>(null);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
-    const [price, setPrice] = useState('10,000');
+    const [price, setPrice] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const typeText = isSell ? '판매' : '구매';
     const typeColor = isSell ? 'bg-[#41b979]' : 'bg-[#ef6253]';
     const typeColorHover = isSell ? 'hover:bg-[#38a36a]' : 'hover:bg-[#d95245]';
 
-    const handleAction = () => {
+    useEffect(() => {
+        if (productId) {
+            productApi.getOne(Number(productId))
+                .then(data => setProduct(data))
+                .catch(err => {
+                    console.error(err);
+                    alert("상품 정보를 불러올 수 없습니다.");
+                    navigate(-1);
+                });
+        }
+    }, [productId, navigate]);
+
+    const handleAction = async () => {
         if (!selectedSize) {
             alert('사이즈를 선택해주세요.');
             return;
         }
-        // Navigate to payment or complete
-        if (isSell) {
-            alert('판매 입찰이 등록되었습니다. (기능 준비중)');
-        } else {
-            navigate('/payment');
+        if (!price) {
+            alert('가격을 입력해주세요.');
+            return;
+        }
+
+        const optionId = OPTION_ID_MAP[selectedSize] || 1; // Fallback to 1
+
+        try {
+            setIsLoading(true);
+            await bidApi.create({
+                productOptionId: optionId,
+                price: parseInt(price.replace(/,/g, ''), 10),
+                type: isSell ? 'SELL' : 'BUY'
+            });
+
+            alert(`${typeText} 입찰이 등록되었습니다.`);
+            navigate('/my'); // Go to My Page or Product Page
+        } catch (err: any) {
+            console.error(err);
+            alert(err.response?.data?.message || '입찰 등록에 실패했습니다.');
+        } finally {
+            setIsLoading(false);
         }
     };
+
+    if (!product) return <div className="text-center py-20">Loading...</div>;
 
     return (
         <div className="flex justify-center bg-gray-50 min-h-screen py-8">
@@ -34,15 +76,15 @@ const BidPage = () => {
                 <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
                     <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
                         <img
-                            src="https://placehold.co/200x200/135bec/ffffff?text=TEST"
-                            alt="Product"
+                            src="https://placehold.co/200x200/f0f0f0/333333?text=Product"
+                            alt={product.name}
                             className="w-full h-full object-cover"
                         />
                     </div>
                     <div className="flex flex-col">
-                        <span className="font-bold text-sm">Payment Test Item</span>
-                        <span className="text-gray-500 text-xs">결제 테스트용 상품</span>
-                        <span className="font-medium text-sm mt-1">{isSell ? '9,000원' : '10,000원'}</span>
+                        <span className="font-bold text-sm">{product.modelNumber}</span>
+                        <span className="text-gray-500 text-xs">{product.name}</span>
+                        <span className="font-medium text-sm mt-1">{product.sizeUnit}</span>
                     </div>
                 </div>
 
@@ -50,33 +92,31 @@ const BidPage = () => {
                 <div className="flex flex-col gap-4">
                     <h3 className="font-bold text-lg">사이즈 선택</h3>
                     <div className="grid grid-cols-3 gap-3">
-                        {['230', '240', '250', '260', '270', '280'].map((size) => (
+                        {product.options && product.options.map((size) => (
                             <button
                                 key={size}
                                 onClick={() => setSelectedSize(size)}
                                 className={`py-3 rounded-xl border font-medium transition-colors ${selectedSize === size
-                                        ? `border-black font-bold ring-1 ring-black`
-                                        : 'border-gray-200 hover:border-gray-400'
+                                    ? `border-black font-bold ring-1 ring-black`
+                                    : 'border-gray-200 hover:border-gray-400'
                                     }`}
                             >
                                 {size}
-                                <div className={`text-[10px] items-center  ${isSell ? 'text-[#41b979]' : 'text-[#ef6253]'}`}>
-                                    {isSell ? '9,000원' : '10,000원'}
-                                </div>
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Price Input (Simplified for Demo) */}
+                {/* Price Input */}
                 <div className="flex flex-col gap-4 border-t border-gray-100 pt-6">
                     <h3 className="font-bold text-lg">{typeText} 희망가</h3>
                     <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
                         <span className="font-bold text-gray-400">가격</span>
                         <input
-                            type="text"
+                            type="number"
                             value={price}
                             onChange={(e) => setPrice(e.target.value)}
+                            // placeholder="희망 가격 입력"
                             className="bg-transparent text-right font-bold text-xl w-full outline-none"
                         />
                         <span className="font-bold ml-1">원</span>
@@ -95,17 +135,19 @@ const BidPage = () => {
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg mt-2">
                         <span>총 결제금액</span>
-                        <span className={`text-${isSell ? '[#41b979]' : '[#ef6253]'}`}>{price}원</span>
+                        <span className={`text-${isSell ? '[#41b979]' : '[#ef6253]'}`}>
+                            {price ? parseInt(price).toLocaleString() : 0}원
+                        </span>
                     </div>
                 </div>
 
                 {/* Action Button */}
                 <button
                     onClick={handleAction}
-                    disabled={!selectedSize}
+                    disabled={!selectedSize || !price || isLoading}
                     className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-colors ${typeColor} ${typeColorHover} disabled:bg-gray-300 disabled:cursor-not-allowed`}
                 >
-                    {isSell ? '판매 입찰하기' : '일반 결제하기'}
+                    {isLoading ? '처리 중...' : `${typeText} 입찰하기`}
                 </button>
             </div>
         </div>
