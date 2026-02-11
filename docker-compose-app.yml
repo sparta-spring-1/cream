@@ -27,6 +27,17 @@ services:
     networks:
       - cream-network
 
+  react-app:
+    build: ./client
+    container_name: cream-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - spring-app
+    networks:
+      - cream-network
+
 networks:
   cream-network:
     driver: bridge

@@ -26,4 +26,5 @@ export interface MeResponse {
     name: string;
     createdAt: string;
     updatedAt: string;
+    role: string;
 }

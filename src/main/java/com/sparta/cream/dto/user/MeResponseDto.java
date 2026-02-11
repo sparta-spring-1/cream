@@ -18,6 +18,5 @@ public class MeResponseDto {
 	private final String name;
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
+	private final String role;
 }
-
-
