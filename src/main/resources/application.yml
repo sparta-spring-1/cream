@@ -8,7 +8,10 @@ spring:
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
     hikari:
-      maximum-pool-size: 20  # 연결 풀 크기
+      maximum-pool-size: 100
+      minimum-idle: 20
+      idle-timeout: 30000
+
 
   jpa:
     hibernate:
@@ -19,6 +22,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        open-in-view: true
 
   data:
     redis:
