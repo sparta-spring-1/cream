@@ -204,13 +204,9 @@ public class ProductService {
 			.map(ProductOption::getId)
 			.toList();
 
-		// 해당 옵션들에 대한 입찰이 존재하는지 한 번의 쿼리로 확인
-		boolean hasBids = bidRepository.existsByProductOptionIdIn(optionIds);
+		//TODO 해당 옵션들에 대한 입찰이 존재하면 삭제할 수 없음
 
-		if(hasBids) {
-			System.out.println("존재함");
-		}
-		// 상품 이미지 삭제
+		// TODO 상품 이미지 삭제
 		//List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
 		//imageIds.forEach(BaseEntity::softDelete);
 
