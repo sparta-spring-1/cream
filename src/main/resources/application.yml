@@ -12,11 +12,13 @@ spring:
       minimum-idle: 20
       idle-timeout: 30000
 
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
