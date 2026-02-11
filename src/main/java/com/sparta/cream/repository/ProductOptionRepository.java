@@ -9,8 +9,6 @@ import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductOption;
 
 public interface ProductOptionRepository extends JpaRepository<ProductOption, Long> {
-	boolean existsByProductAndSize(Product oldProduct, String size);
-	ProductOption findByProductAndSize(Product oldProduct, String size);
 
 	@Query("""
     select po.size
@@ -20,6 +18,4 @@ public interface ProductOptionRepository extends JpaRepository<ProductOption, Lo
 	List<String> findSizesByProductId(Long productId);
 
 	List<ProductOption> findAllByProduct(Product product);
-
-	List<ProductOption> findAllByProductAndDeletedAtIsNull(Product product);
 }
