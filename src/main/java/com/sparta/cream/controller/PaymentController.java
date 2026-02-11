@@ -1,7 +1,9 @@
 package com.sparta.cream.controller;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -103,8 +105,10 @@ public class PaymentController {
 	}
 
 	@GetMapping
-	public ResponseEntity<List<YourPaymentListResponse>> allPayment(@AuthenticationPrincipal CustomUserDetails user) {
-		List<YourPaymentListResponse> response = paymentService.getAllPayment(user.getId());
+	public ResponseEntity<Page<YourPaymentListResponse>> allPayment(
+		@AuthenticationPrincipal CustomUserDetails user,
+		@PageableDefault(sort = "paidAt", direction = Sort.Direction.DESC) Pageable pageable) {
+		Page<YourPaymentListResponse> response = paymentService.getAllPayment(user.getId(), pageable);
 		return ResponseEntity.ok(response);
 	}
 

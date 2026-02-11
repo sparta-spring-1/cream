@@ -1,5 +1,8 @@
 package com.sparta.cream.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -182,10 +185,9 @@ public class PaymentService {
 	}
 
 	@Transactional(readOnly = true)
-	public List<YourPaymentListResponse> getAllPayment(Long userId) {
-		List<YourPaymentListResponse> paymentList = paymentRepository.findAllByUserId(userId).stream()
-			.map(YourPaymentListResponse::from)
-			.toList();
+	public Page<YourPaymentListResponse> getAllPayment(Long userId, Pageable pageable) {
+		Page<YourPaymentListResponse> paymentList = paymentRepository.findAllByUserId(userId, pageable)
+			.map(YourPaymentListResponse::from);
 
 		return paymentList;
 	}
