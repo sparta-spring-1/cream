@@ -14,7 +14,7 @@ import com.sparta.cream.entity.Product;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-	@Query("select p from Product p where p.id = :id and p.isDeleted = false")
+	@Query("select p from Product p where p.id = :id and p.deletedAt is NULL")
 	Optional<Product> findById(Long id);
 
 	boolean existsByModelNumber(String modelNumber);
@@ -48,7 +48,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		Pageable pageable
 	);
 
-	@EntityGraph(attributePaths = {"productCategory"})
-	@Query("select p from Product p where p.id = :id")
-	Optional<Product> findByIdIncludingDeletedWithGraph(Long id);
+	@Query("""
+    SELECT DISTINCT p
+    FROM Product p
+    LEFT JOIN FETCH p.productCategory pc
+    INNER JOIN FETCH p.imageList pi
+    WHERE p.id = :id
+""")
+	Optional<Product> findByIdWithGraph(Long id);
 }

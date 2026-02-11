@@ -200,9 +200,19 @@ public class ProductService {
 		List<ProductOption> options = productOptionRepository.findAllByProduct(product);
 		options.forEach(BaseEntity::softDelete);
 
+		List<Long> optionIds = options.stream()
+			.map(ProductOption::getId)
+			.toList();
+
+		// 해당 옵션들에 대한 입찰이 존재하는지 한 번의 쿼리로 확인
+		boolean hasBids = bidRepository.existsByProductOptionIdIn(optionIds);
+
+		if(hasBids) {
+			System.out.println("존재함");
+		}
 		// 상품 이미지 삭제
-		List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
-		imageIds.forEach(BaseEntity::softDelete);
+		//List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
+		//imageIds.forEach(BaseEntity::softDelete);
 
 		// 상품 삭제
 		product.softDelete();
@@ -255,11 +265,13 @@ public class ProductService {
 	@Transactional(readOnly = true)
 	public AdminGetOneProductResponse getOneProduct(Long productId) {
 		//삭제된 상품을 포함하여 조회
-		Product product = productRepository.findByIdIncludingDeletedWithGraph(productId)
+		Product product = productRepository.findByIdWithGraph(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
 		List<String> options = productOptionRepository.findSizesByProductId(productId);
-		List<Long> imageIds = productImageRepository.findIdsByProductId(productId);
+		List<Long> imageIds = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.collect(Collectors.toList());
 
 		return AdminGetOneProductResponse.from(product, options, imageIds);
 
