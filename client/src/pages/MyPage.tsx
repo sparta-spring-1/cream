@@ -32,7 +32,7 @@ const MyPage = () => {
                 return (
                     <div>
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">구매 내역</h3>
+                            <h3 className="font-bold text-lg">결제 내역</h3>
                             <div className="flex bg-gray-100 p-1 rounded-lg">
                                 <button
                                     onClick={() => setBuyTab('payment')}
@@ -54,20 +54,11 @@ const MyPage = () => {
             case 'selling':
                 return (
                     <div>
-                        <h3 className="font-bold text-lg mb-4">판매 내역</h3>
+                        <h3 className="font-bold text-lg mb-4">입찰 내역</h3>
                         <MyBidHistory />
                     </div>
                 );
-            case 'wishlist':
-                return (
-                    <div>
-                        <h3 className="font-bold text-lg mb-4">관심 상품</h3>
-                        <div className="py-20 flex flex-col items-center justify-center border-t border-b border-gray-100">
-                            <ShoppingBag className="text-gray-300 mb-4" size={48} />
-                            <p className="text-gray-500">관심 상품 내역이 없습니다.</p>
-                        </div>
-                    </div>
-                );
+
             case 'overview':
             default:
                 return (
@@ -76,7 +67,7 @@ const MyPage = () => {
                         <div className="grid grid-cols-3 gap-4 mb-10">
                             {/* Buying */}
                             <div onClick={() => setActiveTab('buying')} className="p-6 bg-gray-50 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                                <h3 className="text-gray-500 text-sm mb-2">구매 내역</h3>
+                                <h3 className="text-gray-500 text-sm mb-2">결제 내역</h3>
                                 <div className="text-xl font-bold flex flex-col items-center gap-1">
                                     -
                                     <span className="text-xs font-normal text-gray-400">전체</span>
@@ -84,18 +75,10 @@ const MyPage = () => {
                             </div>
                             {/* Selling */}
                             <div onClick={() => setActiveTab('selling')} className="p-6 bg-gray-50 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                                <h3 className="text-gray-500 text-sm mb-2">판매 내역</h3>
+                                <h3 className="text-gray-500 text-sm mb-2">입찰 내역</h3>
                                 <div className="text-xl font-bold flex flex-col items-center gap-1">
                                     -
                                     <span className="text-xs font-normal text-gray-400">전체</span>
-                                </div>
-                            </div>
-                            {/* Wishlist */}
-                            <div onClick={() => setActiveTab('wishlist')} className="p-6 bg-gray-50 rounded-xl text-center cursor-pointer hover:bg-gray-100 transition-colors">
-                                <h3 className="text-gray-500 text-sm mb-2">관심 상품</h3>
-                                <div className="text-xl font-bold flex flex-col items-center gap-1">
-                                    0
-                                    <span className="text-xs font-normal text-gray-400">개</span>
                                 </div>
                             </div>
                         </div>
@@ -130,17 +113,10 @@ const MyPage = () => {
                         )}
                         <div className="flex flex-col gap-2">
                             <h3 className="font-bold text-black mb-1">쇼핑 정보</h3>
-                            <button onClick={() => setActiveTab('buying')} className={`text-left hover:text-black ${activeTab === 'buying' ? 'text-black font-bold' : ''}`}>구매 내역</button>
-                            <button onClick={() => setActiveTab('selling')} className={`text-left hover:text-black ${activeTab === 'selling' ? 'text-black font-bold' : ''}`}>판매 내역</button>
+                            <button onClick={() => setActiveTab('buying')} className={`text-left hover:text-black ${activeTab === 'buying' ? 'text-black font-bold' : ''}`}>결제 내역</button>
+                            <button onClick={() => setActiveTab('selling')} className={`text-left hover:text-black ${activeTab === 'selling' ? 'text-black font-bold' : ''}`}>입찰 내역</button>
                             <button onClick={() => setActiveTab('settlement')} className={`text-left hover:text-black ${activeTab === 'settlement' ? 'text-black font-bold' : ''}`}>정산 내역</button>
-                            <button onClick={() => setActiveTab('wishlist')} className={`text-left hover:text-black ${activeTab === 'wishlist' ? 'text-black font-bold' : ''}`}>관심 상품</button>
-                        </div>
-                        <div className="flex flex-col gap-2 mt-4">
-                            <h3 className="font-bold text-black mb-1">내 정보</h3>
-                            <button className="text-left hover:text-black">로그인 정보</button>
-                            <button className="text-left hover:text-black">프로필 관리</button>
-                            <button className="text-left hover:text-black">주소록</button>
-                            <button className="text-left hover:text-black">결제 정보</button>
+
                         </div>
                     </nav>
                 </aside>
@@ -155,10 +131,7 @@ const MyPage = () => {
                         <div className="flex-1">
                             <h2 className="text-xl font-bold">{user.name}</h2>
                             <p className="text-gray-400 text-sm">{user.email}</p>
-                            <div className="flex gap-4 mt-4">
-                                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">프로필 수정</button>
-                                <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">내 스타일</button>
-                            </div>
+
                         </div>
                     </div>
                     {renderContent()}

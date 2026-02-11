@@ -11,24 +11,20 @@ import { bidApi, type BidResponse } from '../../api/bid';
 // So the real response has more fields. Let's define them here or update types later.
 
 interface MyBid extends BidResponse {
+    productOptionId: number;
     productId: number;
     type: 'BUY' | 'SELL';
     createdAt: string;
-    // Note: The API might NOT return product name. We might just show ID or price.
-    // If backend doesn't return product name, UI will be limited.
-    // BidResponseDto.java doesn't have productName.
-    // So we can only show "Price" and "Type".
 }
 
 const MyBidHistory = () => {
-    const [bids, setBids] = useState<MyBid[]>([]); // We cast the response
+    const [bids, setBids] = useState<MyBid[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const fetchBids = () => {
         setIsLoading(true);
-        bidApi.getMyBids(0, 50) // Fetch first 50 for simplicity
+        bidApi.getMyBids(0, 50)
             .then(data => {
-                // data.content is the list
                 setBids(data.content as MyBid[]);
             })
             .catch(err => console.error("Failed to fetch bids", err))
@@ -51,6 +47,30 @@ const MyBidHistory = () => {
         }
     };
 
+    const handleEdit = async (bidId: number, currentPrice: number, productOptionId: number, type: 'BUY' | 'SELL') => {
+        const newPriceStr = prompt("수정할 가격을 입력하세요:", currentPrice.toString());
+        if (newPriceStr === null) return;
+
+        const newPrice = Number(newPriceStr);
+        if (isNaN(newPrice) || newPrice <= 0) {
+            alert("올바른 가격을 입력해주세요.");
+            return;
+        }
+
+        try {
+            await bidApi.updateBid(bidId, {
+                price: newPrice,
+                productOptionId: productOptionId,
+                type: type
+            });
+            alert("입찰 가격이 수정되었습니다.");
+            fetchBids();
+        } catch (error) {
+            console.error(error);
+            alert("입찰 수정에 실패했습니다.");
+        }
+    };
+
     if (isLoading) return <div className="py-10 text-center text-gray-500">로딩 중...</div>;
 
     if (bids.length === 0) {
@@ -70,19 +90,30 @@ const MyBidHistory = () => {
                             {bid.type === 'SELL' ? '판매 입찰' : '구매 입찰'}
                         </span>
                         <span className="font-bold text-sm">상품 ID: {bid.productId}</span>
-                        {/* Backend doesn't give product name, showing ID is the best we can do without N+1 queries */}
-                        <span className="text-xs text-gray-400">{new Date(bid.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-400">
+                            {bid.createdAt && new Date(bid.createdAt).getFullYear() > 1970
+                                ? new Date(bid.createdAt).toLocaleDateString()
+                                : '-'}
+                        </span>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                         <span className="font-bold">{bid.price.toLocaleString()}원</span>
                         <span className="text-xs text-gray-500">{bid.status}</span>
-                        {bid.status === 'PROCESS' && ( // Assuming PROCESS means active/waiting
-                            <button
-                                onClick={() => handleCancel(bid.id)}
-                                className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
-                            >
-                                취소
-                            </button>
+                        {bid.status === 'PENDING' && (
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleEdit(bid.id, bid.price, bid.productOptionId, bid.type)}
+                                    className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50"
+                                >
+                                    수정
+                                </button>
+                                <button
+                                    onClick={() => handleCancel(bid.id)}
+                                    className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50 text-red-500"
+                                >
+                                    취소
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>

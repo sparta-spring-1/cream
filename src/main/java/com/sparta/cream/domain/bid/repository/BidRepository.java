@@ -1,16 +1,20 @@
 package com.sparta.cream.domain.bid.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
+
+import jakarta.persistence.LockModeType;
 
 /**
  * 입찰(Bid) 도메인을 위한 데이터 접근 저장소입니다.
@@ -81,4 +85,14 @@ public interface BidRepository extends JpaRepository<Bid, Long> , BidRepositoryC
 	 */
 	@Query("SELECT b FROM Bid b WHERE b.productOption.id = :productOptionId AND b.type = 'BUY' AND b.status = 'PENDING' AND b.price >= :price AND b.user.id != :userId ORDER BY b.price DESC, b.createdAt ASC")
 	List<Bid> findMatchingBuyBids(Long productOptionId, Long price, Long userId, Pageable pageable);
+
+	/**
+	 * 특정 입찰건에 대해 비관적 락을 획득하여 조회합니다
+	 * @param id id 조회 및 잠금을 수행할 입찰 고유 식별자
+	 * @return 락을 획득한 상태의 입찰 엔티티
+	 */
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("SELECT b FROM Bid b WHERE b.id = :id AND b.status = 'PENDING'")
+	Optional<Bid> findByIdForUpdate(@Param("id") Long id);
+
 }

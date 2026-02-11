@@ -37,13 +37,17 @@ const MyPaymentHistory = () => {
                 <div key={payment.id} className="border border-gray-200 rounded-xl p-4 flex justify-between items-center">
                     <div className="flex flex-col gap-1">
                         <span className="font-bold text-sm">{payment.productName}</span>
-                        <span className="text-xs text-gray-400">{new Date(payment.paidAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-400">
+                            {payment.paidAt && new Date(payment.paidAt).getFullYear() > 1970
+                                ? new Date(payment.paidAt).toLocaleDateString()
+                                : '-'}
+                        </span>
                         <span className="text-xs text-gray-500">{payment.merchantUid}</span>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                         <span className="font-bold">{payment.amount.toLocaleString()}원</span>
                         <span className={`text-xs font-bold ${payment.status === 'PAID' ? 'text-green-600' :
-                                payment.status === 'CANCELLED' ? 'text-red-600' : 'text-gray-500'
+                            payment.status === 'CANCELLED' ? 'text-red-600' : 'text-gray-500'
                             }`}>
                             {payment.status === 'PAID' ? '결제완료' :
                                 payment.status === 'CANCELLED' ? '취소됨' : payment.status}
