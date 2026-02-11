@@ -24,16 +24,14 @@ public class MyPageService {
 	@Transactional(readOnly = true)
 	public MeResponseDto getMe(Long userId) {
 		Users user = userRepository.findById(userId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
+				.orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
 		return new MeResponseDto(
-			user.getId(),
-			user.getEmail(),
-			user.getName(),
-			user.getCreatedAt(),
-			user.getUpdatedAt()
-		);
+				user.getId(),
+				user.getEmail(),
+				user.getName(),
+				user.getCreatedAt(),
+				user.getUpdatedAt(),
+				user.getRole().toString());
 	}
 }
-
-

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Search, Bell, Heart, User, Database } from 'lucide-react';
+import { Search, Bell, User, Database } from 'lucide-react';
 
 const Header = () => {
     return (
@@ -30,12 +30,10 @@ const Header = () => {
                     </nav>
 
                     <div className="flex gap-4 border-l border-gray-200 pl-8">
-                        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
+                        <Link to="/notifications" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
                             <Bell size={24} className="text-gray-900" />
-                        </button>
-                        <button className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
-                            <Heart size={24} className="text-gray-900" />
-                        </button>
+                        </Link>
+
                         <Link to="/auth" className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition-colors">
                             <User size={24} className="text-gray-900" />
                         </Link>
