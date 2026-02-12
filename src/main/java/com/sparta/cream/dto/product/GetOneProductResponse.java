@@ -31,15 +31,15 @@ public class GetOneProductResponse {
 	private final BigDecimal retailPrice;
 	private final LocalDateTime retailDate;
 
-	public static GetOneProductResponse from(Product product) {
+	public static GetOneProductResponse from(Product product, List<String> options, List<Long> imageIds) {
 		return new GetOneProductResponse(
 			product.getId(),
 			product.getName(),
 			product.getModelNumber(),
 			product.getBrandName(),
 			product.getProductCategory().getId(),
-			product.getImageIds(),
-			product.getOptionSizes(),
+			imageIds,
+			options,
 			product.getColor(),
 			product.getSizeUnit(),
 			product.getRetailPrice(),

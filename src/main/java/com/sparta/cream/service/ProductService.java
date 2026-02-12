@@ -288,7 +288,12 @@ public class ProductService {
 		Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		return GetOneProductResponse.from(product);
+		List<String> options = productOptionRepository.findSizesByProductId(productId);
+		List<Long> imageIds = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.collect(Collectors.toList());
+
+		return GetOneProductResponse.from(product,options,imageIds);
 	}
 
 }
