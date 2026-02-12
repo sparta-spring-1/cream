@@ -16,7 +16,7 @@ public class PortOnePaymentResponse {
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Amount {
-        private Long total;
+        private int total;
     }
 
     @Getter

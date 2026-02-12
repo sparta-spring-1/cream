@@ -1,11 +1,11 @@
 package com.sparta.cream.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
@@ -117,12 +117,13 @@ public class PaymentService {
 
 		try {
 			PortOnePaymentResponse body = portOneApiClient.getPayment(request.getMerchantUid());
+			BigDecimal total = new BigDecimal(body.getAmount().getTotal());
 
 			if (body == null) {
 				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
 			}
 
-			if (!payment.getAmount().equals(body.getAmount().getTotal())) {
+			if (!payment.getAmount().equals(total)) {
 				throw new BusinessException(PaymentErrorCode.PAYMENT_PRICE_MISMATCH);
 			}
 
@@ -131,7 +132,7 @@ public class PaymentService {
 			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
 			paymentHistoryRepository.save(success);
 
-			String message = String.format("%s 상품이 %d원에 결제 완료되었습니다.", payment.getProductName(), payment.getAmount());
+			String message = String.format("%s 상품이 %s원에 결제 완료되었습니다.", payment.getProductName(), payment.getAmount());
 
 			notificationService.createNotification(userId, message);
 
@@ -154,7 +155,7 @@ public class PaymentService {
 			throw new BusinessException(PaymentErrorCode.UNAUTHORIZED_REFUND);
 		}
 
-		if (request.getAmount() > payment.getAmount()) {
+		if (request.getAmount().compareTo(payment.getAmount()) > 0) {
 			throw new BusinessException(PaymentErrorCode.REFUND_AMOUNT_EXCEEDED);
 		}
 

@@ -1,5 +1,6 @@
 package com.sparta.cream.client;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.springframework.http.HttpEntity;
@@ -35,8 +36,12 @@ public class PortOneApiClient {
 		return response.getBody();
 	}
 
-	public void cancelPayment(String merchantUid, long amount, String reason, long currentCancellableAmount,
+	public void cancelPayment(String merchantUid, BigDecimal totalAmount, String reason, BigDecimal cancellableAmount,
 		String refundEmail) {
+
+		int amount = totalAmount.intValue();
+		int currentCancellableAmount = cancellableAmount.intValue();
+
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
 		headers.set("Content-Type", "application/json");
