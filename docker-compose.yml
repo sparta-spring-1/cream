@@ -1,0 +1,65 @@
+services:
+  spring-app:
+    build: .
+    container_name: cream-app
+    platform: linux/arm64
+    restart: always
+    environment:
+      # DB 연결 정보
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${DATABASE_NAME}?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&connectTimeout=5000
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: ${DB_ROOT_PASSWORD}
+
+      # Redis 설정
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      # 기타 환경 변수
+      SERVER_PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      AWS_ACCESS_KEY: ${AWS_ACCESS_KEY}
+      AWS_SECRET_KEY: ${AWS_SECRET_KEY}
+      BUCKET_NAME: ${BUCKET_NAME}
+      AWS_REGION: ${AWS_REGION}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - cream-network
+
+  # 2. Redis Server
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    networks:
+      - cream-network
+
+  # 3. MySQL Server
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    platform: linux/amd64
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - cream-db-volume:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - cream-network
+
+volumes:
+  cream-db-volume:
+
+networks:
+  cream-network:
+    driver: bridge

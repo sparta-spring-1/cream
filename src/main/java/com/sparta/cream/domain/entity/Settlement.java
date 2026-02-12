@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.status.SettlementStatus;
 import com.sparta.cream.entity.BaseEntity;
+import com.sparta.cream.entity.Users;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -60,26 +62,33 @@ public class Settlement extends BaseEntity {
 	@JoinColumn(name = "payment_id", nullable = false)
 	private Payment payment;
 
-	/* TODO: Users 엔티티 생성 후 연관관계 설정
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "seller_id", nullable = false)
 	private Users seller;
-	*/
 
     /**
      * Settlement 생성자.
      * <p>생성 시점에 총 금액(totalAmount)은 수수료와 정산 금액의 합으로 자동 계산되어 설정됩니다.</p>
      *
-     * @param feeAmount        수수료
-     * @param settlementAmount 실 지급액
-     * @param status           초기 상태
-     * @param payment          결제 정보
+     * @param amount 		금액
+     * @param status		초기 상태
+     * @param payment 	   결제 정보
      */
-    public Settlement(Long feeAmount, Long settlementAmount, SettlementStatus status, Payment payment) {
-        this.feeAmount = feeAmount;
-        this.settlementAmount = settlementAmount;
-        this.totalAmount = feeAmount + settlementAmount;
+    public Settlement(Long amount, SettlementStatus status, Payment payment) {
+        this.feeAmount = chargeForCream(amount);
+        this.settlementAmount = amount - chargeForCream(amount);
+        this.totalAmount = amount;
         this.status = status;
         this.payment = payment;
+		this.seller = payment.getTrade().getSaleBidId().getUser();
     }
+
+	public Long chargeForCream(Long amount){
+		return (long)(amount *0.1);
+	}
+
+	public void complete() {
+		this.status = SettlementStatus.COMPLETED;
+		this.settledAt = LocalDateTime.now();
+	}
 }

@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,18 +14,17 @@ import com.sparta.cream.entity.Product;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-	boolean existsByModelNumber(String modelNumber);
+	@Query("select p from Product p where p.id = :id and p.deletedAt is NULL")
+	Optional<Product> findById(Long id);
 
-	List<Product> findByModelNumber(String modelNumber);
+	boolean existsByModelNumber(String modelNumber);
 
 	@Query(
 		value = """
             SELECT DISTINCT p
             FROM Product p
-            LEFT JOIN p.productOptionList po
             WHERE (:brand IS NULL OR p.brandName = :brand)
               AND (:category IS NULL OR p.productCategory.id = :category)
-              AND (:productSize IS NULL OR po.size = :productSize)
               AND (:minPrice IS NULL OR p.retailPrice >= :minPrice)
               AND (:maxPrice IS NULL OR p.retailPrice <= :maxPrice)
               AND (:keyword IS NULL OR p.name LIKE CONCAT('%', :keyword, '%'))
@@ -32,10 +32,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		countQuery = """
             SELECT COUNT(DISTINCT p)
             FROM Product p
-            LEFT JOIN p.productOptionList po
             WHERE (:brand IS NULL OR p.brandName = :brand)
               AND (:category IS NULL OR p.productCategory.id = :category)
-              AND (:productSize IS NULL OR po.size = :productSize)
               AND (:minPrice IS NULL OR p.retailPrice >= :minPrice)
               AND (:maxPrice IS NULL OR p.retailPrice <= :maxPrice)
               AND (:keyword IS NULL OR p.name LIKE CONCAT('%', :keyword, '%'))
@@ -50,9 +48,23 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		Pageable pageable
 	);
 
-	@Query(
-		value = "select * from product where id = :id",
-		nativeQuery = true
-	)
-	Optional<Product> findByIdIncludingDeleted(Long id);
+
+	@Query("""
+    SELECT DISTINCT p
+    FROM Product p
+    LEFT JOIN FETCH p.productCategory pc
+    INNER JOIN FETCH p.imageList pi
+    WHERE p.id = :id
+""")
+	Optional<Product> findByIdWithGraph(Long id);
+
+	@Query("""
+    SELECT DISTINCT p
+    FROM Product p
+    LEFT JOIN FETCH p.productCategory pc
+    LEFT JOIN FETCH p.imageList pi
+    WHERE p.id = :productId
+      AND p.deletedAt IS NULL
+""")
+	Optional<Product> findByIdAndDeletedAtIsNull(Long productId);
 }

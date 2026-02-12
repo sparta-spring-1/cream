@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.annotations.BatchSize;
 
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.exception.BusinessException;
@@ -37,7 +37,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"model_number", "brand_name"})
 	}
 )
-@SQLRestriction("is_deleted = false")
+
 public class Product extends BaseEntity {
 
 	@Id
@@ -57,11 +57,10 @@ public class Product extends BaseEntity {
 	@JoinColumn(name = "category_id")
 	private ProductCategory productCategory;
 
-	@OneToMany(mappedBy = "product")
+	@OneToMany
+	@JoinColumn(name = "product_id")
+	@BatchSize(size = 50)
 	private List<ProductImage> imageList = new ArrayList<>();
-
-	@OneToMany(mappedBy = "product")
-	private List<ProductOption> productOptionList = new ArrayList<>();
 
 	@Column(length = 30)
 	private String color;
@@ -84,7 +83,7 @@ public class Product extends BaseEntity {
 
 	@Builder
 	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory,
-		List<ProductImage> imageList, List<ProductOption> productOptionList, String color, String sizeUnit,
+		List<ProductImage> imageList, String color, String sizeUnit,
 		ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
 		LocalDateTime retailDate) {
 		this.name = name;
@@ -92,7 +91,6 @@ public class Product extends BaseEntity {
 		this.brandName = brandName;
 		this.productCategory = productCategory;
 		this.imageList = imageList;
-		this.productOptionList = productOptionList;
 		this.color = color;
 		this.sizeUnit = sizeUnit;
 		this.productStatus = productStatus;
@@ -101,15 +99,12 @@ public class Product extends BaseEntity {
 		this.retailDate = retailDate;
 	}
 
-	public void update(AdminUpdateProductRequest request, ProductCategory productCategory,
-		List<ProductImage> imageList, List<ProductOption> productOptionList
+	public void update(AdminUpdateProductRequest request, ProductCategory productCategory
 	) {
 		this.name = request.getName();
 		this.modelNumber = request.getModelNumber();
 		this.brandName = request.getBrandName();
 		this.productCategory = productCategory;
-		this.imageList = imageList;
-		this.productOptionList = productOptionList;
 		this.color = request.getColor();
 		this.sizeUnit = request.getSizeUnit();
 		this.productStatus = request.getProductStatus();
@@ -118,35 +113,13 @@ public class Product extends BaseEntity {
 		this.retailDate = request.getRetailDate();
 	}
 
-	public void createOption(List<ProductOption> productOption) {
-		this.productOptionList = productOption;
-	}
-
 	public void softDelete() {
 		if(this.productStatus == ProductStatus.ON_SALE){
 			throw new BusinessException(ProductErrorCode.PRODUCT_CANNOT_DELETE_ON_SALE);
 		}
 		super.softDelete();
-		imageList.forEach(BaseEntity::softDelete);
-		productOptionList.forEach(BaseEntity::softDelete);
 	}
 
-	public List<Long> getImageIds() {
-		if(this.imageList == null || this.imageList.isEmpty()) {
-			return Collections.emptyList();
-		}
-		return this.imageList.stream()
-			.map(ProductImage::getId)
-			.toList();
-	}
 
-	public List<String> getOptionSizes() {
-		if(this.productOptionList == null || this.productOptionList.isEmpty()) {
-			return Collections.emptyList();
-		}
-		return this.productOptionList.stream()
-			.map(ProductOption::getSize)
-			.toList();
-	}
 }
 
