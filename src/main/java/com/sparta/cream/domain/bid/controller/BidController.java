@@ -54,8 +54,10 @@ public class BidController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
-		return ResponseEntity.ok(bidService.createBid(userId, requestDto));
+		Long userId = userDetails.getId();
+		BidResponseDto response = bidService.createBid(userId, requestDto);
+
+		return ResponseEntity.ok(response);
 	}
 
 	/**
@@ -68,7 +70,7 @@ public class BidController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
+		Long userId = userDetails.getId();
 		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
 
 	}
@@ -102,7 +104,7 @@ public class BidController {
 		@PathVariable Long bidId,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
+		Long userId = userDetails.getId();
 
 		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
 	}
@@ -119,7 +121,7 @@ public class BidController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable Long bidId
 	) {
-		Long userId = Long.parseLong(userDetails.getUsername());
+		Long userId = userDetails.getId();
 		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
 	}
 
