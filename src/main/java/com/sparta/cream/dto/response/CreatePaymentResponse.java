@@ -4,6 +4,16 @@ import java.math.BigDecimal;
 
 import lombok.Getter;
 
+/**
+ * 결제 생성 후 반환되는 응답 데이터를 나타내는 DTO 클래스입니다.
+ * <p>
+ * id, (PortOne으로 송신할)paymentId, status, productName, amount, email, customerName, customerPhoneNumber를 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 public class CreatePaymentResponse {
 	private final Long id;

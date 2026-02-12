@@ -11,7 +11,7 @@ import lombok.Getter;
  *
  * @author 변채주
  * @version 1.0
- * @since 2026. 01. 26.
+ * @since 2026. 02. 12.
  */
 @Getter
 public class PaymentConfigResponse {

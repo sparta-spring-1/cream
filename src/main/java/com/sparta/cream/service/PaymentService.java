@@ -40,7 +40,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 결제 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.
  * <p>
- * 결제 사전 준비(Prepare) 등
+ * 결제 사전 준비(Prepare), 검증(complete), 환불(refund), 조회 등
  * 결제 프로세스의 전반적인 제어를 담당합니다.
  * </p>
  *
@@ -117,6 +117,19 @@ public class PaymentService {
 			buyer.getPhoneNumber());
 	}
 
+	/**
+	 * 결제를 완료 처리하고 검증합니다.
+	 * <p>
+	 * PortOne API를 통해 결제 정보를 확인하고, DB에 저장된 결제 정보와 일치하는지 검증합니다.
+	 * 결제 성공 시 결제 상태를 PAID_SUCCESS로 업데이트하고 알림을 생성합니다.
+	 * </p>
+	 *
+	 * @param paymentId 내부 DB 결제 식별자
+	 * @param request   결제 완료 요청 정보 (impUid, merchantUid)
+	 * @param userId    결제를 시도한 사용자 식별자
+	 * @return 결제 완료 응답 DTO
+	 * @throws BusinessException 결제 검증 실패, 금액 불일치, PortOne API 오류 발생 시
+	 */
 	@Transactional
 	public CompletePaymentResponse complete(Long paymentId, CompletePaymentRequest request, Long userId) {
 		Payment payment = findById(paymentId);
@@ -160,6 +173,20 @@ public class PaymentService {
 		}
 	}
 
+	/**
+	 * 결제를 환불 처리합니다.
+	 * <p>
+	 * 환불 요청자와 결제 판매자 또는 관리자 권한을 확인하고,
+	 * 환불 금액이 기존 결제 금액을 초과하는지 검증합니다.
+	 * PortOne API를 통해 실제 환불을 처리하고, DB에 환불 내역을 기록합니다.
+	 * </p>
+	 *
+	 * @param paymentId 내부 DB 결제 식별자
+	 * @param request   환불 요청 정보 (환불 사유, 금액)
+	 * @param userId    환불을 요청한 사용자 식별자
+	 * @return 환불 응답 DTO
+	 * @throws BusinessException 권한 없음, 금액 초과, PortOne API 오류 발생 시
+	 */
 	@Transactional
 	public RefundPaymentResponse refund(Long paymentId, RefundPaymentRequest request, Long userId) {
 		Payment payment = findById(paymentId);
@@ -192,15 +219,35 @@ public class PaymentService {
 		}
 	}
 
+	/**
+	 * 주어진 ID로 Payment 엔티티를 조회합니다.
+	 *
+	 * @param id 조회할 Payment의 식별자
+	 * @return 조회된 Payment 엔티티
+	 * @throws BusinessException 해당 ID의 Payment를 찾을 수 없을 경우
+	 */
 	public Payment findById(Long id) {
 		return paymentRepository.findById(id).orElseThrow(
 			() -> new BusinessException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 	}
 
+	/**
+	 * 주어진 상태의 Payment 엔티티 목록을 조회합니다.
+	 *
+	 * @param status 조회할 결제 상태
+	 * @return 해당 상태의 Payment 엔티티 목록
+	 */
 	public List<Payment> getByStatus(PaymentStatus status) {
 		return paymentRepository.findByStatus(status);
 	}
 
+	/**
+	 * 특정 사용자의 모든 결제 내역을 페이징 처리하여 조회합니다.
+	 *
+	 * @param userId   사용자 식별자
+	 * @param pageable 페이지네이션 정보
+	 * @return 페이징 처리된 YourPaymentListResponse DTO 목록
+	 */
 	@Transactional(readOnly = true)
 	public Page<YourPaymentListResponse> getAllPayment(Long userId, Pageable pageable) {
 		Page<YourPaymentListResponse> paymentList = paymentRepository.findAllByUserId(userId, pageable)
@@ -209,6 +256,14 @@ public class PaymentService {
 		return paymentList;
 	}
 
+	/**
+	 * 특정 결제의 상세 정보를 조회합니다.
+	 *
+	 * @param paymentId 조회할 결제의 식별자
+	 * @param userId    조회 요청 사용자 식별자
+	 * @return PaymentDetailsResponse DTO
+	 * @throws BusinessException 해당 결제 정보를 찾을 수 없을 경우
+	 */
 	@Transactional(readOnly = true)
 	public PaymentDetailsResponse getDetails(Long paymentId, Long userId) {
 		Payment payment = paymentRepository.findPaymentWithUserByIdAndUserId(paymentId, userId)

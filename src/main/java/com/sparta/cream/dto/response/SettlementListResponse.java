@@ -8,6 +8,16 @@ import com.sparta.cream.domain.status.SettlementStatus;
 
 import lombok.Getter;
 
+/**
+ * 정산 목록 응답 데이터를 나타내는 DTO 클래스입니다.
+ * <p>
+ * id, settlementAmount, status, settledAt, productName을 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 public class SettlementListResponse {
 	private final Long id;

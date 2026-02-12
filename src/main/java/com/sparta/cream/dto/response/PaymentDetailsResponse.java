@@ -7,6 +7,16 @@ import com.sparta.cream.domain.entity.Payment;
 
 import lombok.Getter;
 
+/**
+ * 결제 상세 정보를 나타내는 DTO 클래스입니다.
+ * <p>
+ * id, merchantUid, productName, amount, status, method, paidAt을 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 public class PaymentDetailsResponse {
 	private final Long id;

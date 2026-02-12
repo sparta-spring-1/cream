@@ -9,6 +9,16 @@ import com.sparta.cream.domain.status.SettlementStatus;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+/**
+ * 정산 상세 정보를 나타내는 DTO 클래스입니다.
+ * <p>
+ * id, feeAmount, settlementAmount, totalAmount, status, settledAt, productName, tradeId, paymentId를 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 @AllArgsConstructor
 public class SettlementDetailsResponse {

@@ -7,6 +7,16 @@ import com.sparta.cream.domain.entity.Payment;
 
 import lombok.Getter;
 
+/**
+ * 사용자 본인의 결제 목록 응답 데이터를 나타내는 DTO 클래스입니다.
+ * <p>
+ * id, merchantUid, productName, amount, paidAt, status를 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 public class YourPaymentListResponse {
 	private final Long id;

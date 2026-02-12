@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 결제 관련 API 요청을 처리하는 컨트롤러입니다.
  * <p>
- * 결제 사전 준비(Prepare), 결제 검증 및 완료(Complete) 등
+ * 결제 사전 준비(Prepare), 결제 검증 및 완료(Complete), 환불(Refund), 결제 정보 조회 등
  * 결제 프로세스와 관련된 HTTP 요청을 처리합니다.
  * </p>
  *
@@ -96,6 +96,14 @@ public class PaymentController {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * 결제를 전액환불 처리합니다.
+	 *
+	 * @param paymentId 내부 DB 결제 식별자
+	 * @param request   환불 요청 정보 (환불 사유 등)
+	 * @param user      인증된 사용자 정보
+	 * @return 성공 시 200 OK
+	 */
 	@PostMapping("/{paymentId}/refund")
 	public ResponseEntity<RefundPaymentResponse> refundPayment(@PathVariable Long paymentId,
 		@RequestBody RefundPaymentRequest request,
@@ -104,6 +112,13 @@ public class PaymentController {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * 사용자 본인의 전체 결제 내역을 조회합니다.
+	 *
+	 * @param user      인증된 사용자 정보
+	 * @param pageable  페이지네이션 정보 (페이지 번호, 페이지 크기, 정렬 기준 등)
+	 * @return 페이징 처리된 결제 내역 응답 객체
+	 */
 	@GetMapping
 	public ResponseEntity<Page<YourPaymentListResponse>> allPayment(
 		@AuthenticationPrincipal CustomUserDetails user,
@@ -112,6 +127,13 @@ public class PaymentController {
 		return ResponseEntity.ok(response);
 	}
 
+	/**
+	 * 특정 결제의 상세 정보를 조회합니다.
+	 *
+	 * @param paymentId 조회할 결제의 식별자
+	 * @param user      인증된 사용자 정보
+	 * @return 결제 상세 정보 응답 객체
+	 */
 	@GetMapping("/{paymentId}")
 	public ResponseEntity<PaymentDetailsResponse> getPaymentDetails(@PathVariable Long paymentId,
 		@AuthenticationPrincipal CustomUserDetails user) {
