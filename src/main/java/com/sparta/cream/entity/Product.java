@@ -37,6 +37,7 @@ import lombok.NoArgsConstructor;
 		@UniqueConstraint(columnNames = {"model_number", "brand_name"})
 	}
 )
+
 public class Product extends BaseEntity {
 
 	@Id
