@@ -21,6 +21,7 @@ import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.dto.product.GetOneProductResponse;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
@@ -272,4 +273,27 @@ public class ProductService {
 		return AdminGetOneProductResponse.from(product, options, imageIds);
 
 	}
+
+	/**
+	 * 상품 단건을 조회합니다.
+	 * Soft Delete 처리된 상품 조회시 예외처리합니다.
+	 *
+	 * @param productId 조회할 상품의 ID
+	 * @return 조회된 상품 정보를 담은 응답 DTO
+	 * @throws BusinessException 상품이 존재하지 않을 경우 발생
+	 */
+	public GetOneProductResponse getPublicProduct(Long productId) {
+
+		//삭제된 상품을 제외하고 조회
+		Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
+
+		List<String> options = productOptionRepository.findSizesByProductId(productId);
+		List<Long> imageIds = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.collect(Collectors.toList());
+
+		return GetOneProductResponse.from(product,options,imageIds);
+	}
+
 }
