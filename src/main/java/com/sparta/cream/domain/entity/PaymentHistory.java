@@ -1,5 +1,7 @@
 package com.sparta.cream.domain.entity;
 
+import java.math.BigDecimal;
+
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.entity.BaseEntity;
 
@@ -46,7 +48,7 @@ public class PaymentHistory extends BaseEntity {
 	private PaymentStatus newStatus;
 
 	@Column(nullable = false)
-	private Long amount;
+	private BigDecimal amount;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "payment_id", nullable = false)
@@ -60,7 +62,7 @@ public class PaymentHistory extends BaseEntity {
      * @param amount     당시 금액
      * @param payment    결제 엔티티
      */
-    public PaymentHistory(PaymentStatus prevStatus, PaymentStatus newStatus, Long amount, Payment payment) {
+    public PaymentHistory(PaymentStatus prevStatus, PaymentStatus newStatus, BigDecimal amount, Payment payment) {
         this.prevStatus = prevStatus;
         this.newStatus = newStatus;
         this.amount = amount;
