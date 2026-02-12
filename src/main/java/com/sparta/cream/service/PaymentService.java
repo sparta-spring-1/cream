@@ -3,6 +3,7 @@ package com.sparta.cream.service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,28 +75,43 @@ public class PaymentService {
 	@Transactional
 	public CreatePaymentResponse prepare(Long tradeId, Long userId) {
 
-		Users buyer = authService.findById(userId);
+		Optional<Payment> existingPayment = paymentRepository.findReadyPaymentByUserIdAndTradeIdAndStatus(userId, tradeId, PaymentStatus.READY);
 
+		if (existingPayment.isPresent()) {
+			Payment payment = existingPayment.get();
+
+			return new CreatePaymentResponse(
+				payment.getId(),
+				payment.getMerchantUid(),
+				payment.getStatus().toString(),
+				payment.getProductName(),
+				payment.getAmount(),
+				payment.getUser().getEmail(),
+				payment.getUser().getName(),
+				payment.getUser().getPhoneNumber());
+		}
+
+		Users buyer = authService.findById(userId);
 		Trade trade = tradeService.findById(tradeId);
 
 		String merchantUid = "PAY-" + LocalDate.now() + "-" + trade.getId().toString();
 		String productName = trade.getPurchaseBidId().getProductOption().getProduct().getName();
 
-		Payment payment = new Payment(merchantUid,
+		Payment newPayment = new Payment(merchantUid,
 			productName,
 			trade.getFinalPrice(),
 			PaymentStatus.READY,
 			trade,
 			buyer);
 
-		paymentRepository.save(payment);
+		paymentRepository.save(newPayment);
 
 		return new CreatePaymentResponse(
-			payment.getId(),
-			payment.getMerchantUid(),
-			payment.getStatus().toString(),
+			newPayment.getId(),
+			newPayment.getMerchantUid(),
+			newPayment.getStatus().toString(),
 			productName,
-			payment.getAmount(),
+			newPayment.getAmount(),
 			buyer.getEmail(),
 			buyer.getName(),
 			buyer.getPhoneNumber());
@@ -104,8 +120,6 @@ public class PaymentService {
 	@Transactional
 	public CompletePaymentResponse complete(Long paymentId, CompletePaymentRequest request, Long userId) {
 		Payment payment = findById(paymentId);
-
-		payment.changeStatus(payment.getStatus(), PaymentStatus.PENDING);
 
 		if (!payment.getMerchantUid().equals(request.getMerchantUid())) {
 			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
@@ -116,6 +130,8 @@ public class PaymentService {
 		}
 
 		try {
+			payment.changeStatus(payment.getStatus(), PaymentStatus.PENDING);
+
 			PortOnePaymentResponse body = portOneApiClient.getPayment(request.getMerchantUid());
 			BigDecimal total = new BigDecimal(body.getAmount().getTotal());
 

@@ -28,5 +28,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
 	@Query("SELECT p FROM Payment p JOIN FETCH p.user u WHERE p.id = :id AND u.id = :userId")
 	Optional<Payment> findPaymentWithUserByIdAndUserId(Long id, Long userId);
+
+	@Query("SELECT p FROM Payment p JOIN FETCH p.user u JOIN FETCH p.trade t "
+		+ "WHERE u.id = :userId AND t.id = :tradeId AND p.status = :status")
+	Optional<Payment> findReadyPaymentByUserIdAndTradeIdAndStatus(Long userId, Long tradeId, PaymentStatus status);
+
 }
 
