@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,9 +42,21 @@ import com.sparta.cream.repository.SettlementRepository;
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
 
+	private static final Long SELLER_ID = 1L;
+	private static final Long TRADE_ID_1 = 1L;
+	private static final Long TRADE_ID_2 = 2L;
+	private static final Long PAYMENT_ID_1 = 1L;
+	private static final Long PAYMENT_ID_2 = 2L;
+	private static final Long SETTLEMENT_ID = 1L;
+	private static final BigDecimal AMOUNT_1000 = BigDecimal.valueOf(1000);
+	private static final BigDecimal AMOUNT_2000 = BigDecimal.valueOf(2000);
+	private static final BigDecimal STANDARD_TRADE_AMOUNT = BigDecimal.valueOf(50000);
+	private static final String SELLER_EMAIL = "seller@email.com";
+	private static final String SELLER_NAME = "판매자";
+	private static final String PRODUCT_SIZE = "270";
+
 	@InjectMocks
 	private SettlementService settlementService;
-
 	@Mock
 	private SettlementRepository settlementRepository;
 
@@ -51,11 +64,11 @@ class SettlementServiceTest {
 	@DisplayName("정산 등록 성공")
 	void set_success_with_payments() {
 		// given
-		Users seller = createMockUser(2L, "seller@email.com", "판매자", UserRole.USER);
-		Trade trade1 = createMockTrade(1L, seller);
-		Trade trade2 = createMockTrade(2L, seller);
-		Payment payment1 = createMockPayment(1L, 1000L, PaymentStatus.PAID_SUCCESS, trade1);
-		Payment payment2 = createMockPayment(2L, 2000L, PaymentStatus.PAID_SUCCESS, trade2);
+		Users seller = createMockUser(SELLER_ID, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
+		Trade trade1 = createMockTrade(TRADE_ID_1, seller);
+		Trade trade2 = createMockTrade(TRADE_ID_2, seller);
+		Payment payment1 = createMockPayment(PAYMENT_ID_1, AMOUNT_1000, PaymentStatus.PAID_SUCCESS, trade1);
+		Payment payment2 = createMockPayment(PAYMENT_ID_2, AMOUNT_2000, PaymentStatus.PAID_SUCCESS, trade2);
 		List<Payment> payments = Arrays.asList(payment1, payment2);
 
 		// when
@@ -82,11 +95,11 @@ class SettlementServiceTest {
 	@DisplayName("정산 처리 성공")
 	void settle_success_with_pending_settlements() {
 		// given
-		Users seller = createMockUser(2L, "seller@email.com", "판매자", UserRole.USER);
-		Trade trade1 = createMockTrade(1L, seller);
-		Trade trade2 = createMockTrade(2L, seller);
-		Settlement settlement1 = createMockSettlement(1L, 1000L, SettlementStatus.PENDING, trade1);
-		Settlement settlement2 = createMockSettlement(2L, 2000L, SettlementStatus.PENDING, trade2);
+		Users seller = createMockUser(SELLER_ID, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
+		Trade trade1 = createMockTrade(TRADE_ID_1, seller);
+		Trade trade2 = createMockTrade(TRADE_ID_2, seller);
+		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.PENDING, trade1);
+		Settlement settlement2 = createMockSettlement(TRADE_ID_2, AMOUNT_2000, SettlementStatus.PENDING, trade2);
 		List<Settlement> settlements = Arrays.asList(settlement1, settlement2);
 
 		// when
@@ -102,9 +115,9 @@ class SettlementServiceTest {
 	@DisplayName("정산 처리 성공 - PENDING 상태 정산이 없는 경우")
 	void settle_success_no_pending_settlements() {
 		// given
-		Users seller = createMockUser(2L, "seller@email.com", "판매자", UserRole.USER);
-		Trade trade1 = createMockTrade(1L, seller);
-		Settlement settlement1 = createMockSettlement(1L, 1000L, SettlementStatus.COMPLETED, trade1);
+		Users seller = createMockUser(SELLER_ID, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
+		Trade trade1 = createMockTrade(TRADE_ID_1, seller);
+		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.COMPLETED, trade1);
 		List<Settlement> settlements = Collections.singletonList(settlement1);
 
 		// when
@@ -119,11 +132,11 @@ class SettlementServiceTest {
 	@DisplayName("정산 목록 조회")
 	void getSettlements_success() {
 		// given
-		Long userId = 1L;
+		Long userId = SELLER_ID;
 		Pageable pageable = PageRequest.of(0, 10);
-		Users seller = createMockUser(userId, "seller@email.com", "판매자", UserRole.USER);
-		Trade trade = createMockTrade(1L, seller);
-		Settlement settlement = createMockSettlement(1L, 1000L, SettlementStatus.COMPLETED, trade);
+		Users seller = createMockUser(userId, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
+		Trade trade = createMockTrade(TRADE_ID_1, seller);
+		Settlement settlement = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.COMPLETED, trade);
 		List<Settlement> settlementList = Collections.singletonList(settlement);
 		Page<Settlement> settlementPage = new PageImpl<>(settlementList, pageable, 1);
 
@@ -144,11 +157,11 @@ class SettlementServiceTest {
 	@DisplayName("정산 상세 조회")
 	void getSettlement_success() {
 		// given
-		Long userId = 1L;
-		Long settlementId = 1L;
-		Users seller = createMockUser(userId, "seller@email.com", "판매자", UserRole.USER);
-		Trade trade = createMockTrade(1L, seller);
-		Settlement settlement = createMockSettlement(settlementId, 1000L, SettlementStatus.COMPLETED, trade);
+		Long userId = SELLER_ID;
+		Long settlementId = SETTLEMENT_ID;
+		Users seller = createMockUser(userId, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
+		Trade trade = createMockTrade(TRADE_ID_1, seller);
+		Settlement settlement = createMockSettlement(settlementId, AMOUNT_1000, SettlementStatus.COMPLETED, trade);
 
 		given(settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)).willReturn(
 			Optional.of(settlement));
@@ -167,8 +180,8 @@ class SettlementServiceTest {
 	@DisplayName("정산 상세 조회 실패 - 찾을 수 없음")
 	void getSettlement_fail_not_found() {
 		// given
-		Long userId = 1L;
-		Long settlementId = 1L;
+		Long userId = SELLER_ID;
+		Long settlementId = SETTLEMENT_ID;
 
 		given(settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)).willReturn(
 			Optional.empty());
@@ -207,14 +220,14 @@ class SettlementServiceTest {
 
 	private Trade createMockTrade(Long id, Users seller) {
 		Product product = createMockProduct(id + 200, "Test Product " + id);
-		ProductOption productOption = createMockProductOption(id + 300, product, "270");
+		ProductOption productOption = createMockProductOption(id + 300, product, PRODUCT_SIZE);
 		Bid saleBid = createMockBid(id + 100, seller, productOption);
-		Trade trade = new Trade(null, saleBid, 50000L);
+		Trade trade = new Trade(null, saleBid, STANDARD_TRADE_AMOUNT.longValue());
 		ReflectionTestUtils.setField(trade, "id", id);
 		return trade;
 	}
 
-	private Payment createMockPayment(Long id, Long amount, PaymentStatus status, Trade trade) {
+	private Payment createMockPayment(Long id, BigDecimal amount, PaymentStatus status, Trade trade) {
 		Payment payment =
 			new Payment("merchant-" + id, "Product " + id, amount, status, trade, null);
 		ReflectionTestUtils.setField(payment, "id", id);
@@ -223,7 +236,7 @@ class SettlementServiceTest {
 		return payment;
 	}
 
-	private Settlement createMockSettlement(Long id, Long amount, SettlementStatus status, Trade trade) {
+	private Settlement createMockSettlement(Long id, BigDecimal amount, SettlementStatus status, Trade trade) {
 		Payment mockPayment = createMockPayment(id, amount, PaymentStatus.PAID_SUCCESS, trade);
 		Settlement settlement = new Settlement(amount, status, mockPayment);
 		ReflectionTestUtils.setField(settlement, "id", id);

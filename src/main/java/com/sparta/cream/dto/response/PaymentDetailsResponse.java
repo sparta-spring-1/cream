@@ -1,5 +1,6 @@
 package com.sparta.cream.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.entity.Payment;
@@ -11,12 +12,12 @@ public class PaymentDetailsResponse {
 	private final Long id;
 	private final String merchantUid;
 	private final String productName;
-	private final Long amount;
+	private final BigDecimal amount;
 	private final String status;
 	private final String method;
 	private final LocalDateTime paidAt;
 
-	public PaymentDetailsResponse(Long id, String merchantUid, String productName, Long amount, String status, String method, LocalDateTime paidAt) {
+	public PaymentDetailsResponse(Long id, String merchantUid, String productName, BigDecimal amount, String status, String method, LocalDateTime paidAt) {
 		this.id = id;
 		this.merchantUid = merchantUid;
 		this.productName = productName;

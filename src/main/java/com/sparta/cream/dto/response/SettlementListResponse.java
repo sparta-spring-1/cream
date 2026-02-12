@@ -1,5 +1,6 @@
 package com.sparta.cream.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.entity.Settlement;
@@ -10,12 +11,12 @@ import lombok.Getter;
 @Getter
 public class SettlementListResponse {
 	private final Long id;
-	private final Long settlementAmount;
+	private final BigDecimal settlementAmount;
 	private final String status;
 	private final LocalDateTime settledAt;
 	private final String productName;
 
-	public SettlementListResponse(Long id, Long settlementAmount, SettlementStatus status, LocalDateTime settledAt,
+	public SettlementListResponse(Long id, BigDecimal settlementAmount, SettlementStatus status, LocalDateTime settledAt,
 		String productName) {
 		this.id = id;
 		this.settlementAmount = settlementAmount;

@@ -99,7 +99,7 @@ public class PaymentService {
 
 		Payment newPayment = new Payment(merchantUid,
 			productName,
-			trade.getFinalPrice(),
+			BigDecimal.valueOf(trade.getFinalPrice()),
 			PaymentStatus.READY,
 			trade,
 			buyer);
