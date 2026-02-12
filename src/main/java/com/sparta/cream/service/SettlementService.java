@@ -15,6 +15,7 @@ import com.sparta.cream.dto.response.SettlementDetailsResponse;
 import com.sparta.cream.dto.response.SettlementListResponse;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
+import com.sparta.cream.exception.SettlementErrorCode;
 import com.sparta.cream.repository.SettlementRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -117,9 +118,18 @@ public class SettlementService {
 	 */
 	@Transactional(readOnly = true)
 	public SettlementDetailsResponse getSettlement(Long userId, Long settlementId) {
-		Settlement settlement = settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
+		Settlement settlement = settlementRepository.findById(settlementId)
+			.orElseThrow(() -> new BusinessException(SettlementErrorCode.SETTLEMENT_NOT_FOUND));
 
 		return SettlementDetailsResponse.from(settlement);
+	}
+
+	@Transactional
+	public void refundedSettlement(Payment payment) {
+		Settlement settlement = settlementRepository.findSettlementByPaymentId(payment.getId()).orElseThrow(
+			() -> new BusinessException(SettlementErrorCode.SETTLEMENT_NOT_FOUND));
+
+		settlement.refundStatus(payment.getStatus(), SettlementStatus.REFUNDED);
+		settlementRepository.save(settlement);
 	}
 }

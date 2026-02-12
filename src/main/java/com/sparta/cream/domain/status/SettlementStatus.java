@@ -16,5 +16,6 @@ package com.sparta.cream.domain.status;
 public enum SettlementStatus {
     PENDING,
     COMPLETED,
-    FAILED
+    FAILED,
+	REFUNDED
 }

@@ -3,9 +3,12 @@ package com.sparta.cream.domain.entity;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.status.SettlementStatus;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.PaymentErrorCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -91,5 +94,12 @@ public class Settlement extends BaseEntity {
 	public void complete() {
 		this.status = SettlementStatus.COMPLETED;
 		this.settledAt = LocalDateTime.now();
+	}
+
+	public void refundStatus(PaymentStatus prevStatus, SettlementStatus nextStatus){
+		if(!prevStatus.equals(PaymentStatus.PAID_SUCCESS)) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+		this.status = nextStatus;
 	}
 }

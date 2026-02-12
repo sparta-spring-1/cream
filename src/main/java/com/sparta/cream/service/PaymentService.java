@@ -59,6 +59,7 @@ public class PaymentService {
 	private final NotificationService notificationService;
 	private final TradeService tradeService;
 	private final AuthService authService;
+	private final SettlementService settlementService;
 	private final PortOneApiClient portOneApiClient;
 
 	/**
@@ -211,6 +212,8 @@ public class PaymentService {
 
 			Refund refund = new Refund(request.getReason(), request.getAmount(), history);
 			refundRepository.save(refund);
+
+			settlementService.refundedSettlement(payment);
 
 			return new RefundPaymentResponse(refund.getId(), refund.getAmount(), payment.getStatus().toString());
 

@@ -22,29 +22,32 @@ import com.sparta.cream.domain.status.SettlementStatus;
  * @since 2026. 02. 12.
  */
 public interface SettlementRepository extends JpaRepository<Settlement, Long> {
-    List<Settlement> findByStatus(SettlementStatus status);
+	List<Settlement> findByStatus(SettlementStatus status);
 
-    @Query("""
-        SELECT s FROM Settlement s
-        JOIN FETCH s.seller u
-        JOIN FETCH s.payment p
-        JOIN FETCH p.trade t
-        JOIN FETCH t.saleBidId sb
-        JOIN FETCH sb.productOption po
-        JOIN FETCH po.product prod
-        WHERE u.id = :sellerId
-        """)
-    Page<Settlement> findAllSettlementsWithDetailsBySellerId(Long sellerId, Pageable pageable);
+	@Query("""
+		SELECT s FROM Settlement s
+		JOIN FETCH s.seller u
+		JOIN FETCH s.payment p
+		JOIN FETCH p.trade t
+		JOIN FETCH t.saleBidId sb
+		JOIN FETCH sb.productOption po
+		JOIN FETCH po.product prod
+		WHERE u.id = :sellerId
+		""")
+	Page<Settlement> findAllSettlementsWithDetailsBySellerId(Long sellerId, Pageable pageable);
 
-        @Query("""
-            SELECT s FROM Settlement s
-            JOIN FETCH s.seller u
-            JOIN FETCH s.payment p
-            JOIN FETCH p.trade t
-            JOIN FETCH t.saleBidId sb
-            JOIN FETCH sb.productOption po
-            JOIN FETCH po.product prod
-            WHERE s.id = :id AND u.id = :sellerId
-            """)
-        Optional<Settlement> findSettlementWithDetailsByIdAndSellerId(Long id, Long sellerId);
+	@Query("""
+		SELECT s FROM Settlement s
+		JOIN FETCH s.seller u
+		JOIN FETCH s.payment p
+		JOIN FETCH p.trade t
+		JOIN FETCH t.saleBidId sb
+		JOIN FETCH sb.productOption po
+		JOIN FETCH po.product prod
+		WHERE s.id = :id AND u.id = :sellerId
+		""")
+	Optional<Settlement> findSettlementWithDetailsByIdAndSellerId(Long id, Long sellerId);
+
+	@Query("SELECT s FROM Settlement s JOIN FETCH s.payment p WHERE p.id = :paymentId")
+	Optional<Settlement> findSettlementByPaymentId(Long paymentId);
 }
