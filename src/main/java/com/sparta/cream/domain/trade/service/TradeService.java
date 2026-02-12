@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -13,14 +12,15 @@ import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.entity.TradeStatus;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 
-import org.springframework.transaction.annotation.Transactional;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 거래 체결 서비스
@@ -31,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
  * @author kimsehyun
  * @since 2026. 1. 28.
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TradeService {
@@ -40,56 +39,32 @@ public class TradeService {
 	private final NotificationService notificationService;
 
 	/**
-	 * 입찰 체결 프로세스를 비동기 스레드에서 실행하는 진입점 메서드입니다.
-	 * 입찰 등록(또는 수정) 트랜잭션이 성공적으로 커밋된 후 호출되며,
-	 * 실제 매칭 로직을 별도의 스레드 풀에서 실행함으로써 사용자 응답 시간을 최적화합니다.
-	 */
-	@Async
-	@Transactional
-	public void processMatching(Long bidId) {
-		try {
-			handleMatchingInternal(bidId);
-		} catch (Exception e) {
-			log.error("매칭 엔진 실행 중 오류 발생 (입찰 ID: {}): {}", bidId, e.getMessage());
-		}
-	}
-
-	/**
-	 * 비동기 환경에서 단일 입찰에 대한 실제 매칭 체결 프로세스를 처리합니다.
-	 * processMatching }에 의해 비동기적으로 호출되며,
-	 * 데이터 정합성을 위해 최신 입찰 상태 재확인 및 비관적 락을 사용합니다.
-	 * 1.전달받은 ID로 입찰의 최신 상태를 DB에서 조회
-	 * 2.입찰상태가 PENDING아닌 즉시 종료
-	 * 3.반대 타입의 입찰 중 가격조건이 맞는 후보 조회
-	 * 4.매칭 후보가 존재ㅐ할 경우 호출하여 해당 레코드에 쓰기 잠금 획득
-	 * 5.락 획득후 최종적으로 executeTrade 통해 거래 체결실행
-	 * @param bidId 체결을 시도할 신규 입찰 식별자
+	 * 단일 입찰에 대한 즉시 매칭을 시도합니다.
+	 * 새로운 입찰이 등록될 때 호출되어 반대 타입의 최적 입찰(최저 판매가 또는 최고 구매가)를 찾아 체결합니다.
+	 *
+	 * @param newBid 새로 등록된 구매 또는 판매 입찰 객체
 	 */
 	@Transactional
-	public void handleMatchingInternal(Long bidId) {
-		Bid newBid = bidRepository.findById(bidId)
-			.orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND));
-
-		if (newBid.getStatus() != BidStatus.PENDING) return;
-
+	public void processMatching(Bid newBid) {
 		Optional<Bid> matchedBid;
 
 		if (newBid.getType() == BidType.BUY) {
 			matchedBid = bidRepository.findMatchingSellBids(
-				newBid.getProductOption().getId(), newBid.getPrice(),
-				newBid.getUser().getId(), PageRequest.of(0, 1)
+				newBid.getProductOption().getId(),
+				newBid.getPrice(),
+				newBid.getUser().getId(),
+				PageRequest.of(0, 1)
 			).stream().findFirst();
 		} else {
 			matchedBid = bidRepository.findMatchingBuyBids(
-				newBid.getProductOption().getId(), newBid.getPrice(),
-				newBid.getUser().getId(), PageRequest.of(0, 1)
+				newBid.getProductOption().getId(),
+				newBid.getPrice(),
+				newBid.getUser().getId(),
+				PageRequest.of(0, 1)
 			).stream().findFirst();
 		}
 
-		matchedBid.ifPresent(candidate -> {
-			bidRepository.findByIdForUpdate(candidate.getId())
-				.ifPresent(target -> executeTrade(newBid, Optional.of(target)));
-		});
+		executeTrade(newBid, matchedBid);
 	}
 
 	/**

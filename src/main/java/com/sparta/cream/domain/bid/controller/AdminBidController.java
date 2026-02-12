@@ -5,11 +5,12 @@ import com.sparta.cream.domain.bid.dto.AdminBidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.AdminBidPagingResponseDto;
 import com.sparta.cream.domain.bid.service.BidService;
 import com.sparta.cream.domain.trade.dto.AdminTradePagingResponseDto;
-import com.sparta.cream.security.CustomUserDetails;
+import com.sparta.cream.domain.trade.repository.TradeRepository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -40,11 +41,11 @@ public class AdminBidController {
 	 */
 	@PatchMapping("/bids/{bidId}")
 	public ResponseEntity<Map<String, Object>> cancelBidByAdmin(
-		@AuthenticationPrincipal CustomUserDetails userDetails,
+		@AuthenticationPrincipal UserDetails userIdAuth,
 		@PathVariable Long bidId,
 		@RequestBody AdminBidCancelRequestDto request) {
 
-		Long adminId = userDetails.getId();
+		Long adminId = Long.parseLong(userIdAuth.getUsername());
 		AdminBidCancelResponseDto data = bidService.cancelBidByAdmin(bidId, request, adminId);
 
 		Map<String, Object> response = new HashMap<>();

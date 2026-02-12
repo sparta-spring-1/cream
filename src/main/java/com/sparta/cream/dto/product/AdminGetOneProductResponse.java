@@ -38,15 +38,15 @@ public class AdminGetOneProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminGetOneProductResponse from(Product product, List<String> options, List<Long> imageIds) {
+	public static AdminGetOneProductResponse from(Product product) {
 		return new AdminGetOneProductResponse(
 			product.getId(),
 			product.getName(),
 			product.getModelNumber(),
 			product.getBrandName(),
 			product.getProductCategory().getId(),
-			imageIds,
-			options,
+			product.getImageIds(),
+			product.getOptionSizes(),
 			product.getColor(),
 			product.getSizeUnit(),
 			product.getProductStatus(),

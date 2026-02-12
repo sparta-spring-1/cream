@@ -42,27 +42,5 @@ export const paymentApi = {
     complete: async (paymentId: number, data: CompletePaymentRequest): Promise<CompletePaymentResponse> => {
         const response = await client.post<CompletePaymentResponse>(`/v1/payments/${paymentId}/complete`, data);
         return response.data;
-    },
-
-    getAllPayment: async () => {
-        const response = await client.get<any[]>('/v1/payments');
-        return response.data;
-    },
-
-    getDetails: async (paymentId: number) => {
-        const response = await client.get(`/v1/payments/${paymentId}`);
-        return response.data;
-    },
-
-    // Refund
-    refund: async (paymentId: number, data: RefundRequest) => {
-        const response = await client.post(`/v1/payments/${paymentId}/refund`, data);
-        return response.data;
     }
 };
-
-export interface RefundRequest {
-    tradeId: number;
-    reason: string;
-    amount: number;
-}

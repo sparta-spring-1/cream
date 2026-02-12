@@ -2,25 +2,6 @@ import { ArrowRight, Zap, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const HomePage = () => {
-    // Mock Data for frontend-only
-    const mockProducts = [
-        {
-            id: '101', brandName: 'Nike', name: "Air Jordan 1 Low 'Olive'", retailPrice: 645000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCfxhrl7NrltfqgQ2ZlR3OwRy7xy3IxiVpFTMxXhm5pKwISzB0tsr1PcT2f44HBrtbuhFK_TVY3wX8lyiE_JFOD5_5ueMVOVML1f4N-agFGSyk0lohakbdkjGGLmje0PLFtbFFMtY0GNc11SU1BC1XZHlFptdWz1IDxekIKFw4YK6_pNjpaEyjPGGBoeIR7PzeVVIIsnfL_ilOMCuJ3tyDAL7N26_Psj9v98SsGED3_jH55rd5HFThmF10nWiQX2nd1aRhpmIwh4is"
-        },
-        {
-            id: '102', brandName: 'Adidas', name: "Samba OG Cloud White", retailPrice: 139000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAh0RgJI2n0LHq9lfy2FL4lE1S6fdW4pjNhmXo7jn7x4X7Dtz_TF811VxK6uzkn3fdMEY2lk-8wp5pYeSH6u4ZJXCJS4d5LZj1loY_Gz_5hMON810997oNFjZJy4sp0DfQVM4FNMQnT_UtRIa5b6Iw2RWKv4DX4ZNE6CosdsPeRnqCYB4Z53S9tBeCpblKJoY7CZJIvlF2qSbsrhbmtrzC6u30-81tWWSHCjwN21-5rRT2_dTun3HHDPOQW51zEyfyASinoxcM0So"
-        },
-        {
-            id: '103', brandName: 'Stussy', name: "8 Ball Tee Black", retailPrice: 82000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCIq96uNuWMj0SotQyxcfEGWkr9AwMyn7nUnMnkL4K_e_WsHSJkSy3Cd9us3w44YUOVjwyxQ2dJec2sRtYDJs5LZf4Tk-GMSFOqkxRxrNKyt6g2oOkvf6-9WdQBy1U-uMGWUfSjwj9fucehcG__bWphCwY5AI8W2e5LHyh3EkS2mXfs2VOaHRZxeWwRXdcLOqG8yh250seM1kttO0nfJE46haJm8puSELy9BkaGRkkl3PKRnFC6UN_iwDrttkk1uiQuTfG2btQYakA"
-        },
-        {
-            id: '104', brandName: 'Prada', name: "Re-Edition 2005 Nylon Bag", retailPrice: 1650000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj5dyVMpOWegUebtXEu6Stw_PpvDqGV-9qHrUxTJCohWYysJchCfOtZHwcED_swIEwaZwPwQGRUmaHer41VQBm6tN2uy34m3SXa9URJiUcpKW34ADKBaZyMrqvfdubanbEz-_yFnzQX8od7pu_6vW5mmIebCEO9K5g8X7Ympv6BQee2Iq0okzXYbIlNf9qKnof38IVsze98BuYqsXsfl0bIwmQjEVt3dmusajNkUOydfYuK9X1PsApqpTxyXz-IH_A9MRuA0obxQk"
-        }
-    ];
 
     return (
         <div className="layout-container py-8 space-y-12">
@@ -70,7 +51,7 @@ const HomePage = () => {
                 </div>
 
                 <div className="grid grid-cols-5 gap-6">
-                    {/* Payment Test Item (Hardcoded) */}
+                    {/* Payment Test Item */}
                     <Link to="/products/payment-test" className="group cursor-pointer">
                         <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4 border-2 border-primary/20">
                             <div
@@ -93,27 +74,99 @@ const HomePage = () => {
                         </div>
                     </Link>
 
-                    {/* MOCK Products */}
-                    {mockProducts.map((product) => (
-                        <Link key={product.id} to="#" className="group cursor-pointer">
-                            <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
-                                <div
-                                    className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
-                                    style={{ backgroundImage: `url("${product.imageUrl}")` }}
-                                />
+                    {/* Card 1 */}
+                    <div className="group cursor-pointer">
+                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                            <div
+                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
+                                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCfxhrl7NrltfqgQ2ZlR3OwRy7xy3IxiVpFTMxXhm5pKwISzB0tsr1PcT2f44HBrtbuhFK_TVY3wX8lyiE_JFOD5_5ueMVOVML1f4N-agFGSyk0lohakbdkjGGLmje0PLFtbFFMtY0GNc11SU1BC1XZHlFptdWz1IDxekIKFw4YK6_pNjpaEyjPGGBoeIR7PzeVVIIsnfL_ilOMCuJ3tyDAL7N26_Psj9v98SsGED3_jH55rd5HFThmF10nWiQX2nd1aRhpmIwh4is")' }}
+                            />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Nike x Travis Scott</p>
+                            <p className="text-gray-500 text-xs truncate mb-2">Air Jordan 1 Low 'Olive'</p>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black">645,000원</span>
+                                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
+                                    <Zap size={10} className="fill-current" /> 빠른배송
+                                </span>
                             </div>
-                            <div>
-                                <p className="font-bold text-sm">{product.brandName}</p>
-                                <p className="text-gray-500 text-xs truncate mb-2">{product.name}</p>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-black">{product.retailPrice.toLocaleString()}원</span>
-                                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
-                                        <Zap size={10} className="fill-current" /> 빠른배송
-                                    </span>
-                                </div>
+                        </div>
+                    </div>
+
+                    {/* Card 2 */}
+                    <div className="group cursor-pointer">
+                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                            <div
+                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
+                                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDAh0RgJI2n0LHq9lfy2FL4lE1S6fdW4pjNhmXo7jn7x4X7Dtz_TF811VxK6uzkn3fdMEY2lk-8wp5pYeSH6u4ZJXCJS4d5LZj1loY_Gz_5hMON810997oNFjZJy4sp0DfQVM4FNMQnT_UtRIa5b6Iw2RWKv4DX4ZNE6CosdsPeRnqCYB4Z53S9tBeCpblKJoY7CZJIvlF2qSbsrhbmtrzC6u30-81tWWSHCjwN21-5rRT2_dTun3HHDPOQW51zEyfyASinoxcM0So")' }}
+                            />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Adidas Samba OG</p>
+                            <p className="text-gray-500 text-xs truncate mb-2">Cloud White Core Black</p>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black">139,000원</span>
+                                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">빠른구매</span>
                             </div>
-                        </Link>
-                    ))}
+                        </div>
+                    </div>
+
+                    {/* Card 3 */}
+                    <div className="group cursor-pointer">
+                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                            <div
+                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
+                                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCIq96uNuWMj0SotQyxcfEGWkr9AwMyn7nUnMnkL4K_e_WsHSJkSy3Cd9us3w44YUOVjwyxQ2dJec2sRtYDJs5LZf4Tk-GMSFOqkxRxrNKyt6g2oOkvf6-9WdQBy1U-uMGWUfSjwj9fucehcG__bWphCwY5AI8W2e5LHyh3EkS2mXfs2VOaHRZxeWwRXdcLOqG8yh250seM1kttO0nfJE46haJm8puSELy9BkaGRkkl3PKRnFC6UN_iwDrttkk1uiQuTfG2btQYakA")' }}
+                            />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Stussy 8 Ball Tee</p>
+                            <p className="text-gray-500 text-xs truncate mb-2">Black (2024 Collection)</p>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black">82,000원</span>
+                                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">입찰대기</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 4 */}
+                    <div className="group cursor-pointer">
+                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                            <div
+                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
+                                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBj5dyVMpOWegUebtXEu6Stw_PpvDqGV-9qHrUxTJCohWYysJchCfOtZHwcED_swIEwaZwPwQGRUmaHer41VQBm6tN2uy34m3SXa9URJiUcpKW34ADKBaZyMrqvfdubanbEz-_yFnzQX8od7pu_6vW5mmIebCEO9K5g8X7Ympv6BQee2Iq0okzXYbIlNf9qKnof38IVsze98BuYqsXsfl0bIwmQjEVt3dmusajNkUOydfYuK9X1PsApqpTxyXz-IH_A9MRuA0obxQk")' }}
+                            />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">Prada Re-Edition</p>
+                            <p className="text-gray-500 text-xs truncate mb-2">2005 Nylon Shoulder Bag</p>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black">1,650,000원</span>
+                                <span className="text-[10px] text-primary font-bold uppercase tracking-wider flex items-center gap-1">
+                                    <CheckCircle size={10} /> 정품보증
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 5 */}
+                    <div className="group cursor-pointer">
+                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
+                            <div
+                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
+                                style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDfWc0Y9bAn4mNvQa0VnyEXlOEFaH2Rs1E8d6hghKIEK0M81i8cb4T1NXvFCZoDEuZd6fHjHEG1MidaASzRTLsYzmxPLunOg1bkpwxv7s5R-N3bkhu5tT8mCVUWDJeisQUH97OVKYI1DojYOn_K_82mMa6yDIgEl6oMzBbAQfj3olegWxm2MHln7TcGzVJv7QPQrZ3JE0tJAAFUhBOJIVuKQo9UIhV1RnXoU-lESqUkeA1eDV0ByH6BVxRiJZqKqBSuwiz5Jo7jDt0")' }}
+                            />
+                        </div>
+                        <div>
+                            <p className="font-bold text-sm">New Balance 2002R</p>
+                            <p className="text-gray-500 text-xs truncate mb-2">Protection Pack Rain Cloud</p>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black">289,000원</span>
+                                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">거래 2.4만</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 

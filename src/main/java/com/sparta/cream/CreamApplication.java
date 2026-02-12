@@ -5,20 +5,18 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 import com.sparta.cream.domain.trade.service.TradeService;
 
-@EnableAsync
 @EnableScheduling
 @EnableJpaAuditing
 @SpringBootApplication
 public class CreamApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(CreamApplication.class, args);
-	}
+  public static void main(String[] args) {
+    SpringApplication.run(CreamApplication.class, args);
+  }
 
 	/**
 	 * 애플리케이션 구동 직후 미체결 입찰 매칭을 수행하는 Runner

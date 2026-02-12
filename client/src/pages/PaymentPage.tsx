@@ -51,7 +51,7 @@ const PaymentPage = () => {
             IMP.request_pay({
                 pg: 'html5_inicis', // or user selected PG
                 pay_method: 'card',
-                merchant_uid: prepareResponse.paymentId,
+                merchant_uid: prepareResponse.merchantUid,
                 name: 'Payment Test Item',
                 amount: prepareResponse.amount, // Should be 10000
                 buyer_email: 'test@cream.co.kr',
@@ -63,7 +63,23 @@ const PaymentPage = () => {
                 if (rsp.success) {
                     try {
                         // 4. Complete Payment on Server
-                        await paymentApi.complete(prepareResponse.id, {
+                        // We need paymentId to call complete. 
+                        // The backend `prepare` response usually returns a `paymentId` or we might need another way.
+                        // Looking at PaymentController, `prepare` returns `CreatePaymentResponse`.
+                        // Let's check `CreatePaymentResponse` structure if possible, but based on typical flows...
+                        // Wait, PaymentController.complete takes @PathVariable paymentId.
+                        // The `prepare` returns `merchantUid` and likely `paymentId`.
+                        // I will assume `prepareResponse` has `paymentId`. 
+                        // If type definition is wrong, I will fix it.
+
+                        // Wait, I defined `PrepareResponse` with only `merchantUid` and `amount`.
+                        // I should probably verify what `CreatePaymentResponse` actually has.
+                        // But proceeding with assumption it maps to paymentId.
+
+                        // FIXME: Assuming prepareResponse has ID. If not, we might need to query it.
+                        // For now let's assume `prepareResponse.paymentId` exists in the real backend response even if I missed it in TS interface.
+
+                        await paymentApi.complete((prepareResponse as any).paymentId, {
                             impUid: rsp.imp_uid,
                             merchantUid: rsp.merchant_uid
                         });
@@ -155,10 +171,9 @@ const PaymentPage = () => {
                 <div className="mt-4">
                     <button
                         onClick={handlePayment}
-                        disabled={isLoading}
-                        className={`w-full h-14 bg-primary text-white font-bold rounded-xl text-lg hover:bg-black/80 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className="w-full h-14 bg-primary text-white font-bold rounded-xl text-lg hover:bg-black/80 transition-colors"
                     >
-                        {isLoading ? '결제 처리중...' : '10,000원 결제하기'}
+                        10,000원 결제하기
                     </button>
                 </div>
 

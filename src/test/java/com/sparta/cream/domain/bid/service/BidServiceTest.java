@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
@@ -75,16 +73,10 @@ class BidServiceTest {
 
 	@BeforeEach
 	void setUp() {
+		// 모든 테스트에서 공통으로 사용할 유저 모킹
 		testUser = mock(Users.class);
 		lenient().when(testUser.getId()).thenReturn(userId);
-		TransactionSynchronizationManager.initSynchronization();
 	}
-
-	@AfterEach
-	void tearDown() {
-		TransactionSynchronizationManager.clearSynchronization();
-	}
-
 
 	/**
 	 * 입찰 등록 성공 시나리오를 검증합니다.

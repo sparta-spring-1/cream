@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-// Use env var or default to empty string (relative path) for production/proxy, 
-// or http://localhost:8080 for local dev if not proxied.
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-
+const API_BASE_URL = 'http://localhost:8080';
 
 const client = axios.create({
   baseURL: API_BASE_URL,
@@ -39,7 +36,7 @@ client.interceptors.response.use(
         // Attempt Reissue
         const { data } = await client.post('/v1/auth/reissue');
         const newAccessToken = data.accessToken;
-
+        
         // Update Token and Retry
         localStorage.setItem('accessToken', newAccessToken);
         originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;

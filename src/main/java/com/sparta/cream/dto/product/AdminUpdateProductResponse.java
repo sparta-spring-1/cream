@@ -6,7 +6,6 @@ import java.util.List;
 
 import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
-import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.ProductStatus;
 
 import lombok.AllArgsConstructor;
@@ -40,15 +39,15 @@ public class AdminUpdateProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminUpdateProductResponse from(Product product, List<Long> imageIds, List<String> options) {
+	public static AdminUpdateProductResponse from(Product product) {
 		return new AdminUpdateProductResponse(
 			product.getId(),
 			product.getName(),
 			product.getModelNumber(),
 			product.getBrandName(),
 			product.getProductCategory().getId(),
-			imageIds,
-			options,
+			product.getImageIds(),
+			product.getOptionSizes(),
 			product.getColor(),
 			product.getSizeUnit(),
 			product.getProductStatus(),

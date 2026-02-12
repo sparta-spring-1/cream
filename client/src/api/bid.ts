@@ -23,20 +23,5 @@ export const bidApi = {
     getMyBids: async (page = 0, size = 10) => {
         const response = await client.get(`/v1/bids/me?page=${page}&size=${size}`);
         return response.data;
-    },
-
-    getBidsByProduct: async (productOptionId: number) => {
-        const response = await client.get(`/v1/bids?productOptionId=${productOptionId}`);
-        return response.data;
-    },
-
-    updateBid: async (bidId: number, data: any) => {
-        const response = await client.patch(`/v1/bids/${bidId}`, data);
-        return response.data;
-    },
-
-    cancelBid: async (bidId: number) => {
-        const response = await client.delete(`/v1/bids/${bidId}`);
-        return response.data;
     }
 };
