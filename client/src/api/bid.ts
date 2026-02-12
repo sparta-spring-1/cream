@@ -9,7 +9,12 @@ export interface BidRequest {
 export interface BidResponse {
     id: number;
     price: number;
+    type: 'BUY' | 'SELL';
     status: string;
+    tradeId?: number; // Backend Requirement: Needs to be added to BidResponseDto
+    createdAt?: string;
+    productId?: number;
+    productOptionId?: number; // Backend Requirement: Needs to be added to BidResponseDto
 }
 
 export const bidApi = {
