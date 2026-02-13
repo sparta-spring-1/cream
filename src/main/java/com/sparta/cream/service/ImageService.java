@@ -2,6 +2,7 @@ package com.sparta.cream.service;
 
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,12 +20,13 @@ import com.sparta.cream.dto.product.S3UploadResult;
 import com.sparta.cream.entity.ProductImage;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ImageErrorCode;
-import com.sparta.cream.exception.ProductErrorCode;
 import com.sparta.cream.repository.ProductImageRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -37,6 +40,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ImageService {
 
 	private final S3Client s3Client;
@@ -134,5 +138,36 @@ public class ImageService {
 			.orElseThrow(() -> new BusinessException(ImageErrorCode.NOT_EXIST_FILE));
 
 		image.softDelete();
+	}
+
+	@Scheduled(cron = "0 0 0 * * *") // 매일 새벽 12시 실행
+	public void cleanupOrphanedImages() {
+
+		log.error("파일 삭제 시작: ");
+		LocalDateTime deleteTime = LocalDateTime.now().minusDays(1);
+		List<ProductImage> deletedImages = productImageRepository.findByDeletedAtBefore(deleteTime);
+
+		for (ProductImage img : deletedImages) {
+			try {
+				s3deleteFile(img.getUrl());
+				productImageRepository.delete(img);
+			} catch (Exception e) {
+				// S3 삭제 실패 시 로그를 남기고, 다음 배치 때 다시 시도
+				log.error("파일 삭제 실패: {}",img.getId());
+			}
+		}
+	}
+
+	public void s3deleteFile(String objectKey) {
+		try {
+			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+				.bucket(bucketName)
+				.key(objectKey)
+				.build();
+
+			s3Client.deleteObject(deleteObjectRequest);
+		} catch (Exception e) {
+			throw new BusinessException(ImageErrorCode.FAIL_DELETE_FILE);
+		}
 	}
 }
