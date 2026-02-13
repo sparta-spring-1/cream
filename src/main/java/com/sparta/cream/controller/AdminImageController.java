@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.sparta.cream.dto.product.ProductImageUploadResponse;
 import com.sparta.cream.service.ImageService;
 
 import lombok.RequiredArgsConstructor;
@@ -33,8 +34,8 @@ public class AdminImageController {
 	private final ImageService imageService;
 
 	@PostMapping("/upload")
-	public ResponseEntity<List<String>> s3Upload(@RequestPart(value = "image") List<MultipartFile> multipartFile) {
-		List<String> upload = imageService.upload(multipartFile);
+	public ResponseEntity<List<ProductImageUploadResponse>> s3Upload(@RequestPart(value = "image") List<MultipartFile> multipartFile) {
+		List<ProductImageUploadResponse> upload = imageService.upload(multipartFile);
 		return ResponseEntity.ok(upload);
 	}
 }
