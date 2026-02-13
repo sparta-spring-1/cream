@@ -48,7 +48,12 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
 		List<Trade> content = queryFactory
 			.selectFrom(t)
 			.leftJoin(t.purchaseBidId, pBid).fetchJoin()
+			.leftJoin(pBid.user).fetchJoin()
 			.leftJoin(t.saleBidId, sBid).fetchJoin()
+			.leftJoin(sBid.user).fetchJoin()
+			.leftJoin(sBid.productOption).fetchJoin()
+			.leftJoin(sBid.productOption.product).fetchJoin()
+
 			.where(
 				eqStatus(status),
 				eqUserId(userId)
@@ -59,8 +64,9 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
 			.fetch();
 
 		Long total = queryFactory
-			.select(t.count()) // QTrade 인스턴스인 't'의 count를 구함
+			.select(t.count())
 			.from(t)
+			.leftJoin(t.purchaseBidId, pBid)
 			.where(
 				eqStatus(status),
 				eqUserId(userId)

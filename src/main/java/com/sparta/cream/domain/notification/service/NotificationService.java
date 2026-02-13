@@ -6,6 +6,7 @@ import com.sparta.cream.domain.notification.entity.Notification;
 import com.sparta.cream.domain.notification.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +33,7 @@ public class NotificationService {
 	 * @param userId 알림을 수신할 사용자 식별자
 	 * @param message 사용자에게 전달할 알림 메시지 내용
 	 */
+	@Async
 	@Transactional
 	public void createNotification(Long userId, String message) {
 		Notification notification = new Notification(userId, message);
