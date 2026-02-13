@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.sparta.cream.dto.product.ProductImageUploadResponse;
@@ -17,6 +18,7 @@ import com.sparta.cream.dto.product.S3UploadResult;
 import com.sparta.cream.entity.ProductImage;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ImageErrorCode;
+import com.sparta.cream.exception.ProductErrorCode;
 import com.sparta.cream.repository.ProductImageRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,7 @@ public class ImageService {
 	private final ProductImageRepository productImageRepository;
 
 	// 외부에서 사용, S3에 저장된 이미지 객체의 public url을 반환
+	@Transactional
 	public List<ProductImageUploadResponse> upload(List<MultipartFile> files) {
 
 		List<S3UploadResult> s3UploadResults = files.stream()
@@ -61,8 +64,6 @@ public class ImageService {
 
 			newImages.add(newImage);
 		}
-
-		productImageRepository.saveAll(newImages);
 
 		// 각 파일을 업로드하고 url을 리스트로 반환
 		return newImages.stream()
@@ -128,4 +129,10 @@ public class ImageService {
 		return new S3UploadResult(originalFilename, s3FileName, ImageUrl);
 	}
 
+	public void deleteImage(Long imageId) {
+		ProductImage image = productImageRepository.findById(imageId)
+			.orElseThrow(() -> new BusinessException(ImageErrorCode.NOT_EXIST_FILE));
+
+		image.softDelete();
+	}
 }

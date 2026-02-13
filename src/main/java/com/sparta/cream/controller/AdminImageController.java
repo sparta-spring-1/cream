@@ -2,7 +2,10 @@ package com.sparta.cream.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -37,5 +40,11 @@ public class AdminImageController {
 	public ResponseEntity<List<ProductImageUploadResponse>> s3Upload(@RequestPart(value = "image") List<MultipartFile> multipartFile) {
 		List<ProductImageUploadResponse> upload = imageService.upload(multipartFile);
 		return ResponseEntity.ok(upload);
+	}
+
+	@DeleteMapping("/{imageId}")
+	public ResponseEntity<Void> deleteImage(@PathVariable Long imageId) {
+		imageService.deleteImage(imageId);
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 }
