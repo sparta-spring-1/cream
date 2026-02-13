@@ -54,7 +54,13 @@ class NotificationSchedulerTest {
 	@DisplayName("스케줄러 폴링 테스트 - 미발송 알림이 발송 완료 상태로 변경되어야 함")
 	void pollNotifications_UpdateStatus() throws InterruptedException {
 		// given
-		notificationService.createNotification(1L, "스케줄러 테스트용");
+		notificationService.createNotification(
+			1L,
+			NotificationType.TRADE_CANCELLED,
+			"스케줄러 테스트",
+			"스케줄러 테스트용 메시지",
+			1L
+		);
 
 		Thread.sleep(100);
 

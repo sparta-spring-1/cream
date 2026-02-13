@@ -14,6 +14,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.sparta.cream.domain.notification.entity.Notification;
+import com.sparta.cream.domain.notification.entity.NotificationType;
 import com.sparta.cream.domain.notification.repository.NotificationRepository;
 
 import jakarta.transaction.Transactional;
@@ -56,7 +57,13 @@ class NotificationServiceTest {
 		String message = "테스트 알림 메시지입니다.";
 
 		// when
-		notificationService.createNotification(userId, message);
+		notificationService.createNotification(
+			userId,
+			NotificationType.TRADE_CANCELLED,
+			"테스트 제목",
+			message,
+			1L
+		);
 
 		Thread.sleep(100);
 
