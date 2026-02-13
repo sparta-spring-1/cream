@@ -2,6 +2,7 @@ package com.sparta.cream.service;
 
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -11,8 +12,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.sparta.cream.dto.product.ProductImageUploadResponse;
+import com.sparta.cream.dto.product.S3UploadResult;
+import com.sparta.cream.entity.ProductImage;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ImageErrorCode;
+import com.sparta.cream.repository.ProductImageRepository;
 
 import lombok.RequiredArgsConstructor;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -35,17 +40,38 @@ public class ImageService {
 	private final S3Client s3Client;
 	@Value("${aws.s3.bucket-name}")
 	private String bucketName;
+	private final ProductImageRepository productImageRepository;
 
 	// 외부에서 사용, S3에 저장된 이미지 객체의 public url을 반환
-	public List<String> upload(List<MultipartFile> files) {
-		// 각 파일을 업로드하고 url을 리스트로 반환
-		return files.stream()
+	public List<ProductImageUploadResponse> upload(List<MultipartFile> files) {
+
+		List<S3UploadResult> s3UploadResults = files.stream()
 			.map(this::uploadImage)
+			.toList();
+
+		List<ProductImage> newImages = new ArrayList<>();
+
+		for (S3UploadResult s3UploadResult : s3UploadResults) {
+
+			ProductImage newImage = new ProductImage(
+				s3UploadResult.getOriginalFileName(),
+				s3UploadResult.getObjectKey(),
+				s3UploadResult.getUrl()
+			);
+
+			newImages.add(newImage);
+		}
+
+		productImageRepository.saveAll(newImages);
+
+		// 각 파일을 업로드하고 url을 리스트로 반환
+		return newImages.stream()
+			.map(ProductImageUploadResponse::from)
 			.toList();
 	}
 
 	// validateFile메서드를 호출하여 유효성 검증 후 uploadImageToS3메서드에 데이터를 반환하여 S3에 파일 업로드, public url을 받아 서비스 로직에 반환
-	private String uploadImage(MultipartFile file) {
+	private S3UploadResult uploadImage(MultipartFile file) {
 		validateFile(file.getOriginalFilename()); // 파일 유효성 검증
 		return uploadImageToS3(file); // 이미지를 S3에 업로드하고, 저장된 파일의 public url을 서비스 로직에 반환
 	}
@@ -72,7 +98,7 @@ public class ImageService {
 	}
 
 	// 직접적으로 S3에 업로드
-	private String uploadImageToS3(MultipartFile file) {
+	private S3UploadResult uploadImageToS3(MultipartFile file) {
 		// 원본 파일 명
 		String originalFilename = file.getOriginalFilename();
 		// 확장자 명
@@ -97,7 +123,9 @@ public class ImageService {
 		}
 
 		// public url 반환
-		return s3Client.utilities().getUrl(url -> url.bucket(bucketName).key(s3FileName)).toString();
+		String ImageUrl = s3Client.utilities().getUrl(url -> url.bucket(bucketName).key(s3FileName)).toString();
+
+		return new S3UploadResult(originalFilename, s3FileName, ImageUrl);
 	}
 
 }
