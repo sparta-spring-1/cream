@@ -48,6 +48,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 		Pageable pageable
 	);
 
+
 	@Query("""
     SELECT DISTINCT p
     FROM Product p
@@ -56,4 +57,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     WHERE p.id = :id
 """)
 	Optional<Product> findByIdWithGraph(Long id);
+
+	@Query("""
+    SELECT DISTINCT p
+    FROM Product p
+    LEFT JOIN FETCH p.productCategory pc
+    LEFT JOIN FETCH p.imageList pi
+    WHERE p.id = :productId
+      AND p.deletedAt IS NULL
+""")
+	Optional<Product> findByIdAndDeletedAtIsNull(Long productId);
 }

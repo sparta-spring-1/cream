@@ -21,6 +21,9 @@ import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.dto.product.GetAllProductResponse;
+import com.sparta.cream.dto.product.GetOneProductResponse;
+import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Product;
 import com.sparta.cream.entity.ProductCategory;
@@ -251,6 +254,46 @@ public class ProductService {
 	}
 
 	/**
+	 * 상품 목록을 조회합니다.
+	 * 브랜드, 카테고리 등의 조건을 기반으로 상품을 검색하며 페이징 처리된 결과를 반환합니다.
+	 *
+	 * @param page 조회할 페이지 번호 (0부터 시작)
+	 * @param pageSize 페이지당 조회할 상품 개수
+	 * ProductSearchCondition 다중 필터 조건 dto
+	 * @return 상품 목록 조회 응답 DTO
+	 */
+	public GetAllProductResponse getAllPublicProduct(int page, int pageSize, ProductSearchCondition condition) {
+
+		Sort sort = Sort.by("id").descending();
+		if(condition.getSort()!=null) {
+			sort = condition.getSort().getSort();
+		}
+
+		Pageable pageable = PageRequest.of(page, pageSize, sort);
+
+		Long categoryId = null;
+
+		if(condition.getCategory() != null) {
+			ProductCategory productCategory = productCategoryRepository.findByName(condition.getCategory())
+											.orElseThrow(()-> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
+			categoryId = productCategory.getId();
+		}
+
+		Page<Product> productPage =
+			productRepository.searchProducts(
+				condition.getBrandName(),
+				categoryId,
+				condition.getProductSize(),
+				condition.getMinPrice(),
+				condition.getMaxPrice(),
+				condition.getKeyword(),
+				pageable
+			);
+
+		return GetAllProductResponse.from(productPage);
+	}
+
+	/**
 	 * 관리자 권한으로 상품 단건을 조회합니다.
 	 * 일반 사용자 조회와 달리 Soft Delete 처리된 상품도 함께 조회합니다.
 	 *
@@ -272,4 +315,27 @@ public class ProductService {
 		return AdminGetOneProductResponse.from(product, options, imageIds);
 
 	}
+
+	/**
+	 * 상품 단건을 조회합니다.
+	 * Soft Delete 처리된 상품 조회시 예외처리합니다.
+	 *
+	 * @param productId 조회할 상품의 ID
+	 * @return 조회된 상품 정보를 담은 응답 DTO
+	 * @throws BusinessException 상품이 존재하지 않을 경우 발생
+	 */
+	public GetOneProductResponse getPublicProduct(Long productId) {
+
+		//삭제된 상품을 제외하고 조회
+		Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
+			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
+
+		List<String> options = productOptionRepository.findSizesByProductId(productId);
+		List<Long> imageIds = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.collect(Collectors.toList());
+
+		return GetOneProductResponse.from(product,options,imageIds);
+	}
+
 }
