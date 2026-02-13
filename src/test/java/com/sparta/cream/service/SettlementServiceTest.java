@@ -36,18 +36,19 @@ import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.UserRole;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
-import com.sparta.cream.exception.ErrorCode;
+import com.sparta.cream.exception.SettlementErrorCode;
 import com.sparta.cream.repository.SettlementRepository;
 
 @ExtendWith(MockitoExtension.class)
 class SettlementServiceTest {
 
 	private static final Long SELLER_ID = 1L;
-	private static final Long TRADE_ID_1 = 1L;
-	private static final Long TRADE_ID_2 = 2L;
-	private static final Long PAYMENT_ID_1 = 1L;
-	private static final Long PAYMENT_ID_2 = 2L;
-	private static final Long SETTLEMENT_ID = 1L;
+	private static final Long TRADE_ID_1 = 10L;
+	private static final Long TRADE_ID_2 = 20L;
+	private static final Long PAYMENT_ID_1 = 100L;
+	private static final Long PAYMENT_ID_2 = 200L;
+	private static final Long SETTLEMENT_ID_1 = 123L;
+	private static final Long SETTLEMENT_ID_2 = 234L;
 	private static final BigDecimal AMOUNT_1000 = BigDecimal.valueOf(1000);
 	private static final BigDecimal AMOUNT_2000 = BigDecimal.valueOf(2000);
 	private static final BigDecimal STANDARD_TRADE_AMOUNT = BigDecimal.valueOf(50000);
@@ -98,8 +99,8 @@ class SettlementServiceTest {
 		Users seller = createMockUser(SELLER_ID, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
 		Trade trade1 = createMockTrade(TRADE_ID_1, seller);
 		Trade trade2 = createMockTrade(TRADE_ID_2, seller);
-		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.PENDING, trade1);
-		Settlement settlement2 = createMockSettlement(TRADE_ID_2, AMOUNT_2000, SettlementStatus.PENDING, trade2);
+		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID_1, AMOUNT_1000, SettlementStatus.PENDING, trade1, seller);
+		Settlement settlement2 = createMockSettlement(SETTLEMENT_ID_2, AMOUNT_2000, SettlementStatus.PENDING, trade2, seller);
 		List<Settlement> settlements = Arrays.asList(settlement1, settlement2);
 
 		// when
@@ -117,7 +118,7 @@ class SettlementServiceTest {
 		// given
 		Users seller = createMockUser(SELLER_ID, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
 		Trade trade1 = createMockTrade(TRADE_ID_1, seller);
-		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.COMPLETED, trade1);
+		Settlement settlement1 = createMockSettlement(SETTLEMENT_ID_1, AMOUNT_1000, SettlementStatus.COMPLETED, trade1, seller);
 		List<Settlement> settlements = Collections.singletonList(settlement1);
 
 		// when
@@ -136,7 +137,7 @@ class SettlementServiceTest {
 		Pageable pageable = PageRequest.of(0, 10);
 		Users seller = createMockUser(userId, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
 		Trade trade = createMockTrade(TRADE_ID_1, seller);
-		Settlement settlement = createMockSettlement(SETTLEMENT_ID, AMOUNT_1000, SettlementStatus.COMPLETED, trade);
+		Settlement settlement = createMockSettlement(SETTLEMENT_ID_1, AMOUNT_1000, SettlementStatus.COMPLETED, trade, seller);
 		List<Settlement> settlementList = Collections.singletonList(settlement);
 		Page<Settlement> settlementPage = new PageImpl<>(settlementList, pageable, 1);
 
@@ -158,12 +159,12 @@ class SettlementServiceTest {
 	void getSettlement_success() {
 		// given
 		Long userId = SELLER_ID;
-		Long settlementId = SETTLEMENT_ID;
+		Long settlementId = SETTLEMENT_ID_1;
 		Users seller = createMockUser(userId, SELLER_EMAIL, SELLER_NAME, UserRole.USER);
 		Trade trade = createMockTrade(TRADE_ID_1, seller);
-		Settlement settlement = createMockSettlement(settlementId, AMOUNT_1000, SettlementStatus.COMPLETED, trade);
+		Settlement settlement = createMockSettlement(settlementId, AMOUNT_1000, SettlementStatus.COMPLETED, trade, seller);
 
-		given(settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)).willReturn(
+		given(settlementRepository.findByIdAndUserId(settlementId, userId)).willReturn(
 			Optional.of(settlement));
 
 		// when
@@ -173,7 +174,7 @@ class SettlementServiceTest {
 		assertNotNull(result);
 		assertEquals(settlementId, result.getId());
 		verify(settlementRepository, times(1))
-			.findSettlementWithDetailsByIdAndSellerId(settlementId, userId);
+			.findByIdAndUserId(settlementId, userId);
 	}
 
 	@Test
@@ -181,17 +182,17 @@ class SettlementServiceTest {
 	void getSettlement_fail_not_found() {
 		// given
 		Long userId = SELLER_ID;
-		Long settlementId = SETTLEMENT_ID;
+		Long settlementId = SETTLEMENT_ID_1;
 
-		given(settlementRepository.findSettlementWithDetailsByIdAndSellerId(settlementId, userId)).willReturn(
+		given(settlementRepository.findByIdAndUserId(settlementId, userId)).willReturn(
 			Optional.empty());
 
 		// when & then
 		BusinessException exception = assertThrows(BusinessException.class,
 			() -> settlementService.getSettlement(userId, settlementId));
-		assertEquals(ErrorCode.RESOURCE_NOT_FOUND, exception.getErrorCode());
+		assertEquals(SettlementErrorCode.SETTLEMENT_NOT_FOUND, exception.getErrorCode());
 		verify(settlementRepository, times(1))
-			.findSettlementWithDetailsByIdAndSellerId(settlementId, userId);
+			.findByIdAndUserId(settlementId, userId);
 	}
 
 	private Users createMockUser(Long id, String email, String name, UserRole role) {
@@ -236,10 +237,11 @@ class SettlementServiceTest {
 		return payment;
 	}
 
-	private Settlement createMockSettlement(Long id, BigDecimal amount, SettlementStatus status, Trade trade) {
+	private Settlement createMockSettlement(Long id, BigDecimal amount, SettlementStatus status, Trade trade, Users users) {
 		Payment mockPayment = createMockPayment(id, amount, PaymentStatus.PAID_SUCCESS, trade);
 		Settlement settlement = new Settlement(amount, status, mockPayment);
 		ReflectionTestUtils.setField(settlement, "id", id);
+		ReflectionTestUtils.setField(settlement, "seller", users);
 		ReflectionTestUtils.setField(settlement, "createdAt", LocalDateTime.now());
 		ReflectionTestUtils.setField(settlement, "updatedAt", LocalDateTime.now());
 		return settlement;

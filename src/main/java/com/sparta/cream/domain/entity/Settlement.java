@@ -97,7 +97,7 @@ public class Settlement extends BaseEntity {
 	}
 
 	public void refundStatus(PaymentStatus prevStatus, SettlementStatus nextStatus){
-		if(!prevStatus.equals(PaymentStatus.PAID_SUCCESS)) {
+		if(!(prevStatus.equals(PaymentStatus.PAID_SUCCESS)&&this.status == SettlementStatus.COMPLETED)) {
 			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
 		}
 		this.status = nextStatus;

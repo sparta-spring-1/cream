@@ -50,4 +50,7 @@ public interface SettlementRepository extends JpaRepository<Settlement, Long> {
 
 	@Query("SELECT s FROM Settlement s JOIN FETCH s.payment p WHERE p.id = :paymentId")
 	Optional<Settlement> findSettlementByPaymentId(Long paymentId);
+
+	@Query("SELECT s FROM Settlement s JOIN FETCH s.seller u WHERE u.id = :userId AND s.id = :settlementId")
+	Optional<Settlement> findByIdAndUserId(Long settlementId, Long userId);
 }

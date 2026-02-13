@@ -1,10 +1,9 @@
 package com.sparta.cream.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import com.sparta.cream.domain.status.SettlementStatus;
 import com.sparta.cream.dto.response.SettlementDetailsResponse;
 import com.sparta.cream.dto.response.SettlementListResponse;
 import com.sparta.cream.exception.BusinessException;
-import com.sparta.cream.exception.ErrorCode;
 import com.sparta.cream.exception.SettlementErrorCode;
 import com.sparta.cream.repository.SettlementRepository;
 
@@ -118,7 +116,7 @@ public class SettlementService {
 	 */
 	@Transactional(readOnly = true)
 	public SettlementDetailsResponse getSettlement(Long userId, Long settlementId) {
-		Settlement settlement = settlementRepository.findById(settlementId)
+		Settlement settlement = settlementRepository.findByIdAndUserId(settlementId, userId)
 			.orElseThrow(() -> new BusinessException(SettlementErrorCode.SETTLEMENT_NOT_FOUND));
 
 		return SettlementDetailsResponse.from(settlement);

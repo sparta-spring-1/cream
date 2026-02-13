@@ -73,6 +73,8 @@ class PaymentServiceTest {
 	@Mock
 	private AuthService authService;
 	@Mock
+	private SettlementService settlementService;
+	@Mock
 	private PortOneApiClient portOneApiClient;
 
 	@Test
@@ -201,12 +203,13 @@ class PaymentServiceTest {
 	void refund_success() {
 		// given
 		Users seller = createMockUser(SELLER_ID, "seller@email.com", "Seller", UserRole.USER);
+		Users buyer = createMockUser(BUYER_ID, "buyer@email.com", "Buyer", UserRole.USER);
 		Bid saleBid = Bid.builder().user(seller).build();
 		Trade trade = new Trade(null, saleBid, STANDARD_AMOUNT.longValue());
 
-		Payment payment = createMockPayment(PAYMENT_ID, MERCHANT_UID, STANDARD_AMOUNT, PaymentStatus.PAID_SUCCESS, null, trade);
+		Payment payment = createMockPayment(PAYMENT_ID, MERCHANT_UID, STANDARD_AMOUNT, PaymentStatus.PAID_SUCCESS, buyer, trade);
 
-		RefundPaymentRequest request = new RefundPaymentRequest(1L, "Out of stock", STANDARD_AMOUNT);
+		RefundPaymentRequest request = new RefundPaymentRequest(TRADE_ID, "Out of stock", STANDARD_AMOUNT);
 
 		given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
 		given(authService.findById(SELLER_ID)).willReturn(seller);
@@ -261,7 +264,7 @@ class PaymentServiceTest {
 		given(paymentRepository.findById(PAYMENT_ID)).willReturn(Optional.of(payment));
 		given(authService.findById(SELLER_ID)).willReturn(seller);
 
-		RefundPaymentRequest request = new RefundPaymentRequest(1L, "Reason", HIGHER_AMOUNT);
+		RefundPaymentRequest request = new RefundPaymentRequest(TRADE_ID, "Reason", HIGHER_AMOUNT);
 
 		// when & then
 		BusinessException ex = assertThrows(BusinessException.class,
