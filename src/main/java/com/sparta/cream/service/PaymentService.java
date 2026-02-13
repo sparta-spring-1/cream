@@ -3,6 +3,7 @@ package com.sparta.cream.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClientException;
@@ -11,7 +12,7 @@ import com.sparta.cream.client.PortOneApiClient;
 import com.sparta.cream.domain.entity.Payment;
 import com.sparta.cream.domain.entity.PaymentHistory;
 import com.sparta.cream.domain.entity.Refund;
-import com.sparta.cream.domain.notification.service.NotificationService;
+import com.sparta.cream.domain.event.PaymentCompletedEvent;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.service.TradeService;
@@ -52,7 +53,7 @@ public class PaymentService {
 	private final PaymentHistoryRepository paymentHistoryRepository;
 	private final RefundRepository refundRepository;
 
-	private final NotificationService notificationService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final TradeService tradeService;
 	private final AuthService authService;
 	private final PortOneApiClient portOneApiClient;
@@ -128,9 +129,13 @@ public class PaymentService {
 			PaymentHistory success = payment.completePayment(request.getImpUid(), method, payment.getStatus());
 			paymentHistoryRepository.save(success);
 
-			String message = String.format("%s 상품이 %d원에 결제 완료되었습니다.", payment.getProductName(), payment.getAmount());
+			eventPublisher.publishEvent(new PaymentCompletedEvent(
+				userId,
+				payment.getProductName(),
+				payment.getAmount(),
+				payment.getId()
+			));
 
-			notificationService.createNotification(userId, message);
 
 			return new CompletePaymentResponse(payment.getImpUid(), payment.getStatus().toString(),
 				payment.getPaidAt());
