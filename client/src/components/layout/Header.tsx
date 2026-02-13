@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Search, Bell, Database, LogOut } from 'lucide-react';
+import { Search, Bell, LogOut } from 'lucide-react';
 import { authApi } from '../../api/auth';
 
 const Header = () => {
@@ -24,8 +24,7 @@ const Header = () => {
             <header className="max-w-content mx-auto flex items-center justify-between px-10 py-4 gap-8">
                 <div className="flex items-center gap-10 flex-1">
                     <Link to="/" className="flex items-center gap-2 cursor-pointer">
-                        <Database className="text-primary" size={32} strokeWidth={2.5} />
-                        <h2 className="text-2xl font-black tracking-tighter">CREAM</h2>
+                        <img src="/logo_cream.png" alt="CREAM" className="h-14 w-auto" />
                     </Link>
 
                     <div className="flex-1 max-w-lg relative">
