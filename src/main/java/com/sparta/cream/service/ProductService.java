@@ -142,7 +142,11 @@ public class ProductService {
 		ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
 
-		// TODO 상품 이미지 수정
+		product.getImageList().stream()
+			.filter(img -> !request.getImageIds().contains(img.getId()))
+			.forEach(ProductImage::softDelete);
+
+		// TODO 새로 추가된 이미지와 상품 연결
 		// TODO 입찰 정보가 있는 상품은 수정할 수 없음
 
 		// 상품 옵션 수정
@@ -203,15 +207,15 @@ public class ProductService {
 		List<ProductOption> options = productOptionRepository.findAllByProduct(product);
 		options.forEach(BaseEntity::softDelete);
 
-		List<Long> optionIds = options.stream()
-			.map(ProductOption::getId)
-			.toList();
-
 		//TODO 해당 옵션들에 대한 입찰이 존재하면 삭제할 수 없음
 
-		// TODO 상품 이미지 삭제
-		//List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
-		//imageIds.forEach(BaseEntity::softDelete);
+		List<Long> imageIdList = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.toList();
+
+		product.getImageList().forEach(BaseEntity::softDelete);
+
+		productImageRepository.deleteAllByIdInBatch(imageIdList);
 
 		// 상품 삭제
 		product.softDelete();
