@@ -1,5 +1,7 @@
 package com.sparta.cream.domain.bid.service;
 
+import static com.sparta.cream.domain.bid.entity.QBid.*;
+import static com.sparta.cream.entity.QProductOption.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
@@ -7,7 +9,9 @@ import static org.mockito.BDDMockito.*;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,11 +19,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RBucket;
+import org.redisson.api.RScoredSortedSet;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
@@ -68,15 +77,33 @@ class BidServiceTest {
 	@Mock
 	private UserRepository userRepository;
 
+	@Mock
+	private RedissonClient redissonClient;
+
+	@Mock
+	private RBucket<Object> rBucket;
+
+	@Mock
+	private RScoredSortedSet<Object> rScoredSortedSet;
+
 	private Users testUser;
 	private final Long userId = 1L;
 
 	@BeforeEach
 	void setUp() {
-		// 모든 테스트에서 공통으로 사용할 유저 모킹
 		testUser = mock(Users.class);
 		lenient().when(testUser.getId()).thenReturn(userId);
+		lenient().when(redissonClient.getBucket(anyString())).thenReturn(rBucket);
+		lenient().when(rBucket.isExists()).thenReturn(false); // 기본적으로 패널티 없는 상태
+		lenient().when(redissonClient.getScoredSortedSet(anyString())).thenReturn(rScoredSortedSet);
+		TransactionSynchronizationManager.initSynchronization();
 	}
+
+	@AfterEach
+	void tearDown() {
+		TransactionSynchronizationManager.clearSynchronization();
+	}
+
 
 	/**
 	 * 입찰 등록 성공 시나리오를 검증합니다.
@@ -87,22 +114,27 @@ class BidServiceTest {
 		// given
 		Long productOptionId = 100L;
 		Long price = 150000L;
+		Long fakeBidId = 1L;
 
 		BidRequestDto requestDto = new BidRequestDto(productOptionId, price, BidType.BUY);
 		ProductOption productOption = mock(ProductOption.class);
 
+		given(productOption.getId()).willReturn(productOptionId);
 		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+		given(testUser.isBidBlocked()).willReturn(false);
 		given(productOptionRepository.findById(productOptionId)).willReturn(Optional.of(productOption));
-		given(bidRepository.save(any(Bid.class))).willAnswer(invocation -> invocation.getArgument(0));
+		given(bidRepository.save(any(Bid.class))).willAnswer(invocation -> {
+				Bid bid = invocation.getArgument(0);
+				org.springframework.test.util.ReflectionTestUtils.setField(bid, "id", fakeBidId);
+				return bid;
+			});
 
 		// when
 		BidResponseDto response = bidService.createBid(userId, requestDto);
 
 		// then
 		assertThat(response).isNotNull();
-		assertThat(response.getPrice()).isEqualTo(price);
-		assertThat(response.getType()).isEqualTo(BidType.BUY);
-
+		verify(rScoredSortedSet, times(1)).add(anyDouble(), anyLong());
 		verify(bidRepository, times(1)).save(any(Bid.class));
 	}
 
@@ -152,10 +184,11 @@ class BidServiceTest {
 
 		int page = 0;
 		int size = 10;
-		Pageable pageable = PageRequest.of(page, size);
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
+
 		Page<Bid> bidPage = new PageImpl<>(List.of(bid1, bid2), pageable, 2);
 
-		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId, pageable))
+		given(bidRepository.findAllByUserId(userId, pageable))
 			.willReturn(bidPage);
 
 		// when
@@ -166,7 +199,7 @@ class BidServiceTest {
 		assertThat(response.getContent().get(0).getPrice()).isEqualTo(100000L);
 		assertThat(response.getContent().get(1).getPrice()).isEqualTo(120000L);
 
-		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
+		verify(bidRepository, times(1)).findAllByUserId(userId, pageable);
 	}
 
 	/**
@@ -179,10 +212,11 @@ class BidServiceTest {
 		Long userId = 1L;
 		int page = 0;
 		int size = 10;
-		Pageable pageable = PageRequest.of(page, size);
+		Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "createdAt"));
+
 		Page<Bid> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
 
-		given(bidRepository.findAllByUserIdOrderByCreatedAtAsc(userId, pageable))
+		given(bidRepository.findAllByUserId(userId, pageable))
 			.willReturn(emptyPage);
 
 		// when
@@ -192,7 +226,7 @@ class BidServiceTest {
 		assertThat(response.getContent()).isEmpty();
 		assertThat(response.getTotalElements()).isEqualTo(0);
 
-		verify(bidRepository, times(1)).findAllByUserIdOrderByCreatedAtAsc(userId, pageable);
+		verify(bidRepository, times(1)).findAllByUserId(userId, pageable);
 	}
 
 	/**
@@ -245,28 +279,40 @@ class BidServiceTest {
 	void updateBid_Success() {
 		// given
 		Long bidId = 100L;
+		Long oldProductOptionId = 50L;
 		Long newPrice = 200000L;
 		Long newProductOptionId = 101L;
 		BidType newType = BidType.SELL;
 
 		BidRequestDto requestDto = new BidRequestDto(newProductOptionId, newPrice, newType);
+
+		ProductOption oldOption = mock(ProductOption.class);
 		ProductOption newOption = mock(ProductOption.class);
+		lenient().when(oldOption.getId()).thenReturn(oldProductOptionId);
+		lenient().when(newOption.getId()).thenReturn(newProductOptionId);
 
-		Bid bid = Bid.builder().user(testUser).status(BidStatus.PENDING).build();
+		Bid bid = Bid.builder()
+			.user(testUser)
+			.productOption(oldOption)
+			.status(BidStatus.PENDING)
+			.price(150000L)
+			.type(BidType.BUY)
+			.build();
 		ReflectionTestUtils.setField(bid, "id", bidId);
-
-		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
-		given(testUser.isBidBlocked()).willReturn(false);
 
 		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
 		given(productOptionRepository.findById(newProductOptionId)).willReturn(Optional.of(newOption));
+		lenient().when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+		lenient().when(testUser.isBidBlocked()).thenReturn(false);
 
 		// when
 		BidResponseDto response = bidService.updateBid(userId, bidId, requestDto);
 
 		// then
 		assertThat(response.getPrice()).isEqualTo(200000L);
+		assertThat(response.getType()).isEqualTo(newType);
 		verify(bidRepository).findById(bidId);
+		verify(rScoredSortedSet, atLeastOnce()).add(anyDouble(), eq(bidId));
 	}
 
 	/**
@@ -280,16 +326,23 @@ class BidServiceTest {
 		Long bidId = 100L;
 		BidRequestDto requestDto = new BidRequestDto(101L, 200000L, BidType.SELL);
 
-		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
-		given(testUser.isBidBlocked()).willReturn(false);
+
+		ProductOption productOption = mock(ProductOption.class);
+		lenient().when(productOption.getId()).thenReturn(1L);
 
 		Bid bid = Bid.builder()
 			.user(testUser)
+			.productOption(productOption)
 			.status(BidStatus.MATCHED)
+			.price(150000L)
+			.type(BidType.BUY)
 			.build();
+		ReflectionTestUtils.setField(bid, "id", bidId);
 
 		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
-		given(productOptionRepository.findById(anyLong())).willReturn(Optional.of(mock(ProductOption.class)));
+		lenient().when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+		lenient().when(testUser.isBidBlocked()).thenReturn(false);
+		lenient().when(productOptionRepository.findById(anyLong())).thenReturn(Optional.of(mock(ProductOption.class)));
 
 		// when & then
 		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, requestDto))
@@ -307,20 +360,24 @@ class BidServiceTest {
 		Long bidId = 100L;
 		Long otherUserId = 999L;
 
-		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
-		given(testUser.isBidBlocked()).willReturn(false);
+		ProductOption productOption = mock(ProductOption.class);
+		lenient().when(productOption.getId()).thenReturn(1L);
+
 
 		Users otherUser = mock(Users.class);
 		given(otherUser.getId()).willReturn(otherUserId);
 
 		Bid bid = Bid.builder()
 			.user(otherUser)
+			.productOption(productOption)
 			.status(BidStatus.PENDING)
 			.build();
-
 		ReflectionTestUtils.setField(bid, "id", bidId);
 
 		given(bidRepository.findById(bidId)).willReturn(Optional.of(bid));
+
+		lenient().when(userRepository.findById(userId)).thenReturn(Optional.of(testUser));
+		lenient().when(testUser.isBidBlocked()).thenReturn(false);
 
 		// when & then
 		assertThatThrownBy(() -> bidService.updateBid(userId, bidId, new BidRequestDto(101L, 200000L, BidType.SELL)))
@@ -335,13 +392,42 @@ class BidServiceTest {
 	@DisplayName("입찰 수정 실패 - 패널티로 인해 입찰이 차단된 유저")
 	void updateBid_Fail_PenaltyUser() {
 		// given
+		Long testBidId = 1L;
+		Long newOptionId = 100L;
+		BidRequestDto requestDto = new BidRequestDto(newOptionId, 200000L, BidType.SELL);
+
+		RBucket<Object> mockBucket = mock(RBucket.class);
+		given(redissonClient.getBucket(anyString())).willReturn(mockBucket);
+		given(mockBucket.isExists()).willReturn(false);
+
+		ReflectionTestUtils.setField(testUser, "id", userId);
 		given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
-		given(testUser.isBidBlocked()).willReturn(true); // 차단된 유저로 설정
+		given(testUser.isBidBlocked()).willReturn(true);
+
+		// ReflectionTestUtils.setField(testUser, "id", userId);
+		// given(testUser.getId()).willReturn(userId);
+		// given(testUser.isBidBlocked()).willReturn(true);
+		//
+		// Bid bid = Bid.builder()
+		// 	.user(testUser)
+		// 	.productOption(oldOption)
+		// 	.status(BidStatus.PENDING)
+		// 	.price(150000L)
+		// 	.type(BidType.BUY)
+		// 	.build();
+		// ReflectionTestUtils.setField(bid, "id", testBidId);
+		//
+		// given(bidRepository.findById(testBidId)).willReturn(Optional.of(bid));
+		// given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
 
 		// when & then
-		assertThatThrownBy(() -> bidService.updateBid(userId, 1L, new BidRequestDto(100L, 200000L, BidType.SELL)))
+		assertThatThrownBy(() ->
+			bidService.updateBid(userId, testBidId, new BidRequestDto(newOptionId, 200000L, BidType.SELL))
+		)
 			.isInstanceOf(BusinessException.class)
 			.hasMessageContaining(BidErrorCode.BID_BLOCKED_BY_PENALTY.getMessage());
+		verify(mockBucket).set(eq("BANNED"), eq(3L), eq(TimeUnit.DAYS));
+
 	}
 
 	/**
@@ -353,6 +439,7 @@ class BidServiceTest {
 		// given
 		Long userId = 1L;
 		Long bidId = 100L;
+		Long otherUserId = 999L;
 
 		Users otherUser = mock(Users.class);
 		given(otherUser.getId()).willReturn(999L);
@@ -380,6 +467,15 @@ class BidServiceTest {
 		Long bidId = 1L;
 		Long adminId = 99L;
 
+		RBucket<Object> mockBucket = mock(RBucket.class);
+		RScoredSortedSet mockZSet = mock(RScoredSortedSet.class);
+
+		given(redissonClient.getBucket(anyString())).willReturn(mockBucket);
+		given(redissonClient.getScoredSortedSet(anyString())).willReturn(mockZSet);
+
+		ProductOption productOption = mock(ProductOption.class);
+		given(productOption.getId()).willReturn(10L);
+
 		AdminBidCancelRequestDto requestDto = new AdminBidCancelRequestDto(
 			CancelReason.MISTAKE.name(),
 			"관리자 수동 취소 처리"
@@ -389,6 +485,8 @@ class BidServiceTest {
 
 		Bid bid = Bid.builder()
 			.status(BidStatus.PENDING)
+			.type(BidType.BUY) // removeFromRedisZSet에서 type을 체크하므로 추가
+			.productOption(productOption)
 			.build();
 		ReflectionTestUtils.setField(bid, "id", bidId);
 

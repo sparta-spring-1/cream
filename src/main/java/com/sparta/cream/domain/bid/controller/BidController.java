@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
+import com.sparta.cream.domain.bid.service.BidLockFacade;
 import com.sparta.cream.domain.bid.service.BidService;
 import com.sparta.cream.security.CustomUserDetails;
 
@@ -40,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 public class BidController {
 
 	private final BidService bidService;
+	private final BidLockFacade bidLockFacade;
 
 	/**
 	 * 입찰을 등록합니다.
@@ -54,8 +56,10 @@ public class BidController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
-		return ResponseEntity.ok(bidService.createBid(userId, requestDto));
+		Long userId = userDetails.getId();
+		BidResponseDto response = bidLockFacade.createBidWithLock(userId, requestDto);
+
+		return ResponseEntity.ok(response);
 	}
 
 	/**
@@ -68,7 +72,7 @@ public class BidController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "10") int size) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
+		Long userId = userDetails.getId();
 		return ResponseEntity.ok(bidService.getMyBids(userId, page, size));
 
 	}
@@ -102,9 +106,10 @@ public class BidController {
 		@PathVariable Long bidId,
 		@Valid @RequestBody BidRequestDto requestDto) {
 
-		Long userId = Long.parseLong(userDetails.getUsername());
+		Long userId = userDetails.getId();
+		BidResponseDto response = bidLockFacade.updateBidWithLock(userId, bidId, requestDto);
 
-		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
+		return ResponseEntity.ok(response);
 	}
 
 	/**
@@ -119,8 +124,8 @@ public class BidController {
 		@AuthenticationPrincipal CustomUserDetails userDetails,
 		@PathVariable Long bidId
 	) {
-		Long userId = Long.parseLong(userDetails.getUsername());
-		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
+		Long userId = userDetails.getId();
+		return ResponseEntity.ok(bidLockFacade.cancelBidWithLock(userId, bidId));
 	}
 
 }
