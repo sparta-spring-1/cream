@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
 import com.sparta.cream.domain.bid.dto.BidRequestDto;
 import com.sparta.cream.domain.bid.dto.BidResponseDto;
+import com.sparta.cream.domain.bid.service.BidLockFacade;
 import com.sparta.cream.domain.bid.service.BidService;
 import com.sparta.cream.security.CustomUserDetails;
 
@@ -40,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 public class BidController {
 
 	private final BidService bidService;
+	private final BidLockFacade bidLockFacade;
 
 	/**
 	 * 입찰을 등록합니다.
@@ -55,7 +57,7 @@ public class BidController {
 		@Valid @RequestBody BidRequestDto requestDto) {
 
 		Long userId = userDetails.getId();
-		BidResponseDto response = bidService.createBid(userId, requestDto);
+		BidResponseDto response = bidLockFacade.createBidWithLock(userId, requestDto);
 
 		return ResponseEntity.ok(response);
 	}
@@ -105,8 +107,9 @@ public class BidController {
 		@Valid @RequestBody BidRequestDto requestDto) {
 
 		Long userId = userDetails.getId();
+		BidResponseDto response = bidLockFacade.updateBidWithLock(userId, bidId, requestDto);
 
-		return ResponseEntity.ok(bidService.updateBid(userId, bidId, requestDto));
+		return ResponseEntity.ok(response);
 	}
 
 	/**
@@ -122,7 +125,7 @@ public class BidController {
 		@PathVariable Long bidId
 	) {
 		Long userId = userDetails.getId();
-		return ResponseEntity.ok(bidService.cancelBid(userId, bidId));
+		return ResponseEntity.ok(bidLockFacade.cancelBidWithLock(userId, bidId));
 	}
 
 }

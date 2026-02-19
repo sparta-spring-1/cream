@@ -41,7 +41,7 @@ public class TradeController {
 		@PathVariable Long tradeId,
 		@AuthenticationPrincipal CustomUserDetails userDetails
 	) {
-		tradeService.cancelTrade(tradeId, userDetails.getId());
+		tradeService.cancelTradeWithLock(tradeId, userDetails.getId());
 
 		return ResponseEntity.ok(
 			Map.of("message", "체결이 정상적으로 취소되었습니다. 3일간 입찰 등록이 제한됩니다.")
