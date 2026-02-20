@@ -9,9 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.sparta.cream.domain.notification.dto.NotificationResponseDto;
 
 import com.sparta.cream.domain.notification.entity.Notification;
 import com.sparta.cream.domain.notification.entity.NotificationType;
@@ -41,6 +46,15 @@ class NotificationServiceTest {
 
 	@MockitoBean
 	private RedissonClient redissonClient;
+
+	@MockitoBean
+	private RedisConnectionFactory redisConnectionFactory;
+
+	@MockitoBean
+	private RedisMessageListenerContainer redisMessageListenerContainer;
+
+	@MockitoBean(name = "notificationRedisTemplate")
+	private RedisTemplate<String, NotificationResponseDto> notificationRedisTemplate;
 
 	/**
 	 * 알림 생성 기능의 정상 동작 여부를 검증합니다.

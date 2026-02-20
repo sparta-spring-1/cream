@@ -166,7 +166,7 @@ public class PaymentService {
 			eventPublisher.publishEvent(new PaymentCompletedEvent(
 				userId,
 				payment.getProductName(),
-				payment.getAmount(),
+				payment.getAmount().longValue(),
 				payment.getId()
 			));
 

@@ -10,8 +10,13 @@ import org.junit.jupiter.api.Test;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.sparta.cream.domain.notification.dto.NotificationResponseDto;
 
 import com.sparta.cream.domain.notification.repository.NotificationRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
@@ -42,6 +47,15 @@ class NotificationSchedulerTest {
 
 	@MockitoBean
 	private RedissonClient redissonClient;
+
+	@MockitoBean
+	private RedisConnectionFactory redisConnectionFactory;
+
+	@MockitoBean
+	private RedisMessageListenerContainer redisMessageListenerContainer;
+
+	@MockitoBean(name = "notificationRedisTemplate")
+	private RedisTemplate<String, NotificationResponseDto> notificationRedisTemplate;
 
 	/**
 	 * 스케줄러의 알림 처리 흐름을 테스트합니다
