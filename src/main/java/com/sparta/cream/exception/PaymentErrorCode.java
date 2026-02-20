@@ -5,6 +5,16 @@ import org.springframework.http.HttpStatus;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 결제 관련 오류 코드를 정의하는 열거형 클래스입니다.
+ * <p>
+ * 각 오류 코드는 HTTP 상태 코드와 사용자에게 표시될 메시지를 포함합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Getter
 @RequiredArgsConstructor
 public enum PaymentErrorCode implements BaseCode {
