@@ -31,8 +31,8 @@ client.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // IF 401 Unauthorized AND not already retrying
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // IF 401 Unauthorized AND not already retrying AND the request is not for reissue itself
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/reissue')) {
       originalRequest._retry = true;
 
       try {
@@ -47,7 +47,7 @@ client.interceptors.response.use(
       } catch (reissueError) {
         // Reissue Failed -> Logout
         localStorage.removeItem('accessToken');
-        window.location.href = '/login';
+        window.location.href = '/auth';
         return Promise.reject(reissueError);
       }
     }

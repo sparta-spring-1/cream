@@ -1,30 +1,21 @@
-import { ArrowRight, Zap, CheckCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { productApi, type PublicSummaryProduct } from '../api/product';
+import { ArrowRight } from 'lucide-react';
+import { ProductCard } from '../components/product/ProductCard';
 
 const HomePage = () => {
-    // Mock Data for frontend-only
-    const mockProducts = [
-        {
-            id: '101', brandName: 'Nike', name: "Air Jordan 1 Low 'Olive'", retailPrice: 645000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCfxhrl7NrltfqgQ2ZlR3OwRy7xy3IxiVpFTMxXhm5pKwISzB0tsr1PcT2f44HBrtbuhFK_TVY3wX8lyiE_JFOD5_5ueMVOVML1f4N-agFGSyk0lohakbdkjGGLmje0PLFtbFFMtY0GNc11SU1BC1XZHlFptdWz1IDxekIKFw4YK6_pNjpaEyjPGGBoeIR7PzeVVIIsnfL_ilOMCuJ3tyDAL7N26_Psj9v98SsGED3_jH55rd5HFThmF10nWiQX2nd1aRhpmIwh4is"
-        },
-        {
-            id: '102', brandName: 'Adidas', name: "Samba OG Cloud White", retailPrice: 139000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDAh0RgJI2n0LHq9lfy2FL4lE1S6fdW4pjNhmXo7jn7x4X7Dtz_TF811VxK6uzkn3fdMEY2lk-8wp5pYeSH6u4ZJXCJS4d5LZj1loY_Gz_5hMON810997oNFjZJy4sp0DfQVM4FNMQnT_UtRIa5b6Iw2RWKv4DX4ZNE6CosdsPeRnqCYB4Z53S9tBeCpblKJoY7CZJIvlF2qSbsrhbmtrzC6u30-81tWWSHCjwN21-5rRT2_dTun3HHDPOQW51zEyfyASinoxcM0So"
-        },
-        {
-            id: '103', brandName: 'Stussy', name: "8 Ball Tee Black", retailPrice: 82000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuCIq96uNuWMj0SotQyxcfEGWkr9AwMyn7nUnMnkL4K_e_WsHSJkSy3Cd9us3w44YUOVjwyxQ2dJec2sRtYDJs5LZf4Tk-GMSFOqkxRxrNKyt6g2oOkvf6-9WdQBy1U-uMGWUfSjwj9fucehcG__bWphCwY5AI8W2e5LHyh3EkS2mXfs2VOaHRZxeWwRXdcLOqG8yh250seM1kttO0nfJE46haJm8puSELy9BkaGRkkl3PKRnFC6UN_iwDrttkk1uiQuTfG2btQYakA"
-        },
-        {
-            id: '104', brandName: 'Prada', name: "Re-Edition 2005 Nylon Bag", retailPrice: 1650000,
-            imageUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuBj5dyVMpOWegUebtXEu6Stw_PpvDqGV-9qHrUxTJCohWYysJchCfOtZHwcED_swIEwaZwPwQGRUmaHer41VQBm6tN2uy34m3SXa9URJiUcpKW34ADKBaZyMrqvfdubanbEz-_yFnzQX8od7pu_6vW5mmIebCEO9K5g8X7Ympv6BQee2Iq0okzXYbIlNf9qKnof38IVsze98BuYqsXsfl0bIwmQjEVt3dmusajNkUOydfYuK9X1PsApqpTxyXz-IH_A9MRuA0obxQk"
-        }
-    ];
+    const [products, setProducts] = useState<PublicSummaryProduct[]>([]);
+
+    useEffect(() => {
+        productApi.getPublicProducts(0, 5) // Fetch top 5 items
+            .then(data => setProducts(data.productList))
+            .catch(err => console.error("Failed to fetch products", err));
+    }, []);
 
     return (
         <div className="layout-container py-8 space-y-12">
-            {/* Hero Section */}
+            {/* ... Hero Section omitted for brevity, keeping it unchanged ... */}
             <section className="max-w-content px-10">
                 <div className="flex overflow-x-auto gap-4 hide-scrollbar pb-4 -mx-2 px-2">
                     {/* Banner 1 */}
@@ -70,49 +61,8 @@ const HomePage = () => {
                 </div>
 
                 <div className="grid grid-cols-5 gap-6">
-                    {/* Payment Test Item (Hardcoded) */}
-                    <Link to="/products/payment-test" className="group cursor-pointer">
-                        <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4 border-2 border-primary/20">
-                            <div
-                                className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
-                                style={{ backgroundImage: 'url("https://placehold.co/400x400/135bec/ffffff?text=TEST")' }}
-                            />
-                            <div className="absolute top-2 left-2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded">
-                                TEST
-                            </div>
-                        </div>
-                        <div>
-                            <p className="font-bold text-sm">Payment Test Item</p>
-                            <p className="text-gray-500 text-xs truncate mb-2">결제 테스트용 상품</p>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-black">10,000원</span>
-                                <span className="text-[10px] text-primary font-bold uppercase tracking-wider flex items-center gap-1">
-                                    <Zap size={10} className="fill-current" /> 테스트
-                                </span>
-                            </div>
-                        </div>
-                    </Link>
-
-                    {/* MOCK Products */}
-                    {mockProducts.map((product) => (
-                        <Link key={product.id} to="#" className="group cursor-pointer">
-                            <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
-                                <div
-                                    className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
-                                    style={{ backgroundImage: `url("${product.imageUrl}")` }}
-                                />
-                            </div>
-                            <div>
-                                <p className="font-bold text-sm">{product.brandName}</p>
-                                <p className="text-gray-500 text-xs truncate mb-2">{product.name}</p>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-black">{product.retailPrice.toLocaleString()}원</span>
-                                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
-                                        <Zap size={10} className="fill-current" /> 빠른배송
-                                    </span>
-                                </div>
-                            </div>
-                        </Link>
+                    {products.map((product) => (
+                        <ProductCard key={product.productId} product={product} />
                     ))}
                 </div>
             </section>
