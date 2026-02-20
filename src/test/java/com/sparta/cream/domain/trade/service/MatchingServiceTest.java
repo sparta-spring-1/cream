@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -58,6 +59,9 @@ class MatchingServiceTest {
 	@Mock
 	private RScoredSortedSet<Long> candidateSet;
 
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
+
 	/**
 	 * 가격 조건이 충족될 때 체결 프로세스가 완벽히 수행되는지 검증합니다.
 	 * 구매/판매 Bid 상태가 MATCHED 로 변경되는지
@@ -82,6 +86,12 @@ class MatchingServiceTest {
 		doReturn(candidateSet).when(redissonClient).getScoredSortedSet(anyString());
 		when(candidateSet.first()).thenReturn(sellBidId);
 		when(candidateSet.getScore(sellBidId)).thenReturn(250000.0);
+		when(tradeRepository.save(any(Trade.class)))
+			.thenAnswer(invocation -> {
+				Trade trade = invocation.getArgument(0);
+				ReflectionTestUtils.setField(trade, "id", 100L);
+				return trade;
+			});
 
 		// when
 		matchingService.checkStatusAndMatch(buyBidId);

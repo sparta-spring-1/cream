@@ -18,11 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.client.PortOneApiClient;
 import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.entity.Payment;
+import com.sparta.cream.domain.event.PaymentCompletedEvent;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.trade.entity.Trade;
@@ -76,6 +78,8 @@ class PaymentServiceTest {
 	private SettlementService settlementService;
 	@Mock
 	private PortOneApiClient portOneApiClient;
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
 
 	@Test
 	@DisplayName("결제 사전 준비 성공 - 신규 요청")
@@ -159,7 +163,9 @@ class PaymentServiceTest {
 		assertEquals("PAID_SUCCESS", response.getStatus());
 		assertEquals(IMP_UID, response.getPaymentId());
 		verify(paymentHistoryRepository, times(1)).save(any());
-		verify(notificationService, times(1)).createNotification(eq(BUYER_ID), anyString());
+		verify(eventPublisher, times(1)).publishEvent(any(PaymentCompletedEvent.class));
+
+
 	}
 
 	@Test

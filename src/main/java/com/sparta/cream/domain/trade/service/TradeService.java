@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -16,8 +17,8 @@ import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
-import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.event.TradeCancelledEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
@@ -44,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TradeService {
 	private final BidRepository bidRepository;
 	private final TradeRepository tradeRepository;
-	private final NotificationService notificationService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final RedissonClient redissonClient;
 	private final MatchingService matchingService;
 
@@ -191,17 +192,18 @@ public class TradeService {
 		victimBid.restoreToPending();
 
 		Users cancelUser = cancelBid.getUser();
+		Users victimUser = victimBid.getUser();
+
 		cancelUser.applyBidPenalty();
 
-		notificationService.createNotification(
-			cancelUser.getId(),
-			"체결을 취소하여 3일간 입찰 등록이 제한됩니다."
-		);
+		tradeRepository.saveAndFlush(trade);
 
-		notificationService.createNotification(
-			victimBid.getUser().getId(),
-			"상대방의 체결 취소로 입찰이 다시 대기 상태로 전환되었습니다."
-		);
+		eventPublisher.publishEvent(new TradeCancelledEvent(
+			cancelUser.getId(),
+			victimUser.getId(),
+			tradeId
+		));
+
 	}
 
 	/**
