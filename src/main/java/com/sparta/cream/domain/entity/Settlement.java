@@ -1,10 +1,14 @@
 package com.sparta.cream.domain.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.sparta.cream.domain.status.PaymentStatus;
 import com.sparta.cream.domain.status.SettlementStatus;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.PaymentErrorCode;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,13 +48,13 @@ public class Settlement extends BaseEntity {
     private Long id;
 
 	@Column(nullable = false)
-    private Long feeAmount;
+    private BigDecimal feeAmount;
 
 	@Column(nullable = false)
-    private Long settlementAmount;
+    private BigDecimal settlementAmount;
 
 	@Column(nullable = false)
-	private Long totalAmount;
+	private BigDecimal totalAmount;
 
 	@Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -74,21 +78,28 @@ public class Settlement extends BaseEntity {
      * @param status		초기 상태
      * @param payment 	   결제 정보
      */
-    public Settlement(Long amount, SettlementStatus status, Payment payment) {
+    public Settlement(BigDecimal amount, SettlementStatus status, Payment payment) {
         this.feeAmount = chargeForCream(amount);
-        this.settlementAmount = amount - chargeForCream(amount);
+        this.settlementAmount = amount.subtract(chargeForCream(amount));
         this.totalAmount = amount;
         this.status = status;
         this.payment = payment;
 		this.seller = payment.getTrade().getSaleBidId().getUser();
     }
 
-	public Long chargeForCream(Long amount){
-		return (long)(amount *0.1);
+	public BigDecimal chargeForCream(BigDecimal amount){
+		return amount.multiply(BigDecimal.valueOf(0.1));
 	}
 
 	public void complete() {
 		this.status = SettlementStatus.COMPLETED;
 		this.settledAt = LocalDateTime.now();
+	}
+
+	public void refundStatus(PaymentStatus prevStatus, SettlementStatus nextStatus){
+		if(!(prevStatus.equals(PaymentStatus.PAID_SUCCESS)&&this.status == SettlementStatus.COMPLETED)) {
+			throw new BusinessException(PaymentErrorCode.PAYMENT_VERIFICATION_FAILED);
+		}
+		this.status = nextStatus;
 	}
 }

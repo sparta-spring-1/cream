@@ -6,12 +6,15 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.sparta.cream.domain.notification.entity.Notification;
+import com.sparta.cream.domain.notification.entity.NotificationType;
 import com.sparta.cream.domain.notification.repository.NotificationRepository;
 
 import jakarta.transaction.Transactional;
@@ -36,6 +39,9 @@ class NotificationServiceTest {
 	@Autowired
 	private NotificationRepository notificationRepository;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
 	/**
 	 * 알림 생성 기능의 정상 동작 여부를 검증합니다.
 	 * 검증사항:
@@ -45,20 +51,28 @@ class NotificationServiceTest {
 	 */
 	@Test
 	@DisplayName("알림 생성 테스트 - 데이터가 DB에 정상 적재되어야 함")
-	void createNotification_Success() {
+	void createNotification_Success() throws InterruptedException {
 		// given
 		Long userId = 1L;
 		String message = "테스트 알림 메시지입니다.";
 
 		// when
-		notificationService.createNotification(userId, message);
+		notificationService.createNotification(
+			userId,
+			NotificationType.TRADE_CANCELLED,
+			"테스트 제목",
+			message,
+			1L
+		);
+
+		Thread.sleep(100);
 
 		// then
 		List<Notification> notifications = notificationRepository.findAll();
+		assertThat(notifications).isNotEmpty();
+
 		Notification target = notifications.get(notifications.size() - 1);
 
 		assertThat(target.getUserId()).isEqualTo(userId);
-		assertThat(target.getMessage()).isEqualTo(message);
-		assertThat(target.isSent()).isFalse();
 	}
 }

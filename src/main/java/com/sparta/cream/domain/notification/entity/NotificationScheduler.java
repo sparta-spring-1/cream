@@ -31,7 +31,7 @@ public class NotificationScheduler {
 	 * {@code fixedDelay = 5000} 설정에 따라 이전 작업이 종료된 시점으로부터
 	 * 5초후에 다음 작업이 시작됩니다.
 	 */
-	@Scheduled(fixedDelay = 5000)
+	@Scheduled(fixedDelay = 60000)
 	public void pollNotifications() {
 		List<Notification> pendingList = notificationService.getPendingNotifications();
 

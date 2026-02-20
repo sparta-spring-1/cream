@@ -6,13 +6,16 @@ import static org.mockito.BDDMockito.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import static org.mockito.ArgumentMatchers.anyString;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -22,6 +25,7 @@ import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.entity.TradeStatus;
+import com.sparta.cream.domain.trade.event.TradeCancelledEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.UserRole;
@@ -52,64 +56,78 @@ class TradeServiceTest {
 	@Mock
 	private NotificationService notificationService;
 
+	@Mock
+	private org.redisson.api.RedissonClient redissonClient;
+
+	@Mock
+	private org.redisson.api.RScoredSortedSet scoredSortedSet;
+
+	@Mock
+	private MatchingService matchingService;
+
+	@Mock
+	private org.redisson.api.RLock lock;
+
+	@Mock
+	private org.springframework.beans.factory.ObjectProvider<TradeService> selfProvider;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
+
+	@BeforeEach
+	void setUp() {
+		lenient().when(redissonClient.getScoredSortedSet(anyString())).thenReturn(scoredSortedSet);
+		lenient().when(redissonClient.getLock(anyString())).thenReturn(lock);
+		lenient().when(selfProvider.getIfAvailable()).thenReturn(tradeService);
+		lenient().when(lock.isHeldByCurrentThread()).thenReturn(true);
+		try {
+			lenient().when(lock.tryLock(anyLong(), anyLong(), any())).thenReturn(true);
+		} catch (InterruptedException e) {}
+	}
+
 	/**
 	 * 동일한 상품 옵션에 대해 구매가와 판매자가 일치할 경우 성공케이스
 	 * 1. 입찰 상태가 MATCHED 로 변경되는지 확인
 	 * 2. 새로운 Trade 엔티티가 생성되어 저장되는지 확인
 	 */
 	@Test
-	@DisplayName("가격이 일치하는 구매와 판매 입찰이 있으면 체결이 성공한다")
-	void matchBidsSuccessTest() {
-		//given
-		Long commonOptionId = 4L;
-		ProductOption commonOption = createOption(commonOptionId);
-		Bid buyBid = createBidWithOption(1L, commonOption, 1L, 250000L, BidType.BUY);
-		Bid sellBid = createBidWithOption(2L, commonOption, 2L, 250000L, BidType.SELL);
+	@DisplayName("입찰 ID가 주어지면 락을 획득하고 매칭 서비스를 호출한다")
+	void matchBidsSuccessTest() throws InterruptedException {
+		// given
+		Long buyBidId = 1L;
+		ProductOption option = createOption(4L);
+		Bid buyBid = createBidWithOption(buyBidId, option, 1L, 250000L, BidType.BUY);
 
-		when(bidRepository.findByTypeAndStatusOrderByCreatedAtAsc(BidType.BUY, BidStatus.PENDING))
-			.thenReturn(List.of(buyBid));
+		// 상세 조회 모킹
+		when(bidRepository.findById(buyBidId)).thenReturn(Optional.of(buyBid));
+		// 락 획득 성공 모킹
+		when(lock.tryLock(anyLong(), anyLong(), any())).thenReturn(true);
 
-		when(bidRepository.findMatchingSellBids(
-			eq(commonOptionId),
-			anyLong(),
-			anyLong(),
-			any()
-		)).thenReturn(List.of(sellBid));
-
-		// when
-		tradeService.matchAllPendingBids();
+		// when: matchAllPendingBids 대신 직접 호출 (더 직관적)
+		tradeService.processTradeMatching(buyBidId);
 
 		// then
-		assertEquals(BidStatus.MATCHED, buyBid.getStatus(), "구매 입찰이 MATCHED 상태여야 합니다.");
-		assertEquals(BidStatus.MATCHED, sellBid.getStatus(), "판매 입찰이 MATCHED 상태여야 합니다.");
-		verify(tradeRepository, times(1)).save(any(Trade.class));
+		verify(lock).tryLock(anyLong(), anyLong(), any());
+		verify(matchingService).checkStatusAndMatch(buyBidId);
+		verify(lock).unlock();
 	}
 
 	/**
-	 * 구매가가 판매가보다 낮을 경우 실패케이스 입니다
-	 * 1. 입찰 상태가 여전히 PENDING 이어야 함
-	 * 2. Trade 엔티티가 저장되지 않아야 함
+	 * 입찰 대기열이 비어있을 경우 매칭 엔진을 호출하지 않는지 확인합니다.
 	 */
 	@Test
-	@DisplayName("구매가가 판매가보다 낮으면 체결되지 않고 PENDING 상태를 유지한다")
-	void matchBidsFailTest() {
-		//given
-		Long commonOptionId = 4L;
-		ProductOption commonOption = createOption(commonOptionId);
-
-		Bid buyBid = createBidWithOption(1L, commonOption, 1L, 200000L, BidType.BUY);
-		Bid sellBid = createBidWithOption(2L, commonOption, 2L, 250000L, BidType.SELL);
-
-		lenient().when(bidRepository.findAllByStatus(BidStatus.PENDING))
-			.thenReturn(List.of(buyBid, sellBid));
+	@DisplayName("대기 중인 입찰이 없으면 매칭을 시도하지 않는다")
+	void matchBidsNoPendingTest() throws InterruptedException {
+		// given
+		when(bidRepository.findByTypeAndStatusOrderByCreatedAtAsc(any(), any()))
+			.thenReturn(List.of());
 
 		// when
 		tradeService.matchAllPendingBids();
 
 		// then
-		assertEquals(BidStatus.PENDING, buyBid.getStatus());
-		assertEquals(BidStatus.PENDING, sellBid.getStatus());
-		verify(tradeRepository, never()).save(any(Trade.class));
+		verify(matchingService, never()).checkStatusAndMatch(anyLong());
+		verify(lock, never()).tryLock(anyLong(), anyLong(), any());
 	}
 
 	/**
@@ -202,15 +220,7 @@ class TradeServiceTest {
 		assertEquals(BidStatus.PENDING, sellBid.getStatus(), "판매자 입찰은 다시 대기 상태여야 한다");
 		assertTrue(buyBid.getUser().isBidBlocked(), "취소한 사용자는 입찰 제한 상태여야 한다");
 
-		verify(notificationService).createNotification(
-			eq(buyerId),
-			contains("입찰 등록이 제한")
-		);
-
-		verify(notificationService).createNotification(
-			eq(sellerId),
-			contains("다시 대기 상태")
-		);
+		verify(eventPublisher).publishEvent(any(TradeCancelledEvent.class));
 	}
 
 	/**
@@ -249,8 +259,8 @@ class TradeServiceTest {
 		assertEquals(BidStatus.PENDING, buyBid.getStatus());
 		assertTrue(sellBid.getUser().isBidBlocked());
 
-		verify(notificationService, times(2))
-			.createNotification(anyLong(), anyString());
+		verify(eventPublisher).publishEvent(any(TradeCancelledEvent.class));
+
 	}
 
 	/**

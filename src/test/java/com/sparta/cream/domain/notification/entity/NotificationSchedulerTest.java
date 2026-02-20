@@ -7,10 +7,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.sparta.cream.domain.notification.repository.NotificationRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
@@ -39,6 +40,9 @@ class NotificationSchedulerTest {
 	@Autowired
 	private NotificationRepository notificationRepository;
 
+	@MockitoBean
+	private RedissonClient redissonClient;
+
 	/**
 	 * 스케줄러의 알림 처리 흐름을 테스트합니다
 	 * 새로운 알림을 생성하여 DB에 저장
@@ -48,9 +52,17 @@ class NotificationSchedulerTest {
 	 */
 	@Test
 	@DisplayName("스케줄러 폴링 테스트 - 미발송 알림이 발송 완료 상태로 변경되어야 함")
-	void pollNotifications_UpdateStatus() {
+	void pollNotifications_UpdateStatus() throws InterruptedException {
 		// given
-		notificationService.createNotification(1L, "스케줄러 테스트용");
+		notificationService.createNotification(
+			1L,
+			NotificationType.TRADE_CANCELLED,
+			"스케줄러 테스트",
+			"스케줄러 테스트용 메시지",
+			1L
+		);
+
+		Thread.sleep(100);
 
 		// when:
 		notificationScheduler.pollNotifications();
