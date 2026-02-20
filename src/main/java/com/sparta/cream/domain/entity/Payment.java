@@ -1,5 +1,6 @@
 package com.sparta.cream.domain.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.sparta.cream.domain.status.PaymentStatus;
@@ -55,7 +56,7 @@ public class Payment extends BaseEntity {
 	private String productName;
 
 	@Column(nullable = false)
-	private Long amount;
+	private BigDecimal amount;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
@@ -83,7 +84,7 @@ public class Payment extends BaseEntity {
 	 * @param amount      결제 금액
 	 * @param status      초기 상태 (READY)
 	 */
-	public Payment(String merchantUid, String productName, Long amount, PaymentStatus status, Trade trade, Users user) {
+	public Payment(String merchantUid, String productName, BigDecimal amount, PaymentStatus status, Trade trade, Users user) {
 		this.merchantUid = merchantUid;
 		this.productName = productName;
 		this.amount = amount;
@@ -107,7 +108,7 @@ public class Payment extends BaseEntity {
 	private Payment(String merchantUid,
 		String impUid,
 		String productName,
-		Long amount,
+		BigDecimal amount,
 		PaymentStatus status,
 		String method,
 		LocalDateTime paidAt,
