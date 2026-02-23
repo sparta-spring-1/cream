@@ -7,6 +7,7 @@ on:
       - completed
     branches:
       - main
+      - hotfix/#12-instance-connect
 
 env:
   DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/cream
