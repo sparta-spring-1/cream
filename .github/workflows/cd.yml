@@ -92,3 +92,5 @@ jobs:
             echo "set \$service_url http://127.0.0.1:${NEXT_PORT};" | sudo tee /etc/nginx/conf.d/service-url.inc
             sudo nginx -t
             sudo nginx -s reload
+            
+            docker image prune -f
