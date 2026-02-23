@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { paymentApi } from '../api/payment';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { paymentApi, type PrepareResponse } from '../api/payment';
 
 const PaymentPage = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const tradeId = searchParams.get('tradeId');
+
     const [isLoading, setIsLoading] = useState(false);
+    const [paymentData, setPaymentData] = useState<PrepareResponse | null>(null);
 
     useEffect(() => {
         // Initialize PortOne SDK
@@ -15,13 +19,26 @@ const PaymentPage = () => {
         document.head.appendChild(jquery);
         document.head.appendChild(iamport);
 
+        // Fetch Payment Data if tradeId exists
+        if (tradeId) {
+            paymentApi.prepare(Number(tradeId))
+                .then(data => setPaymentData(data))
+                .catch(err => {
+                    console.error("Failed to prepare payment", err);
+                    alert("결제 정보를 불러오는데 실패했습니다.");
+                    navigate(-1);
+                });
+        }
+
         return () => {
             document.head.removeChild(jquery);
             document.head.removeChild(iamport);
         }
-    }, []);
+    }, [tradeId, navigate]);
 
     const handlePayment = async () => {
+        if (!paymentData || !tradeId) return;
+
         try {
             setIsLoading(true);
 
@@ -30,40 +47,23 @@ const PaymentPage = () => {
             const { IMP } = window;
             IMP.init(config.storeId);
 
-            // 2. Prepare Payment (For testing, using logic that doesn't strictly depend on a real tradeId if the backend allows, 
-            // OR we'll use a dummy tradeId if provided. Assuming backend needs a valid tradeId, 
-            // but for this UI demo we might need to handle the case where tradeId comes from previous page.
-            // For now, I'll pass a dummy ID '1' or rely on what's available. 
-            // Ideally, we should receive tradeId from location state or params.)
-            // Let's assume we are paying for the "Payment Test Item" which might need a trade.
-            // For this specific 'payment-test' flow, maybe the backend creates a trade implicitly or we just simulate 'prepare' for now.
-
-            // Re-reading user request: "Portone integration... refer to PaymentController".
-            // PaymentController.prepare takes { tradeId }. 
-            // If the user hasn't created a trade yet, this might fail.
-            // However, the prompt implies "get it working".
-            // Let's try to prepare with a hardcoded ID '1' for the test item, hoping a trade exists or backend handles it.
-            // If it fails, I'll advise the user.
-
-            const prepareResponse = await paymentApi.prepare(1); // Using dummy tradeId 1 for test
-
-            // 3. Request Payment to PortOne
+            // 2. Request Payment to PortOne
             IMP.request_pay({
                 pg: 'html5_inicis', // or user selected PG
                 pay_method: 'card',
-                merchant_uid: prepareResponse.paymentId,
-                name: 'Payment Test Item',
-                amount: prepareResponse.amount, // Should be 10000
-                buyer_email: 'test@cream.co.kr',
-                buyer_name: 'Hong Gil Dong',
-                buyer_tel: '010-1234-5678',
-                buyer_addr: 'Seoul, Gangnam-gu, Teheran-ro 123',
-                buyer_postcode: '01234'
+                merchant_uid: paymentData.paymentId,
+                name: paymentData.productName,
+                amount: paymentData.amount,
+                buyer_email: paymentData.email,
+                buyer_name: paymentData.customerName,
+                buyer_tel: paymentData.customerPhoneNumber,
+                // buyer_addr: paymentData.address, // Added to DTO requirements
+                // buyer_postcode: paymentData.zipCode
             }, async (rsp: any) => {
                 if (rsp.success) {
                     try {
-                        // 4. Complete Payment on Server
-                        await paymentApi.complete(prepareResponse.id, {
+                        // 3. Complete Payment on Server
+                        await paymentApi.complete(paymentData.id, {
                             impUid: rsp.imp_uid,
                             merchantUid: rsp.merchant_uid
                         });
@@ -81,11 +81,19 @@ const PaymentPage = () => {
 
         } catch (error) {
             console.error('Payment Error', error);
-            alert('결제 준비 중 오류가 발생했습니다. (백엔드 연결 확인 필요)');
+            alert('결제 준비 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (!tradeId) {
+        return <div className="text-center py-20">잘못된 접근입니다.</div>;
+    }
+
+    if (!paymentData) {
+        return <div className="text-center py-20">결제 정보 로딩 중...</div>;
+    }
 
     return (
         <div className="flex justify-center bg-gray-50 min-h-screen py-8">
@@ -99,9 +107,10 @@ const PaymentPage = () => {
                         <button className="text-xs text-gray-500 underline">변경</button>
                     </div>
                     <div className="p-4 bg-gray-50 rounded-lg text-sm">
-                        <p className="font-bold">홍길동</p>
-                        <p className="text-gray-500">010-1234-5678</p>
-                        <p className="text-gray-500">서울시 강남구 테헤란로 123 크림빌딩 10층</p>
+                        <p className="font-bold">{paymentData.customerName}</p>
+                        <p className="text-gray-500">{paymentData.customerPhoneNumber}</p>
+                        <p className="text-gray-500">{paymentData.email}</p>
+                        {/* Address will be added later when DTO is updated */}
                     </div>
                 </div>
 
@@ -111,14 +120,14 @@ const PaymentPage = () => {
                     <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                             <img
-                                src="https://placehold.co/200x200/135bec/ffffff?text=TEST"
+                                src="https://placehold.co/200x200/f0f0f0/333333?text=Product"
                                 alt="Product"
                                 className="w-full h-full object-cover"
                             />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-bold text-sm">Payment Test Item</span>
-                            <span className="text-gray-500 text-xs">260 / 테스트</span>
+                            <span className="font-bold text-sm">{paymentData.productName}</span>
+                            <span className="text-gray-500 text-xs text-right">{paymentData.amount.toLocaleString()}원</span>
                         </div>
                     </div>
                 </div>
@@ -127,7 +136,7 @@ const PaymentPage = () => {
                 <div className="flex flex-col gap-2 border-t border-gray-100 pt-6">
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-500">총 상품금액</span>
-                        <span className="font-bold">10,000원</span>
+                        <span className="font-bold">{paymentData.amount.toLocaleString()}원</span>
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-500">검수비</span>
@@ -139,7 +148,7 @@ const PaymentPage = () => {
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg mt-4 pt-4 border-t border-gray-200">
                         <span>총 결제금액</span>
-                        <span className="text-primary">10,000원</span>
+                        <span className="text-primary">{paymentData.amount.toLocaleString()}원</span>
                     </div>
                 </div>
 
@@ -158,7 +167,7 @@ const PaymentPage = () => {
                         disabled={isLoading}
                         className={`w-full h-14 bg-primary text-white font-bold rounded-xl text-lg hover:bg-black/80 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {isLoading ? '결제 처리중...' : '10,000원 결제하기'}
+                        {isLoading ? '결제 처리중...' : `${paymentData.amount.toLocaleString()}원 결제하기`}
                     </button>
                 </div>
 

@@ -27,49 +27,43 @@ public class Notification extends BaseEntity {
 	@Column(nullable = false)
 	private Long userId;
 
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false, length = 50)
+	private NotificationType type;
+
 	@Column(nullable = false)
+	private String title;
+
+	@Column(nullable = false, length = 500)
 	private String message;
+
+	private Long tradeId;
 
 	@Column(nullable = false)
 	private boolean isSent = false;
 
 	private LocalDateTime sentAt;
 
-	@Column(length = 100)
-	private String title;
-
-	@Column(length = 500)
-	private String content;
+	@Column(nullable = false)
+	private boolean isRead = false;
 
 	private LocalDateTime readAt;
 
 	/**
-	 * 새로운 알림 객체를 생성하기 위한 생성자입니다.
-	 * 기본적으로 전송 여부는 false로 설정합니다.
-	 * 기존 발송 로직과의 호환성을 위해 message를 title과 content로 자동 설정합니다.
-	 * @param userId 알림 수신 대상자ID
-	 * @param message 전송할 알림 내용
-	 */
-	public Notification(Long userId, String message) {
-		this.userId = userId;
-		this.message = message;
-		this.title = message; // 기존 호환성: message를 title로 사용
-		this.content = message; // 기존 호환성: message를 content로 사용
-		this.isSent = false;
-	}
-
-	/**
 	 * title과 content를 분리하여 알림을 생성하는 생성자입니다.
 	 * @param userId 알림 수신 대상자ID
+	 * @param type 알림 타입
 	 * @param title 알림 제목
-	 * @param content 알림 내용
+	 * @param message 알림 내용
+	 * @param tradeId 체결 ID
 	 */
-	public Notification(Long userId, String title, String content) {
+	public Notification(Long userId, NotificationType type, String title, String message, Long tradeId
+	) {
 		this.userId = userId;
-		this.message = title; // 기존 호환성: title을 message로도 저장
+		this.type = type;
 		this.title = title;
-		this.content = content;
-		this.isSent = false;
+		this.message = message;
+		this.tradeId = tradeId;
 	}
 
 	/**
@@ -79,13 +73,5 @@ public class Notification extends BaseEntity {
 	public void markAsSent() {
 		this.isSent = true;
 		this.sentAt = LocalDateTime.now();
-	}
-
-	/**
-	 * 알림을 읽음 처리합니다.
-	 * readAt 시간을 현재 시간으로 설정합니다.
-	 */
-	public void markAsRead() {
-		this.readAt = LocalDateTime.now();
 	}
 }

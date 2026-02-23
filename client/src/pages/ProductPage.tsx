@@ -1,43 +1,21 @@
 import { ChevronDown, Bookmark } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { productApi, type AdminGetOneProductResponse } from '../api/product';
+import { productApi, type GetOneProductResponse } from '../api/product';
 import { bidApi, type BidResponse } from '../api/bid';
 
 const ProductPage = () => {
     const { id } = useParams();
-    const isTestItem = id === 'payment-test';
+    const isTestItem = false;
 
-    const [product, setProduct] = useState<AdminGetOneProductResponse | null>(null);
+    const [product, setProduct] = useState<GetOneProductResponse | null>(null);
     const [isLoading, setIsLoading] = useState(!isTestItem);
     const [marketBids, setMarketBids] = useState<BidResponse[]>([]);
 
     useEffect(() => {
-        if (isTestItem) {
-            setProduct({
-                id: 1,
-                name: "Payment Test Item",
-                brandName: "Cream Test",
-                modelNumber: "TEST-10000",
-                retailPrice: 10000,
-                // Dummy data filling
-                categoryId: 0,
-                imageIds: [],
-                options: ['230', '240', '250', '260', '270', '280'],
-                color: 'Black/White',
-                sizeUnit: 'mm',
-                productStatus: 'ON_SALE',
-                operationStatus: 'NORMAL',
-                retailDate: new Date().toISOString(),
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            });
-            setIsLoading(false);
-            return;
-        }
 
         if (id) {
-            productApi.getOne(Number(id))
+            productApi.getPublicProduct(Number(id))
                 .then(data => {
                     setProduct(data);
                 })

@@ -61,17 +61,7 @@ public class NotificationQueryService {
 	 * @return 알림 응답 DTO
 	 */
 	private NotificationResponseDto toResponseDto(Notification notification) {
-
-		String title = notification.getTitle() != null ? notification.getTitle() : notification.getMessage();
-		String content = notification.getContent() != null ? notification.getContent() : notification.getMessage();
-
-		return new NotificationResponseDto(
-			notification.getId(),
-			title,
-			content,
-			notification.getCreatedAt(),
-			notification.getReadAt()
-		);
+		return new NotificationResponseDto(notification);
 	}
 }
 

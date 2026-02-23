@@ -82,3 +82,6 @@ management:
   endpoint:
     prometheus:
       enabled: true
+
+springdoc:
+  enable-kotlin: false

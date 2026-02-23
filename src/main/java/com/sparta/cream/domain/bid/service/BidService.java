@@ -2,8 +2,9 @@ package com.sparta.cream.domain.bid.service;
 
 import com.sparta.cream.domain.bid.dto.*;
 import com.sparta.cream.domain.bid.entity.*;
+import com.sparta.cream.domain.bid.event.BidChangedEvent;
 import com.sparta.cream.domain.bid.repository.BidRepository;
-import com.sparta.cream.domain.notification.service.NotificationService;
+import com.sparta.cream.domain.notification.entity.NotificationType;
 import com.sparta.cream.domain.trade.dto.*;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
@@ -18,6 +19,7 @@ import org.redisson.api.RLock;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +48,7 @@ public class BidService {
 	private final UserRepository userRepository;
 	private final TradeService tradeService;
 	private final TradeRepository tradeRepository;
-	private final NotificationService notificationService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final RedissonClient redissonClient;
 
 	/**
@@ -84,8 +86,13 @@ public class BidService {
 		Bid savedBid = bidRepository.save(bid);
 		addToRedisZSet(savedBid);
 
-		notificationService.createNotification(userId, String.format("[%s] %d원에 입찰 등록 완료", bid.getType(), bid.getPrice()));
-
+		eventPublisher.publishEvent(new BidChangedEvent(
+			userId,
+			NotificationType.BID_REGISTERED,
+			"입찰 등록 완료",
+			String.format("[%s] %d원에 입찰 등록 완료", bid.getType(), bid.getPrice()),
+			null
+		));
 		registerMatchingSync(savedBid.getId());
 
 		return new BidResponseDto(savedBid);
@@ -165,6 +172,10 @@ public class BidService {
 			throw new BusinessException(BidErrorCode.NOT_YOUR_BID);
 		}
 
+
+		Long oldPrice = bid.getPrice();
+		BidType oldType = bid.getType();
+
 		removeFromRedisZSet(bid);
 
 		ProductOption newOption = productOptionRepository.findById(requestDto.getProductOptionId())
@@ -175,6 +186,21 @@ public class BidService {
 		addToRedisZSet(bid);
 
 		registerMatchingSync(bid.getId());
+
+		eventPublisher.publishEvent(new BidChangedEvent(
+			userId,
+			NotificationType.BID_UPDATED,
+			"입찰 수정 완료",
+			String.format(
+				"입찰이 수정되었습니다.\n옵션: %s\n가격: %,d원 → %,d원\n유형: %s → %s",
+				newOption.getSize(),
+				oldPrice,
+				bid.getPrice(),
+				oldType,
+				bid.getType()
+			),
+			bid.getId()
+		));
 
 		return new BidResponseDto(bid);
 	}
@@ -191,6 +217,7 @@ public class BidService {
 	 * @return 취소 처리된 입찰의 정보를 담은 {@link BidCancelResponseDto}
 	 */
 	@Transactional
+	@CacheEvict(value = "productBids", key = "#result.productOptionId")
 	public BidCancelResponseDto cancelBid(Long userId, Long bidId) {
 		Bid bid = bidRepository.findById(bidId)
 			.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
@@ -203,33 +230,25 @@ public class BidService {
 			throw new BusinessException(BidErrorCode.CANNOT_CANCEL_NON_PENDING_BID);
 		}
 
-		RLock lock = redissonClient.getLock("lock:option:" + bid.getProductOption().getId());
-		try {
-			if (lock.tryLock(5, 3, TimeUnit.SECONDS)) {
+		bid.cancel(userId);
+		removeFromRedisZSet(bid);
 
-				Bid latestBid = bidRepository.findById(bidId)
-					.orElseThrow(() -> new BusinessException(BidErrorCode.BID_NOT_FOUND));
+		eventPublisher.publishEvent(new BidChangedEvent(
+			userId,
+			NotificationType.BID_CANCELLED,
+			"입찰 취소 완료",
+			String.format(
+				"[%s] 입찰 취소가 정상적으로 처리되었습니다.\n상품명: %s\n사이즈: %s",
+				bid.getType(),
+				bid.getProductOption().getProduct().getName(),
+				bid.getProductOption().getSize()
+			),
+			bid.getId()
+		));
 
-				if (latestBid.getStatus() != BidStatus.PENDING) {
-					throw new BusinessException(BidErrorCode.CANNOT_CANCEL_NON_PENDING_BID);
-				}
-
-				latestBid.cancel(userId);
-				removeFromRedisZSet(latestBid);
-
-				return BidCancelResponseDto.from(latestBid);
-			} else {
-				throw new BusinessException(ErrorCode.LOCK_ACQUISITION_FAILED);
-			}
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
-		} finally {
-			if (lock.isHeldByCurrentThread()) {
-				lock.unlock();
-			}
-		}
+		return BidCancelResponseDto.from(bid);
 	}
+
 
 	/**
 	 * 관리자 권한으로 입찰을 강제 취소 처리합니다.

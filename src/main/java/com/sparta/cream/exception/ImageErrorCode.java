@@ -20,7 +20,8 @@ public enum ImageErrorCode implements BaseCode {
 	NOT_EXIST_FILE(HttpStatus.BAD_REQUEST, "존재하지 않는 이미지입니다."),
 	NOT_EXIST_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "확장자가 없습니다."),
 	INVALID_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "허용되지 않는 확장자를 사용했습니다."),
-	IO_EXCEPTION_UPLOAD_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드 도중 에러가 발생했습니다.");
+	IO_EXCEPTION_UPLOAD_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 업로드 도중 에러가 발생했습니다."),
+	FAIL_DELETE_FILE(HttpStatus.INTERNAL_SERVER_ERROR, "이미지 삭제 도중 에러가 발생했습니다.");
 
 	private final HttpStatus status;
 	private final String message;

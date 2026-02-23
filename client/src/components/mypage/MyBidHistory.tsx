@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
 import { bidApi, type BidResponse } from '../../api/bid';
-
-// Extended type for display if API returns more info, 
-// but currently BidResponse has { id, price, status }
-// We might need to assume or fetch more details if the API supports it.
-// Looking at BidResponseDto.java: it returns userId, productId, price, type, status, createdAt...
-// We should update the frontend type definition if we want to show product name etc.
-// But for now we stick to what we have or infer.
-// Wait, `getMyBids` calls `/v1/bids/me` which returns `Page<BidResponseDto>`.
-// So the real response has more fields. Let's define them here or update types later.
+import { tradeApi } from '../../api/trade';
 
 interface MyBid extends BidResponse {
     productOptionId: number;
@@ -44,6 +36,18 @@ const MyBidHistory = () => {
         } catch (error) {
             console.error(error);
             alert("입찰 취소에 실패했습니다.");
+        }
+    };
+
+    const handleTradeCancel = async (tradeId: number) => {
+        if (!confirm("체결된 거래를 취소하시겠습니까? 취소 시 3일간 입찰이 제한됩니다.")) return;
+        try {
+            await tradeApi.cancelTrade(tradeId);
+            alert("거래가 취소되었습니다.");
+            fetchBids();
+        } catch (error) {
+            console.error(error);
+            alert("거래 취소에 실패했습니다.");
         }
     };
 
@@ -99,6 +103,7 @@ const MyBidHistory = () => {
                     <div className="flex flex-col items-end gap-2">
                         <span className="font-bold">{bid.price.toLocaleString()}원</span>
                         <span className="text-xs text-gray-500">{bid.status}</span>
+
                         {bid.status === 'PENDING' && (
                             <div className="flex gap-2">
                                 <button
@@ -112,6 +117,25 @@ const MyBidHistory = () => {
                                     className="px-2 py-1 border border-gray-300 rounded text-xs hover:bg-gray-50 text-red-500"
                                 >
                                     취소
+                                </button>
+                            </div>
+                        )}
+
+                        {bid.status === 'MATCHED' && bid.tradeId && (
+                            <div className="flex gap-2">
+                                {bid.type === 'BUY' && (
+                                    <button
+                                        onClick={() => window.location.href = `/payment?tradeId=${bid.tradeId}`}
+                                        className="px-2 py-1 border border-blue-200 bg-blue-50 text-blue-600 rounded text-xs hover:bg-blue-100 font-bold"
+                                    >
+                                        결제하기
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => handleTradeCancel(bid.tradeId!)}
+                                    className="px-2 py-1 border border-red-200 bg-red-50 text-red-600 rounded text-xs hover:bg-red-100"
+                                >
+                                    체결 취소
                                 </button>
                             </div>
                         )}
