@@ -227,17 +227,10 @@ public class ProductService {
 	 *
 	 * @param page 조회할 페이지 번호 (0부터 시작)
 	 * @param pageSize 페이지당 조회할 상품 개수
-	 * @param sort 정렬 조건
-	 * @param brand 브랜드 필터 조건
-	 * @param category 카테고리 ID 필터 조건
-	 * @param productSize 상품 사이즈 필터 조건
-	 * @param minPrice 최소 가격 필터 조건
-	 * @param maxPrice 최대 가격 필터 조건
-	 * @param keyword 상품명 검색 키워드
+	 * @param productSearchCondition 상품 검색 조건 모음
 	 * @return 관리자 상품 목록 조회 응답 DTO
 	 */
-	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category,
-		String productSize, Integer minPrice, Integer maxPrice, String keyword) {
+	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, ProductSearchCondition productSearchCondition) {
 
 		//TODO 정렬 조건
 
@@ -245,12 +238,7 @@ public class ProductService {
 
 		Page<Product> productPage =
 			productRepository.searchProducts(
-				brand,
-				category,
-				productSize,
-				minPrice,
-				maxPrice,
-				keyword,
+				productSearchCondition,
 				pageable
 			);
 
@@ -285,12 +273,7 @@ public class ProductService {
 
 		Page<Product> productPage =
 			productRepository.searchProducts(
-				condition.getBrandName(),
-				categoryId,
-				condition.getProductSize(),
-				condition.getMinPrice(),
-				condition.getMaxPrice(),
-				condition.getKeyword(),
+				condition,
 				pageable
 			);
 
