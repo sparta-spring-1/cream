@@ -2,21 +2,31 @@ package com.sparta.cream.service;
 
 import java.io.InputStream;
 import java.net.URLConnection;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.sparta.cream.dto.product.ProductImageUploadResponse;
+import com.sparta.cream.dto.product.S3UploadResult;
+import com.sparta.cream.entity.ProductImage;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ImageErrorCode;
+import com.sparta.cream.repository.ProductImageRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
@@ -30,22 +40,43 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ImageService {
 
 	private final S3Client s3Client;
 	@Value("${aws.s3.bucket-name}")
 	private String bucketName;
+	private final ProductImageRepository productImageRepository;
 
 	// 외부에서 사용, S3에 저장된 이미지 객체의 public url을 반환
-	public List<String> upload(List<MultipartFile> files) {
-		// 각 파일을 업로드하고 url을 리스트로 반환
-		return files.stream()
+	@Transactional
+	public List<ProductImageUploadResponse> upload(List<MultipartFile> files) {
+
+		List<S3UploadResult> s3UploadResults = files.stream()
 			.map(this::uploadImage)
+			.toList();
+
+		List<ProductImage> newImages = new ArrayList<>();
+
+		for (S3UploadResult s3UploadResult : s3UploadResults) {
+
+			ProductImage newImage = new ProductImage(
+				s3UploadResult.getOriginalFileName(),
+				s3UploadResult.getObjectKey(),
+				s3UploadResult.getUrl()
+			);
+
+			newImages.add(newImage);
+		}
+
+		// 각 파일을 업로드하고 url을 리스트로 반환
+		return newImages.stream()
+			.map(ProductImageUploadResponse::from)
 			.toList();
 	}
 
 	// validateFile메서드를 호출하여 유효성 검증 후 uploadImageToS3메서드에 데이터를 반환하여 S3에 파일 업로드, public url을 받아 서비스 로직에 반환
-	private String uploadImage(MultipartFile file) {
+	private S3UploadResult uploadImage(MultipartFile file) {
 		validateFile(file.getOriginalFilename()); // 파일 유효성 검증
 		return uploadImageToS3(file); // 이미지를 S3에 업로드하고, 저장된 파일의 public url을 서비스 로직에 반환
 	}
@@ -72,7 +103,7 @@ public class ImageService {
 	}
 
 	// 직접적으로 S3에 업로드
-	private String uploadImageToS3(MultipartFile file) {
+	private S3UploadResult uploadImageToS3(MultipartFile file) {
 		// 원본 파일 명
 		String originalFilename = file.getOriginalFilename();
 		// 확장자 명
@@ -97,7 +128,46 @@ public class ImageService {
 		}
 
 		// public url 반환
-		return s3Client.utilities().getUrl(url -> url.bucket(bucketName).key(s3FileName)).toString();
+		String ImageUrl = s3Client.utilities().getUrl(url -> url.bucket(bucketName).key(s3FileName)).toString();
+
+		return new S3UploadResult(originalFilename, s3FileName, ImageUrl);
 	}
 
+	public void deleteImage(Long imageId) {
+		ProductImage image = productImageRepository.findById(imageId)
+			.orElseThrow(() -> new BusinessException(ImageErrorCode.NOT_EXIST_FILE));
+
+		image.softDelete();
+	}
+
+	@Scheduled(cron = "0 0 0 * * *") // 매일 새벽 12시 실행
+	public void cleanupOrphanedImages() {
+
+		log.error("파일 삭제 시작: ");
+		LocalDateTime deleteTime = LocalDateTime.now().minusDays(1);
+		List<ProductImage> deletedImages = productImageRepository.findByDeletedAtBefore(deleteTime);
+
+		for (ProductImage img : deletedImages) {
+			try {
+				s3deleteFile(img.getUrl());
+				productImageRepository.delete(img);
+			} catch (Exception e) {
+				// S3 삭제 실패 시 로그를 남기고, 다음 배치 때 다시 시도
+				log.error("파일 삭제 실패: {}",img.getId());
+			}
+		}
+	}
+
+	public void s3deleteFile(String objectKey) {
+		try {
+			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+				.bucket(bucketName)
+				.key(objectKey)
+				.build();
+
+			s3Client.deleteObject(deleteObjectRequest);
+		} catch (Exception e) {
+			throw new BusinessException(ImageErrorCode.FAIL_DELETE_FILE);
+		}
+	}
 }
