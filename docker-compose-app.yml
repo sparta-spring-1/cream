@@ -52,3 +52,7 @@ services:
       - "8082:8080"
     networks:
       - cream-network
+
+networks:
+  cream-network:
+    driver: bridge
