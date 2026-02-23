@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.redisson.api.RBucket;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -85,6 +86,9 @@ class BidServiceTest {
 
 	@Mock
 	private RScoredSortedSet<Object> rScoredSortedSet;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
 
 	private Users testUser;
 	private final Long userId = 1L;

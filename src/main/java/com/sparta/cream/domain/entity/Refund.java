@@ -1,5 +1,7 @@
 package com.sparta.cream.domain.entity;
 
+import java.math.BigDecimal;
+
 import com.sparta.cream.entity.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -39,7 +41,7 @@ public class Refund extends BaseEntity {
 	private String reason;
 
 	@Column(nullable = false)
-	private Long amount;
+	private BigDecimal amount;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "payment_history_id", nullable = false)
@@ -52,7 +54,7 @@ public class Refund extends BaseEntity {
      * @param amount         환불 금액
      * @param paymentHistory 연관된 결제 이력
      */
-    public Refund(String reason, Long amount, PaymentHistory paymentHistory) {
+    public Refund(String reason, BigDecimal amount, PaymentHistory paymentHistory) {
         this.reason = reason;
         this.amount = amount;
         this.paymentHistory = paymentHistory;

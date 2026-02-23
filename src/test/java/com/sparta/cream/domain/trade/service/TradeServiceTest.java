@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sparta.cream.domain.bid.entity.Bid;
@@ -24,6 +25,7 @@ import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.entity.TradeStatus;
+import com.sparta.cream.domain.trade.event.TradeCancelledEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.UserRole;
@@ -68,6 +70,9 @@ class TradeServiceTest {
 
 	@Mock
 	private org.springframework.beans.factory.ObjectProvider<TradeService> selfProvider;
+
+	@Mock
+	private ApplicationEventPublisher eventPublisher;
 
 	@BeforeEach
 	void setUp() {
@@ -215,15 +220,7 @@ class TradeServiceTest {
 		assertEquals(BidStatus.PENDING, sellBid.getStatus(), "판매자 입찰은 다시 대기 상태여야 한다");
 		assertTrue(buyBid.getUser().isBidBlocked(), "취소한 사용자는 입찰 제한 상태여야 한다");
 
-		verify(notificationService).createNotification(
-			eq(buyerId),
-			contains("입찰 등록이 제한")
-		);
-
-		verify(notificationService).createNotification(
-			eq(sellerId),
-			contains("다시 대기 상태")
-		);
+		verify(eventPublisher).publishEvent(any(TradeCancelledEvent.class));
 	}
 
 	/**
@@ -262,8 +259,8 @@ class TradeServiceTest {
 		assertEquals(BidStatus.PENDING, buyBid.getStatus());
 		assertTrue(sellBid.getUser().isBidBlocked());
 
-		verify(notificationService, times(2))
-			.createNotification(anyLong(), anyString());
+		verify(eventPublisher).publishEvent(any(TradeCancelledEvent.class));
+
 	}
 
 	/**
