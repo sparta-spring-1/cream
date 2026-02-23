@@ -152,9 +152,8 @@ public class ImageService {
 	)
 	public void cleanupOrphanedImages() {
 
-		log.error("파일 삭제 시작: ");
-		LocalDateTime deleteTime = LocalDateTime.now().minusDays(1);
-		List<ProductImage> deletedImages = productImageRepository.findByDeletedAtBefore(deleteTime);
+		log.info("파일 삭제 시작: ");
+		List<ProductImage> deletedImages = productImageRepository.findOrphanedImages();
 
 		for (ProductImage img : deletedImages) {
 			try {
