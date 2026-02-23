@@ -86,7 +86,7 @@ jobs:
             echo "Health check failed"
             exit 1
             fi
-            sleep 5
+            sleep 10
             done
 
             echo "set \$service_url http://127.0.0.1:${NEXT_PORT};" | sudo tee /etc/nginx/conf.d/service-url.inc
