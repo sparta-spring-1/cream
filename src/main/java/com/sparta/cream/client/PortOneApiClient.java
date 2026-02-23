@@ -1,5 +1,6 @@
 package com.sparta.cream.client;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 import org.springframework.http.HttpEntity;
@@ -14,6 +15,16 @@ import com.sparta.cream.dto.portone.PortOnePaymentResponse;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * PortOne API와의 통신을 담당하는 클라이언트 클래스입니다.
+ * <p>
+ * 결제 정보 조회 및 결제 취소 기능을 제공합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Component
 @RequiredArgsConstructor
 public class PortOneApiClient {
@@ -35,8 +46,12 @@ public class PortOneApiClient {
 		return response.getBody();
 	}
 
-	public void cancelPayment(String merchantUid, long amount, String reason, long currentCancellableAmount,
+	public void cancelPayment(String merchantUid, BigDecimal totalAmount, String reason, BigDecimal cancellableAmount,
 		String refundEmail) {
+
+		int amount = totalAmount.intValue();
+		int currentCancellableAmount = cancellableAmount.intValue();
+
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("Authorization", "PortOne " + portOneConfig.getApiSecret());
 		headers.set("Content-Type", "application/json");

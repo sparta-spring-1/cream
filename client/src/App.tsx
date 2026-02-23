@@ -3,6 +3,7 @@ import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import AuthPage from './pages/AuthPage';
 import ProductPage from './pages/ProductPage';
+import ShopPage from './pages/ShopPage';
 import BidPage from './pages/BidPage';
 import PaymentPage from './pages/PaymentPage';
 import MyPage from './pages/MyPage';
@@ -19,7 +20,7 @@ function App() {
           <Route path="/auth" element={<AuthPage />} />
 
           {/* Product Routes */}
-          <Route path="/products" element={<ProductPage />} />
+          <Route path="/products" element={<ShopPage />} />
           <Route path="/products/:id" element={<ProductPage />} />
 
           {/* Protected Routes (Login Required) */}

@@ -6,13 +6,17 @@ import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
 import com.sparta.cream.domain.notification.service.NotificationService;
 import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.event.TradeMatchedEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -34,7 +38,7 @@ public class MatchingService {
 
 	private final BidRepository bidRepository;
 	private final TradeRepository tradeRepository;
-	private final NotificationService notificationService;
+	private final ApplicationEventPublisher eventPublisher;
 	private final RedissonClient redissonClient;
 
 	/**
@@ -68,11 +72,15 @@ public class MatchingService {
 
 		while (true) {
 			Long matchedBidId = candidateSet.first();
-			if (matchedBidId == null) break;
+			if (matchedBidId == null)
+				break;
 
-			Double matchedPrice = candidateSet.getScore(matchedBidId);
+			Double score = candidateSet.getScore(matchedBidId);
+			if (score == null) break;
 
-			if (!isMatchable(newBid, matchedPrice)) {
+			Double actualPrice = Math.abs(score);
+
+			if (!isMatchable(newBid, actualPrice)) {
 				break;
 			}
 
@@ -101,7 +109,8 @@ public class MatchingService {
 	 */
 	private boolean matchAndSave(Long newBidId, Long matchedBidId) {
 		List<Bid> bids = bidRepository.findAllById(List.of(newBidId, matchedBidId));
-		if (bids.size() < 2) return false;
+		if (bids.size() < 2)
+			return false;
 
 		Bid current = bids.stream().filter(b -> b.getId().equals(newBidId)).findFirst().orElse(null);
 		Bid target = bids.stream().filter(b -> b.getId().equals(matchedBidId)).findFirst().orElse(null);
@@ -113,19 +122,30 @@ public class MatchingService {
 			target.match();
 
 			Long finalPrice = target.getPrice();
-
 			Trade trade = new Trade(
 				current.getType() == BidType.BUY ? current : target,
 				current.getType() == BidType.SELL ? current : target,
 				finalPrice
 			);
-			tradeRepository.save(trade);
+			Trade savedTrade = tradeRepository.save(trade);
 
-			removeFromZSet(current);
-			removeFromZSet(target);
+			if (TransactionSynchronizationManager.isActualTransactionActive()) {
+				TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+					@Override
+					public void afterCommit() {
+						removeFromZSet(current);
+						removeFromZSet(target);
 
-			sendNotifications(current, target, finalPrice);
-
+						eventPublisher.publishEvent(new TradeMatchedEvent(
+							current.getUser().getId(),
+							target.getUser().getId(),
+							finalPrice,
+							savedTrade.getId(),
+							current.getProductOption().getSize()
+						));
+					}
+				});
+			}
 			return true;
 		}
 		return false;
@@ -158,23 +178,5 @@ public class MatchingService {
 	private void removeFromZSet(Bid bid) {
 		String key = (bid.getType() == BidType.BUY ? "bids:buy:" : "bids:sell:") + bid.getProductOption().getId();
 		redissonClient.getScoredSortedSet(key).remove(bid.getId());
-	}
-
-	/**
-	 * 거래 체결관료 . 거래 당사자들에게 알림을 전송합니다.
-	 * 체결된 거래의 금액정보를 포함한 동일한 메시지를
-	 * 구매자아 판매자에게 가각 전다뢷ㅂ니다.
-	 * 본 메서드는 거래 생성이후 호출되며,
-	 * 알림 발송 실패가 매칭 트랜잭션에 영향을 주지 않도록
-	 * 별도의 비즈니스 로직을 포함하지 않습니다.
-	 *
-	 * @param b1 거래에 참여한 첫번째 입찰
-	 * @param b2 거래에 참여한 두번째 입찰
-	 * @param price 최종 체결 금액
-	 */
-	private void sendNotifications(Bid b1, Bid b2, Long price) {
-		String msg = String.format("거래가 체결되었습니다. (금액: %d원)", price);
-		notificationService.createNotification(b1.getUser().getId(), msg);
-		notificationService.createNotification(b2.getUser().getId(), msg);
 	}
 }
