@@ -78,7 +78,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: prometheus # 프로메테우스용 데이터만 노출
+        include: prometheus, health
   endpoint:
     prometheus:
       enabled: true
