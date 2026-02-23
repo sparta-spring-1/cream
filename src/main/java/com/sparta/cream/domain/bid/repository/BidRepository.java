@@ -30,8 +30,8 @@ public interface BidRepository extends JpaRepository<Bid, Long> , BidRepositoryC
 	 * @param userId 사용자 식별자
 	 * @return 사용자 전체 입찰 리스트 (과거순 정렬)
 	 */
-	@Query("SELECT b FROM Bid b WHERE b.user.id = :userId ORDER BY b.createdAt ASC")
-	Page<Bid> findAllByUserIdOrderByCreatedAtAsc(@Param("userId") Long userId, Pageable pageable);
+	@Query("SELECT b FROM Bid b WHERE b.user.id = :userId")
+	Page<Bid> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
 	/**
 	 * 특정 상품 옵션에 등록된 모든 입찰 내역을 입찰가 내림차순으로 조회합니다.
@@ -70,29 +70,5 @@ public interface BidRepository extends JpaRepository<Bid, Long> , BidRepositoryC
 	 */
 	@Query("SELECT b FROM Bid b WHERE b.productOption.id = :productOptionId AND b.type = 'SELL' AND b.status = 'PENDING' AND b.price <= :price AND b.user.id != :userId ORDER BY b.price ASC, b.createdAt ASC")
 	List<Bid> findMatchingSellBids(Long productOptionId, Long price, Long userId, Pageable pageable);
-
-	/**
-	 * 판매 입찰 발생시, 체결 가능한 최적의 구매 입찰을 조회합니다.
-	 * 매칭 우선순위:
-	 * 1. 가격이 판매가보다 높거나 같을 것
-	 * 2. 가격이 같다면 먼저 등록된 입찰 수언
-	 * 3. 본인이 등록한 입찰은 제회
-	 * @param productOptionId 상품 옵션 식별자
-	 * @param price 판매 희망가
-	 * @param userId 판매자 식별자
-	 * @param pageable 조회 개수 제한
-	 * @return 매칭 후보 구매 입찰 리스트
-	 */
-	@Query("SELECT b FROM Bid b WHERE b.productOption.id = :productOptionId AND b.type = 'BUY' AND b.status = 'PENDING' AND b.price >= :price AND b.user.id != :userId ORDER BY b.price DESC, b.createdAt ASC")
-	List<Bid> findMatchingBuyBids(Long productOptionId, Long price, Long userId, Pageable pageable);
-
-	/**
-	 * 특정 입찰건에 대해 비관적 락을 획득하여 조회합니다
-	 * @param id id 조회 및 잠금을 수행할 입찰 고유 식별자
-	 * @return 락을 획득한 상태의 입찰 엔티티
-	 */
-	@Lock(LockModeType.PESSIMISTIC_WRITE)
-	@Query("SELECT b FROM Bid b WHERE b.id = :id AND b.status = 'PENDING'")
-	Optional<Bid> findByIdForUpdate(@Param("id") Long id);
 
 }

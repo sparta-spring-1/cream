@@ -2,6 +2,7 @@ package com.sparta.cream.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,8 @@ import com.sparta.cream.dto.product.AdminGetAllProductResponse;
 import com.sparta.cream.dto.product.AdminGetOneProductResponse;
 import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
+import com.sparta.cream.dto.product.GetAllProductResponse;
+import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.service.ProductService;
 
 import jakarta.validation.Valid;
@@ -57,19 +60,13 @@ public class AdminProductController {
 
 	@GetMapping
 	public ResponseEntity<AdminGetAllProductResponse> getAllProduct(
-		@RequestParam(required = true) int page,
-		@RequestParam(required = true) int pageSize,
-		@RequestParam(required = false) String sort,
-		@RequestParam(required = false) String brand,
-		@RequestParam(required = false) Long category,
-		@RequestParam(required = false) String productSize,
-		@RequestParam(required = false) Integer minPrice,
-		@RequestParam(required = false) Integer maxPrice,
-		@RequestParam(required = false) String keyword
+		@RequestParam(defaultValue = "0") int page,
+		@RequestParam(defaultValue = "5") int pageSize,
+		@Validated ProductSearchCondition condition
 	) {
+
 		AdminGetAllProductResponse response =
-			productService.getAllProduct(page, pageSize, sort, brand, category, productSize, minPrice, maxPrice,
-				keyword);
+			productService.getAllProduct(page, pageSize,condition);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 

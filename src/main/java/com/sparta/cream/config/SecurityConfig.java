@@ -74,8 +74,9 @@ public class SecurityConfig {
 				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
 					"/v1/admin/**")
 				.permitAll()
-				.requestMatchers("/payment-test.html").permitAll()
+				.requestMatchers("/v1/products/**").permitAll()
 				.requestMatchers("/actuator/**").permitAll()
+				.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 				.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

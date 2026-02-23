@@ -1,5 +1,9 @@
 server:
   port: 8080
+  tomcat:
+    threads:
+      max: 500 # VU 300명을 충분히 수용하도록 늘림
+    accept-count: 200
 
 spring:
   datasource:
@@ -8,21 +12,23 @@ spring:
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
     hikari:
-      maximum-pool-size: 100
-      minimum-idle: 20
+      maximum-pool-size: 400
+      connection-timeout: 30000
+      minimum-idle: 50
       idle-timeout: 30000
-
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
-    open-in-view: false
     properties:
       hibernate:
-        format_sql: true
-        open-in-view: true
+        format_sql: false
+        open-in-view: false
+        jdbc.batch_size: 50
+        order_inserts: true
 
   data:
     redis:
@@ -47,7 +53,12 @@ aws:
 
 logging:
   level:
-    com.sparta.cream: debug
+    root: INFO
+    com.sparta.cream: ERROR
+    org.hibernate: INFO # 우리 서비스의 상세 로직 확인
+    org.springframework.web: DEBUG # 컨트롤러 진입 전 에러 포착
+    org.hibernate.SQL: DEBUG      # 쿼리 문제인지 확인
+    com.zaxxer.hikari: DEBUG      # 커넥션 풀 부족 문제인지 확인
 
 portone:
   api:
@@ -58,6 +69,7 @@ portone:
 
 jwt:
   secret: ${JWT_SECRET}
+  key: ${JWT_SECRET}
   issuer: ${JWT_ISSUER:app}
   access-exp-sec: ${JWT_ACCESS_EXP_SEC:900}
   refresh-exp-sec: ${JWT_REFRESH_EXP_SEC:1209600}
@@ -70,3 +82,6 @@ management:
   endpoint:
     prometheus:
       enabled: true
+
+springdoc:
+  enable-kotlin: false
