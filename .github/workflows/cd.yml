@@ -22,7 +22,7 @@ jobs:
 
       - name: Set Image Tag from Workflow Run
         run: |
-          echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
+          echo "IMAGE_TAG=sha-${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
 
       - name: Transfer docker-compose-app.yml to EC2
         uses: appleboy/scp-action@v0.1.7
