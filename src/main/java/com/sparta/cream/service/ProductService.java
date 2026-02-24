@@ -23,6 +23,7 @@ import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
 import com.sparta.cream.dto.product.GetAllProductResponse;
 import com.sparta.cream.dto.product.GetOneProductResponse;
+import com.sparta.cream.dto.product.ProductOptionInfo;
 import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Product;
@@ -37,6 +38,7 @@ import com.sparta.cream.repository.ProductOptionRepository;
 import com.sparta.cream.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 /**
  * 관리자 상품 도메인의 비즈니스 로직을 담당하는 서비스 클래스.
@@ -104,12 +106,17 @@ public class ProductService {
 			.operationStatus(request.getOperationStatus())
 			.build();
 
-		Product savedProduct = productRepository.save(product);
+		productRepository.save(product);
+
+		if (!request.getImageIds().isEmpty()) {
+			List<ProductImage> imageList = productImageRepository.findAllByIdIn(request.getImageIds());
+			product.getImageList().addAll(imageList);
+		}
 
 		List<ProductOption> newOptions = new ArrayList<>();
 		for (String size : request.getSizes()) {
 			ProductOption productOption = ProductOption.builder()
-				.product(savedProduct)
+				.product(product)
 				.size(size)
 				.build();
 
@@ -118,7 +125,7 @@ public class ProductService {
 		}
 		productOptionRepository.saveAll(newOptions);
 
-		return AdminCreateProductResponse.from(savedProduct);
+		return AdminCreateProductResponse.from(product);
 	}
 
 	/**
@@ -294,9 +301,12 @@ public class ProductService {
 		Product product = productRepository.findByIdWithGraph(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		List<String> options = productOptionRepository.findSizesByProductId(productId);
-		List<Long> imageIds = product.getImageList().stream()
-			.map(ProductImage::getId)
+		List<ProductOptionInfo> options = productOptionRepository.findAllByProduct(product)
+			.stream().map(ProductOptionInfo::from)
+			.toList();
+
+		List<String> imageIds = product.getImageList().stream()
+			.map(ProductImage::getUrl)
 			.collect(Collectors.toList());
 
 		return AdminGetOneProductResponse.from(product, options, imageIds);
@@ -317,9 +327,14 @@ public class ProductService {
 		Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		List<String> options = productOptionRepository.findSizesByProductId(productId);
-		List<Long> imageIds = product.getImageList().stream()
-			.map(ProductImage::getId)
+		//List<String> options = productOptionRepository.findSizesByProductId(productId);
+
+		List<ProductOptionInfo> options = productOptionRepository.findAllByProduct(product)
+			.stream().map(ProductOptionInfo::from)
+			.toList();
+
+		List<String> imageIds = product.getImageList().stream()
+			.map(ProductImage::getUrl)
 			.collect(Collectors.toList());
 
 		return GetOneProductResponse.from(product,options,imageIds);

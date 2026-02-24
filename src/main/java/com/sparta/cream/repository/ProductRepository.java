@@ -18,7 +18,7 @@ public interface ProductRepository extends JpaRepository<Product, Long>,ProductC
     SELECT DISTINCT p
     FROM Product p
     LEFT JOIN FETCH p.productCategory pc
-    INNER JOIN FETCH p.imageList pi
+    LEFT JOIN FETCH p.imageList pi
     WHERE p.id = :id
 """)
 	Optional<Product> findByIdWithGraph(Long id);
