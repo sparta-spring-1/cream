@@ -1,45 +1,26 @@
 import { Link } from 'react-router-dom';
-import { Zap } from 'lucide-react';
-import type { PublicSummaryProduct } from '../../api/product';
+import { type PublicSummaryProduct } from '../../api/product';
 
 interface ProductCardProps {
     product: PublicSummaryProduct;
 }
 
 export const ProductCard = ({ product }: ProductCardProps) => {
+    // Backend doesn't provide image URLs in the summary yet, so we use a clean CSS placeholder
     return (
-        <Link
-            to={`/products/${product.productId}`}
-            className="block group relative bg-white rounded-2xl overflow-hidden border border-gray-100 transition-all hover:shadow-xl hover:-translate-y-1"
-        >
-            {/* Image Section */}
-            <div className="aspect-square bg-gray-50 relative overflow-hidden">
-                <div
-                    className="absolute inset-0 bg-center bg-cover transition-transform duration-500 group-hover:scale-110"
-                    style={{ backgroundImage: `url("https://placehold.co/400x400/f0f0f0/333333?text=Product")` }}
-                />
-                {/* Badges could go here */}
-                <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-[10px] font-bold shadow-sm flex items-center gap-1 text-green-600">
-                    <Zap size={10} className="fill-current" /> 빠른배송
+        <Link to={`/products/${product.productId}`} className="group flex flex-col gap-3 no-underline">
+            <div className="aspect-square w-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 overflow-hidden relative">
+                {/* Visual placeholder instead of dummy image URL */}
+                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
+                    <span className="text-gray-400 font-bold text-lg select-none">{product.brandName}</span>
                 </div>
             </div>
 
-            {/* Info Section */}
-            <div className="p-4">
-                <p className="text-xs font-extrabold text-black mb-1 underline decoration-transparent group-hover:decoration-black transition-all underline-offset-2">
-                    {product.brandName}
-                </p>
-                <p className="text-sm text-gray-600 mb-3 truncate leading-tight min-h-[1.25rem]">
-                    {product.name}
-                </p>
-
-                <div className="flex items-end justify-between mt-2">
-                    <div className="flex flex-col">
-                        <span className="text-base font-bold text-gray-900 tracking-tight">
-                            {product.retailPrice.toLocaleString()}원
-                        </span>
-                        <span className="text-[10px] text-gray-400 font-medium">즉시 구매가</span>
-                    </div>
+            <div className="flex flex-col gap-1 px-1">
+                <span className="text-sm font-bold text-black border-b border-black w-fit">{product.brandName}</span>
+                <p className="text-xs text-gray-500 line-clamp-1">{product.name}</p>
+                <div className="mt-1 flex flex-col">
+                    <p className="text-sm font-black text-black">{product.retailPrice.toLocaleString()}원</p>
                 </div>
             </div>
         </Link>
