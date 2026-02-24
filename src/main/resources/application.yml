@@ -2,8 +2,8 @@ server:
   port: 8080
   tomcat:
     threads:
-      max: 500 # VU 300명을 충분히 수용하도록 늘림
-    accept-count: 200
+      max: 200 # VU 300명을 충분히 수용하도록 늘림
+    accept-count: 100
 
 spring:
   datasource:
@@ -11,12 +11,12 @@ spring:
     url: jdbc:mysql://localhost:3306/cream?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
     username: ${LOCAL_DB_USERNAME}
     password: ${LOCAL_DB_PASSWORD}
-#    hikari:
-#      maximum-pool-size: 400
-#      connection-timeout: 30000
-#      minimum-idle: 50
-#      idle-timeout: 30000
-#      max-lifetime: 1800000
+    hikari:
+      maximum-pool-size: 50
+      connection-timeout: 30000
+      minimum-idle: 10
+      idle-timeout: 30000
+      max-lifetime: 1800000
 
   jpa:
     hibernate:
