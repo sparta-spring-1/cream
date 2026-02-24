@@ -69,6 +69,8 @@ public class ImageService {
 			newImages.add(newImage);
 		}
 
+		productImageRepository.saveAll(newImages);
+
 		// 각 파일을 업로드하고 url을 리스트로 반환
 		return newImages.stream()
 			.map(ProductImageUploadResponse::from)
