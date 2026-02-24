@@ -2,7 +2,7 @@ server:
   port: 8080
   tomcat:
     threads:
-      max: 200 # VU 300명을 충분히 수용하도록 늘림
+      max: 200
     accept-count: 100
 
 spring:
