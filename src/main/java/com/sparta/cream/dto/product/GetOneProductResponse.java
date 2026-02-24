@@ -24,14 +24,14 @@ public class GetOneProductResponse {
 	private final String modelNumber;
 	private final String brandName;
 	private final Long categoryId;
-	private final List<Long> imageIds;
-	private final List<String> options;
+	private final List<String> imageIds;
+	private final List<ProductOptionInfo> options;
 	private final String color;
 	private final String sizeUnit;
 	private final BigDecimal retailPrice;
 	private final LocalDateTime retailDate;
 
-	public static GetOneProductResponse from(Product product, List<String> options, List<Long> imageIds) {
+	public static GetOneProductResponse from(Product product, List<ProductOptionInfo> options, List<String> imageIds) {
 		return new GetOneProductResponse(
 			product.getId(),
 			product.getName(),

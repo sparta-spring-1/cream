@@ -23,6 +23,7 @@ import com.sparta.cream.dto.product.AdminUpdateProductRequest;
 import com.sparta.cream.dto.product.AdminUpdateProductResponse;
 import com.sparta.cream.dto.product.GetAllProductResponse;
 import com.sparta.cream.dto.product.GetOneProductResponse;
+import com.sparta.cream.dto.product.ProductOptionInfo;
 import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.entity.BaseEntity;
 import com.sparta.cream.entity.Product;
@@ -37,6 +38,7 @@ import com.sparta.cream.repository.ProductOptionRepository;
 import com.sparta.cream.repository.ProductRepository;
 
 import lombok.RequiredArgsConstructor;
+import software.amazon.awssdk.services.s3.endpoints.internal.Value;
 
 /**
  * 관리자 상품 도메인의 비즈니스 로직을 담당하는 서비스 클래스.
@@ -104,12 +106,17 @@ public class ProductService {
 			.operationStatus(request.getOperationStatus())
 			.build();
 
-		Product savedProduct = productRepository.save(product);
+		productRepository.save(product);
+
+		if (!request.getImageIds().isEmpty()) {
+			List<ProductImage> imageList = productImageRepository.findAllByIdIn(request.getImageIds());
+			product.getImageList().addAll(imageList);
+		}
 
 		List<ProductOption> newOptions = new ArrayList<>();
 		for (String size : request.getSizes()) {
 			ProductOption productOption = ProductOption.builder()
-				.product(savedProduct)
+				.product(product)
 				.size(size)
 				.build();
 
@@ -118,7 +125,7 @@ public class ProductService {
 		}
 		productOptionRepository.saveAll(newOptions);
 
-		return AdminCreateProductResponse.from(savedProduct);
+		return AdminCreateProductResponse.from(product);
 	}
 
 	/**
@@ -142,7 +149,11 @@ public class ProductService {
 		ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
 
-		// TODO 상품 이미지 수정
+		product.getImageList().stream()
+			.filter(img -> !request.getImageIds().contains(img.getId()))
+			.forEach(ProductImage::softDelete);
+
+		// TODO 새로 추가된 이미지와 상품 연결
 		// TODO 입찰 정보가 있는 상품은 수정할 수 없음
 
 		// 상품 옵션 수정
@@ -203,15 +214,15 @@ public class ProductService {
 		List<ProductOption> options = productOptionRepository.findAllByProduct(product);
 		options.forEach(BaseEntity::softDelete);
 
-		List<Long> optionIds = options.stream()
-			.map(ProductOption::getId)
-			.toList();
-
 		//TODO 해당 옵션들에 대한 입찰이 존재하면 삭제할 수 없음
 
-		// TODO 상품 이미지 삭제
-		//List<ProductImage> imageIds = productImageRepository.findAllByProduct(product);
-		//imageIds.forEach(BaseEntity::softDelete);
+		List<Long> imageIdList = product.getImageList().stream()
+			.map(ProductImage::getId)
+			.toList();
+
+		product.getImageList().forEach(BaseEntity::softDelete);
+
+		productImageRepository.deleteAllByIdInBatch(imageIdList);
 
 		// 상품 삭제
 		product.softDelete();
@@ -223,17 +234,10 @@ public class ProductService {
 	 *
 	 * @param page 조회할 페이지 번호 (0부터 시작)
 	 * @param pageSize 페이지당 조회할 상품 개수
-	 * @param sort 정렬 조건
-	 * @param brand 브랜드 필터 조건
-	 * @param category 카테고리 ID 필터 조건
-	 * @param productSize 상품 사이즈 필터 조건
-	 * @param minPrice 최소 가격 필터 조건
-	 * @param maxPrice 최대 가격 필터 조건
-	 * @param keyword 상품명 검색 키워드
+	 * @param productSearchCondition 상품 검색 조건 모음
 	 * @return 관리자 상품 목록 조회 응답 DTO
 	 */
-	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, String sort, String brand, Long category,
-		String productSize, Integer minPrice, Integer maxPrice, String keyword) {
+	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, ProductSearchCondition productSearchCondition) {
 
 		//TODO 정렬 조건
 
@@ -241,12 +245,7 @@ public class ProductService {
 
 		Page<Product> productPage =
 			productRepository.searchProducts(
-				brand,
-				category,
-				productSize,
-				minPrice,
-				maxPrice,
-				keyword,
+				productSearchCondition,
 				pageable
 			);
 
@@ -281,12 +280,7 @@ public class ProductService {
 
 		Page<Product> productPage =
 			productRepository.searchProducts(
-				condition.getBrandName(),
-				categoryId,
-				condition.getProductSize(),
-				condition.getMinPrice(),
-				condition.getMaxPrice(),
-				condition.getKeyword(),
+				condition,
 				pageable
 			);
 
@@ -307,9 +301,12 @@ public class ProductService {
 		Product product = productRepository.findByIdWithGraph(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		List<String> options = productOptionRepository.findSizesByProductId(productId);
-		List<Long> imageIds = product.getImageList().stream()
-			.map(ProductImage::getId)
+		List<ProductOptionInfo> options = productOptionRepository.findAllByProduct(product)
+			.stream().map(ProductOptionInfo::from)
+			.toList();
+
+		List<String> imageIds = product.getImageList().stream()
+			.map(ProductImage::getUrl)
 			.collect(Collectors.toList());
 
 		return AdminGetOneProductResponse.from(product, options, imageIds);
@@ -330,9 +327,14 @@ public class ProductService {
 		Product product = productRepository.findByIdAndDeletedAtIsNull(productId)
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_ID));
 
-		List<String> options = productOptionRepository.findSizesByProductId(productId);
-		List<Long> imageIds = product.getImageList().stream()
-			.map(ProductImage::getId)
+		//List<String> options = productOptionRepository.findSizesByProductId(productId);
+
+		List<ProductOptionInfo> options = productOptionRepository.findAllByProduct(product)
+			.stream().map(ProductOptionInfo::from)
+			.toList();
+
+		List<String> imageIds = product.getImageList().stream()
+			.map(ProductImage::getUrl)
 			.collect(Collectors.toList());
 
 		return GetOneProductResponse.from(product,options,imageIds);

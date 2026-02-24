@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @SQLRestriction("deleted_at IS NULL")
 public class ProductImage extends BaseEntity {
 	@Id
@@ -31,4 +31,10 @@ public class ProductImage extends BaseEntity {
 
 	@Column(nullable = false, length = 500)
 	private String url;
+
+	public ProductImage(String fileName, String objectKey, String url) {
+		this.fileName = fileName;
+		this.objectKey = objectKey;
+		this.url = url;
+	}
 }

@@ -83,14 +83,14 @@ public class Product extends BaseEntity {
 
 	@Builder
 	public Product(String name, String modelNumber, String brandName, ProductCategory productCategory,
-		List<ProductImage> imageList, String color, String sizeUnit,
+		String color, String sizeUnit,
 		ProductStatus productStatus, OperationStatus operationStatus, BigDecimal retailPrice,
 		LocalDateTime retailDate) {
 		this.name = name;
 		this.modelNumber = modelNumber;
 		this.brandName = brandName;
 		this.productCategory = productCategory;
-		this.imageList = imageList;
+		this.imageList = new ArrayList<>();
 		this.color = color;
 		this.sizeUnit = sizeUnit;
 		this.productStatus = productStatus;
@@ -114,12 +114,11 @@ public class Product extends BaseEntity {
 	}
 
 	public void softDelete() {
-		if(this.productStatus == ProductStatus.ON_SALE){
+		if (this.productStatus == ProductStatus.ON_SALE) {
 			throw new BusinessException(ProductErrorCode.PRODUCT_CANNOT_DELETE_ON_SALE);
 		}
 		super.softDelete();
 	}
-
 
 }
 
