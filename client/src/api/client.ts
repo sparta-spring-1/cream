@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// Use env var or default to empty string (relative path) for production/proxy, 
-// or http://localhost:8080 for local dev if not proxied.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
 

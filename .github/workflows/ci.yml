@@ -5,12 +5,10 @@ on:
     branches:
       - main
       - develop
-      - hotfix/#12-instance-connect
   pull_request:
     branches:
       - main
       - develop
-      - hotfix/#12-instance-connect
 
 env:
   DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/cream
