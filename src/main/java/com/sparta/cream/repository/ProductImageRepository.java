@@ -9,4 +9,6 @@ import com.sparta.cream.entity.ProductImage;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, Long> {
 	List<ProductImage> findByDeletedAtBefore(LocalDateTime localDateTime);
+
+	List<ProductImage> findAllByIdIn(List<Long> imageIds);
 }

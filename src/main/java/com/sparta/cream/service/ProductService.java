@@ -104,12 +104,17 @@ public class ProductService {
 			.operationStatus(request.getOperationStatus())
 			.build();
 
-		Product savedProduct = productRepository.save(product);
+		productRepository.save(product);
+
+		if (!request.getImageIds().isEmpty()) {
+			List<ProductImage> imageList = productImageRepository.findAllByIdIn(request.getImageIds());
+			product.getImageList().addAll(imageList);
+		}
 
 		List<ProductOption> newOptions = new ArrayList<>();
 		for (String size : request.getSizes()) {
 			ProductOption productOption = ProductOption.builder()
-				.product(savedProduct)
+				.product(product)
 				.size(size)
 				.build();
 
@@ -118,7 +123,7 @@ public class ProductService {
 		}
 		productOptionRepository.saveAll(newOptions);
 
-		return AdminCreateProductResponse.from(savedProduct);
+		return AdminCreateProductResponse.from(product);
 	}
 
 	/**
