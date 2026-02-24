@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { productApi, type PublicSummaryProduct } from '../api/product';
-import { Zap } from 'lucide-react';
+import { ProductCard } from '../components/product/ProductCard';
 
 const ShopPage = () => {
     const [searchParams] = useSearchParams();
@@ -38,24 +38,7 @@ const ShopPage = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 px-10">
 
                     {products.map((product) => (
-                        <Link key={product.productId} to={`/products/${product.productId}`} className="group cursor-pointer">
-                            <div className="relative aspect-square rounded-xl bg-gray-100 overflow-hidden mb-4">
-                                <div
-                                    className="absolute inset-0 bg-center bg-cover group-hover:scale-110 transition-transform duration-500"
-                                    style={{ backgroundImage: `url("https://placehold.co/400x400/f0f0f0/333333?text=No+Image")` }}
-                                />
-                            </div>
-                            <div>
-                                <p className="font-bold text-sm text-black">{product.brandName}</p>
-                                <p className="text-gray-500 text-xs truncate mb-2">{product.name}</p>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-black text-black">{product.retailPrice.toLocaleString()}원</span>
-                                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
-                                        <Zap size={10} className="fill-current" /> 빠른배송
-                                    </span>
-                                </div>
-                            </div>
-                        </Link>
+                        <ProductCard key={product.productId} product={product} />
                     ))}
 
                     {products.length === 0 && (
