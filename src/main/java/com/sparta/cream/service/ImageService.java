@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
 import com.sparta.cream.dto.product.ProductImageUploadResponse;
 import com.sparta.cream.dto.product.S3UploadResult;
 import com.sparta.cream.entity.ProductImage;
@@ -68,6 +70,8 @@ public class ImageService {
 
 			newImages.add(newImage);
 		}
+
+		productImageRepository.saveAll(newImages);
 
 		// 각 파일을 업로드하고 url을 리스트로 반환
 		return newImages.stream()
@@ -141,11 +145,15 @@ public class ImageService {
 	}
 
 	@Scheduled(cron = "0 0 0 * * *") // 매일 새벽 12시 실행
+	@SchedulerLock(
+		name = "product_image_cleanup_lock", // DB에 저장될 고유 키
+		lockAtLeastFor = "1m",              // 최소 1분간은 다른 서버가 못 잡게 함
+		lockAtMostFor = "5m"                // 최대 5분 후엔 자동으로 락 해제
+	)
 	public void cleanupOrphanedImages() {
 
-		log.error("파일 삭제 시작: ");
-		LocalDateTime deleteTime = LocalDateTime.now().minusDays(1);
-		List<ProductImage> deletedImages = productImageRepository.findByDeletedAtBefore(deleteTime);
+		log.info("파일 삭제 시작: ");
+		List<ProductImage> deletedImages = productImageRepository.findOrphanedImages();
 
 		for (ProductImage img : deletedImages) {
 			try {

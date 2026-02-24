@@ -27,8 +27,8 @@ public class AdminGetOneProductResponse {
 	private final String modelNumber;
 	private final String brandName;
 	private final Long categoryId;
-	private final List<Long> imageIds;
-	private final List<String> options;
+	private final List<String> imageUrls;
+	private final List<ProductOptionInfo> options;
 	private final String color;
 	private final String sizeUnit;
 	private final ProductStatus productStatus;
@@ -38,14 +38,14 @@ public class AdminGetOneProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminGetOneProductResponse from(Product product, List<String> options, List<Long> imageIds) {
+	public static AdminGetOneProductResponse from(Product product, List<ProductOptionInfo> options, List<String> imageUrls) {
 		return new AdminGetOneProductResponse(
 			product.getId(),
 			product.getName(),
 			product.getModelNumber(),
 			product.getBrandName(),
 			product.getProductCategory().getId(),
-			imageIds,
+			imageUrls,
 			options,
 			product.getColor(),
 			product.getSizeUnit(),
