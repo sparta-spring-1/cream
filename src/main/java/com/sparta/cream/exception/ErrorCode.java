@@ -23,6 +23,7 @@ public enum ErrorCode implements BaseCode {
 	AUTH_REDIS_SYSTEM_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "Redis 시스템 오류가 발생했습니다."),
 	AUTH_REDIS_TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "Redis 요청 시간이 초과되었습니다."),
 	AUTH_USER_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 저장 중 오류가 발생했습니다."),
+	LOCK_ACQUISITION_FAILED(HttpStatus.TOO_MANY_REQUESTS, "락 획득에 실패했습니다. 잠시 후 다시 시도해주세요."),
 	// user
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다.");
 

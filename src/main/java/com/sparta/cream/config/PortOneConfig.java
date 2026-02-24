@@ -7,6 +7,16 @@ import org.springframework.context.annotation.Configuration;
 import io.portone.sdk.server.PortOneClient;
 import lombok.Getter;
 
+/**
+ * PortOne API 관련 설정을 담당하는 Configuration 클래스입니다.
+ * <p>
+ * application.yml에서 PortOne API의 기본 URL, Secret Key, Store ID, Channel Key를 주입받아 사용합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Configuration
 @Getter
 public class PortOneConfig {

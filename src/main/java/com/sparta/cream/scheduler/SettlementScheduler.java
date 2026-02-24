@@ -16,6 +16,17 @@ import com.sparta.cream.service.SettlementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 정산 관련 스케줄링 작업을 처리하는 스케줄러 클래스입니다.
+ * <p>
+ * 매일 특정 시간에 정산 예정인 결제 건을 설정하고,
+ * 설정된 정산 건들을 처리(완료)하는 기능을 수행합니다.
+ * </p>
+ *
+ * @author 변채주
+ * @version 1.0
+ * @since 2026. 02. 12.
+ */
 @Slf4j(topic = "SettlementScheduler")
 @Component
 @RequiredArgsConstructor
