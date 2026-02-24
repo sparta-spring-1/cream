@@ -1,34 +1,52 @@
 package com.sparta.cream.domain.bid.service;
 
-import com.sparta.cream.domain.bid.dto.*;
-import com.sparta.cream.domain.bid.entity.*;
-import com.sparta.cream.domain.bid.event.BidChangedEvent;
-import com.sparta.cream.domain.bid.repository.BidRepository;
-import com.sparta.cream.domain.notification.entity.NotificationType;
-import com.sparta.cream.domain.trade.dto.*;
-import com.sparta.cream.domain.trade.entity.Trade;
-import com.sparta.cream.domain.trade.repository.TradeRepository;
-import com.sparta.cream.domain.trade.service.TradeService;
-import com.sparta.cream.entity.*;
-import com.sparta.cream.exception.*;
-import com.sparta.cream.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import org.redisson.api.RLock;
 import org.redisson.api.RScoredSortedSet;
 import org.redisson.api.RedissonClient;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import com.sparta.cream.domain.bid.dto.AdminBidCancelRequestDto;
+import com.sparta.cream.domain.bid.dto.AdminBidCancelResponseDto;
+import com.sparta.cream.domain.bid.dto.AdminBidMonitoringResponseDto;
+import com.sparta.cream.domain.bid.dto.AdminBidPagingResponseDto;
+import com.sparta.cream.domain.bid.dto.BidCancelResponseDto;
+import com.sparta.cream.domain.bid.dto.BidRequestDto;
+import com.sparta.cream.domain.bid.dto.BidResponseDto;
+import com.sparta.cream.domain.bid.entity.Bid;
+import com.sparta.cream.domain.bid.entity.BidStatus;
+import com.sparta.cream.domain.bid.entity.BidType;
+import com.sparta.cream.domain.bid.event.BidChangedEvent;
+import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.domain.notification.entity.NotificationType;
+import com.sparta.cream.domain.trade.dto.AdminTradeMonitoringResponseDto;
+import com.sparta.cream.domain.trade.dto.AdminTradePagingResponseDto;
+import com.sparta.cream.domain.trade.entity.Trade;
+import com.sparta.cream.domain.trade.repository.TradeRepository;
+import com.sparta.cream.domain.trade.service.TradeService;
+import com.sparta.cream.entity.Product;
+import com.sparta.cream.entity.ProductOption;
+import com.sparta.cream.entity.UserRole;
+import com.sparta.cream.entity.Users;
+import com.sparta.cream.exception.BidErrorCode;
+import com.sparta.cream.exception.BusinessException;
+import com.sparta.cream.exception.ErrorCode;
+import com.sparta.cream.repository.ProductOptionRepository;
+import com.sparta.cream.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 입찰(Bid) 관련 비즈니스 로직을 처리하는 서비스 클래스입니다.

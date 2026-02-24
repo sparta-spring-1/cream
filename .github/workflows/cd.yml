@@ -7,7 +7,6 @@ on:
       - completed
     branches:
       - main
-      - hotfix/#12-instance-connect
 
 env:
   DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_USERNAME }}/cream
@@ -86,9 +85,11 @@ jobs:
             echo "Health check failed"
             exit 1
             fi
-            sleep 5
+            sleep 10
             done
 
             echo "set \$service_url http://127.0.0.1:${NEXT_PORT};" | sudo tee /etc/nginx/conf.d/service-url.inc
             sudo nginx -t
             sudo nginx -s reload
+            
+            docker image prune -f
