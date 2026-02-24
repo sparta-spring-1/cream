@@ -87,8 +87,8 @@ public class SecurityConfig {
 	@Bean
 	public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
 		org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-		configuration.addAllowedOriginPattern("http://localhost:*"); // 기존 로컬 포트 허용
-		configuration.addAllowedOrigin("http://3.38.101.128"); // EC2 퍼블릭 IP 주소 허용
+		configuration.addAllowedOrigin("https://teamcream.shop");
+		configuration.addAllowedOrigin("https://www.teamcream.shop");
 		configuration.addAllowedMethod("*");
 		configuration.addAllowedHeader("*");
 		configuration.setAllowCredentials(true);
