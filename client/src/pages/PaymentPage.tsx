@@ -118,12 +118,8 @@ const PaymentPage = () => {
                 <div className="flex flex-col gap-3 border-t border-gray-100 pt-6">
                     <h3 className="font-bold text-lg">최종 주문 정보</h3>
                     <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                            <img
-                                src="https://placehold.co/200x200/f0f0f0/333333?text=Product"
-                                alt="Product"
-                                className="w-full h-full object-cover"
-                            />
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                            <span className="text-gray-400 text-[10px]">No Image</span>
                         </div>
                         <div className="flex flex-col">
                             <span className="font-bold text-sm">{paymentData.productName}</span>

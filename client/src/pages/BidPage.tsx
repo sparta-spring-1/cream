@@ -74,12 +74,8 @@ const BidPage = () => {
             <div className="max-w-[800px] w-full bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-8">
                 {/* Header */}
                 <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                            src="https://placehold.co/200x200/f0f0f0/333333?text=Product"
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                        />
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">No Image</span>
                     </div>
                     <div className="flex flex-col">
                         <span className="font-bold text-sm">{product.modelNumber}</span>

@@ -2,7 +2,7 @@ import { ChevronDown, Bookmark } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { productApi, type GetOneProductResponse } from '../api/product';
-import { bidApi, type BidResponse } from '../api/bid';
+import { type BidResponse } from '../api/bid';
 
 const ProductPage = () => {
     const { id } = useParams();
@@ -12,8 +12,10 @@ const ProductPage = () => {
     const [isLoading, setIsLoading] = useState(!isTestItem);
     const [marketBids, setMarketBids] = useState<BidResponse[]>([]);
 
-    useEffect(() => {
+    // Since we don't have URLs, use a local placeholder or CSS background
+    const imageUrl = "/no-image.png";
 
+    useEffect(() => {
         if (id) {
             productApi.getPublicProduct(Number(id))
                 .then(data => {
@@ -25,10 +27,9 @@ const ProductPage = () => {
                 })
                 .finally(() => setIsLoading(false));
 
-            // Fetch Market Price (Hardcoded option ID 1 as requested)
-            bidApi.getBidsByProduct(1)
-                .then(data => setMarketBids(data))
-                .catch(err => console.error("Failed to fetch bids", err));
+            // Market Price Section: Removed hardcoded ID 1 call
+            // We need option IDs from backend to fetch specific market prices.
+            setMarketBids([]);
         }
     }, [id, isTestItem]);
 
@@ -37,8 +38,6 @@ const ProductPage = () => {
 
     // Helper for display
     const displayPrice = product.retailPrice.toLocaleString() + '원';
-    // Since we don't have URLs, use a placeholder
-    const imageUrl = "https://placehold.co/600x600/f0f0f0/333333?text=No+Image";
 
     return (
         <div className="flex justify-center py-8">

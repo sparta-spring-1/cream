@@ -36,7 +36,6 @@ const ShopPage = () => {
                 <div className="flex justify-center p-20">Loading...</div>
             ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6 px-10">
-                    {/* Placeholder for Payment Test Item if needed, or just list API products */}
 
                     {products.map((product) => (
                         <ProductCard key={product.productId} product={product} />

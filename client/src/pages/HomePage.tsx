@@ -21,28 +21,26 @@ const HomePage = () => {
                     {/* Banner 1 */}
                     <div className="min-w-[700px] h-[360px] relative rounded-xl overflow-hidden group cursor-pointer flex-shrink-0">
                         <div
-                            className="absolute inset-0 bg-center bg-cover transition-transform duration-500 group-hover:scale-105"
-                            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAg_rBjhCLn6cPLT5FjjclNTFfyN1hQ73p28aFbqQPvd5B0AwPwQsOsH3daB1Peu8RoLPdRtIbi0zaxsQrD15-0C7mdfFTMNK_X9mqA41yitgXpLYDwCpb6IUyEQKSMwYUF-YyNw8J17qIxkZF34T0CThYfOZzp-PELd7bMHVed7gi88ixJ2K9jS3QKM7-47eR5TYRElnpqX-JDlwixgzf5oDmn4y8Mld8Ymid2mBXXizaq_pO1W98aISG-G6OEjsZyUBATwmWiyFU")' }}
+                            className="absolute inset-0 bg-gradient-to-br from-[#f8f8f8] to-[#e0e0e0] transition-transform duration-500 group-hover:scale-105"
                         ></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                        <div className="absolute bottom-10 left-10 text-white">
-                            <h3 className="text-3xl font-bold mb-2">Jordan 1 High OG 'Royal Reimagined'</h3>
-                            <p className="text-lg opacity-90 mb-6">클래식의 재해석, 프리미엄 스웨이드를 만나보세요.</p>
-                            <button className="bg-white text-black px-8 py-3 rounded-lg font-bold hover:bg-gray-200 transition-colors border-none cursor-pointer">구매하기</button>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        <div className="absolute bottom-10 left-10 text-black">
+                            <h3 className="text-3xl font-bold mb-2">New Arrivals</h3>
+                            <p className="text-lg opacity-90 mb-6">최신 트렌드 상품을 지금 바로 만나보세요.</p>
+                            <button className="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors border-none cursor-pointer">구매하기</button>
                         </div>
                     </div>
 
                     {/* Banner 2 */}
                     <div className="min-w-[400px] h-[360px] relative rounded-xl overflow-hidden group cursor-pointer flex-shrink-0">
                         <div
-                            className="absolute inset-0 bg-center bg-cover transition-transform duration-500 group-hover:scale-105"
-                            style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuBWko8z3T7FQgdfWL8Eur6qZifUtzqZQLqXS5nimH9wE8mzWGXg_KrmqWkx-pMdQ2-nHhSsCQTIOuOubxFn1mjf9fXO1P3BINAqfBoM2CZYwqEmy_jwFTOWYcTllcU7r_6A6q2mNWRHG0-O1NKipIrXKeiRZ0_X9Ht9oGqjhkzsXfch6OT8d_n6puFwmmfuIe0wRbehC5RN13YI5fxvUiHNfTCpRieE2DSaNbDMkYRImWG49j8H1TUthipjQNabO-iyYsJxiV8XFgI")' }}
+                            className="absolute inset-0 bg-gradient-to-br from-[#d4af37]/20 to-[#ffd700]/10 transition-transform duration-500 group-hover:scale-105"
                         ></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                        <div className="absolute bottom-10 left-10 text-white">
-                            <h3 className="text-2xl font-bold mb-2">Pre-owned Rolex</h3>
-                            <p className="text-sm opacity-90 mb-4">검증된 정품 컬렉션</p>
-                            <button className="bg-primary text-white px-6 py-2 rounded-lg font-bold hover:bg-primary/90 transition-colors border-none cursor-pointer">둘러보기</button>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                        <div className="absolute bottom-10 left-10 text-black">
+                            <h3 className="text-2xl font-bold mb-2">Premium Collection</h3>
+                            <p className="text-sm opacity-90 mb-4">검증된 프리미엄 에디션</p>
+                            <button className="bg-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors border-none cursor-pointer">둘러보기</button>
                         </div>
                     </div>
                 </div>
