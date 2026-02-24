@@ -1,23 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { productApi, type AdminGetOneProductResponse } from '../api/product';
+import { productApi, type GetOneProductResponse, type ProductOptionInfo } from '../api/product';
 import { bidApi } from '../api/bid';
-
-// Hardcoded mapping for demonstration since backend doesn't return Option IDs yet
-const OPTION_ID_MAP: Record<string, number> = {
-    '230': 1, '240': 2, '250': 3, '260': 4, '270': 5, '280': 6,
-    'S': 7, 'M': 8, 'L': 9, 'XL': 10
-};
 
 const BidPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const productId = searchParams.get('productId');
+    const preSelectedOptionId = searchParams.get('optionId');
     const isSell = location.pathname.includes('/sell');
 
-    const [product, setProduct] = useState<AdminGetOneProductResponse | null>(null);
-    const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [product, setProduct] = useState<GetOneProductResponse | null>(null);
+    const [selectedOptionId, setSelectedOptionId] = useState<number | null>(preSelectedOptionId ? Number(preSelectedOptionId) : null);
     const [price, setPrice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -27,8 +22,15 @@ const BidPage = () => {
 
     useEffect(() => {
         if (productId) {
-            productApi.getOne(Number(productId))
-                .then(data => setProduct(data))
+            productApi.getPublicProduct(Number(productId))
+                .then(data => {
+                    setProduct(data);
+                    // If we have a pre-selected optionId, verify it exists in the product options
+                    if (preSelectedOptionId) {
+                        const exists = data.options.some(opt => opt.id === Number(preSelectedOptionId));
+                        if (!exists) setSelectedOptionId(null);
+                    }
+                })
                 .catch(err => {
                     console.error(err);
                     alert("상품 정보를 불러올 수 없습니다.");
@@ -38,7 +40,7 @@ const BidPage = () => {
     }, [productId, navigate]);
 
     const handleAction = async () => {
-        if (!selectedSize) {
+        if (!selectedOptionId) {
             alert('사이즈를 선택해주세요.');
             return;
         }
@@ -47,18 +49,16 @@ const BidPage = () => {
             return;
         }
 
-        const optionId = OPTION_ID_MAP[selectedSize] || 1; // Fallback to 1
-
         try {
             setIsLoading(true);
             await bidApi.create({
-                productOptionId: optionId,
+                productOptionId: selectedOptionId,
                 price: parseInt(price.replace(/,/g, ''), 10),
                 type: isSell ? 'SELL' : 'BUY'
             });
 
             alert(`${typeText} 입찰이 등록되었습니다.`);
-            navigate('/my'); // Go to My Page or Product Page
+            navigate('/me'); // Go to My Page or Product Page
         } catch (err: any) {
             console.error(err);
             alert(err.response?.data?.message || '입찰 등록에 실패했습니다.');
@@ -75,7 +75,7 @@ const BidPage = () => {
                 {/* Header */}
                 <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
                     <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                        <span className="text-gray-400 text-xs">No Image</span>
+                        <span className="text-gray-400 font-bold text-xs select-none">{product.brandName}</span>
                     </div>
                     <div className="flex flex-col">
                         <span className="font-bold text-sm">{product.modelNumber}</span>
@@ -88,16 +88,16 @@ const BidPage = () => {
                 <div className="flex flex-col gap-4">
                     <h3 className="font-bold text-lg">사이즈 선택</h3>
                     <div className="grid grid-cols-3 gap-3">
-                        {product.options && product.options.map((size) => (
+                        {product.options && product.options.map((option: ProductOptionInfo) => (
                             <button
-                                key={size}
-                                onClick={() => setSelectedSize(size)}
-                                className={`py-3 rounded-xl border font-medium transition-colors ${selectedSize === size
+                                key={option.id}
+                                onClick={() => setSelectedOptionId(option.id)}
+                                className={`py-3 rounded-xl border font-medium transition-colors ${selectedOptionId === option.id
                                     ? `border-black font-bold ring-1 ring-black`
                                     : 'border-gray-200 hover:border-gray-400'
                                     }`}
                             >
-                                {size}
+                                {option.size}
                             </button>
                         ))}
                     </div>
@@ -125,10 +125,6 @@ const BidPage = () => {
                         <span className="text-gray-500">검수비</span>
                         <span>무료</span>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">배송비</span>
-                        <span>무료 (이벤트)</span>
-                    </div>
                     <div className="flex justify-between items-center font-bold text-lg mt-2">
                         <span>총 결제금액</span>
                         <span className={`text-${isSell ? '[#41b979]' : '[#ef6253]'}`}>
@@ -140,7 +136,7 @@ const BidPage = () => {
                 {/* Action Button */}
                 <button
                     onClick={handleAction}
-                    disabled={!selectedSize || !price || isLoading}
+                    disabled={!selectedOptionId || !price || isLoading}
                     className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-colors ${typeColor} ${typeColorHover} disabled:bg-gray-300 disabled:cursor-not-allowed`}
                 >
                     {isLoading ? '처리 중...' : `${typeText} 입찰하기`}

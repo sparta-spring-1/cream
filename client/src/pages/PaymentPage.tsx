@@ -98,21 +98,8 @@ const PaymentPage = () => {
     return (
         <div className="flex justify-center bg-gray-50 min-h-screen py-8">
             <div className="max-w-[600px] w-full bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-6">
-                <h2 className="text-2xl font-bold">배송/결제</h2>
+                <h2 className="text-2xl font-bold">결제</h2>
 
-                {/* Delivery Info */}
-                <div className="flex flex-col gap-3">
-                    <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-lg">배송 주소</h3>
-                        <button className="text-xs text-gray-500 underline">변경</button>
-                    </div>
-                    <div className="p-4 bg-gray-50 rounded-lg text-sm">
-                        <p className="font-bold">{paymentData.customerName}</p>
-                        <p className="text-gray-500">{paymentData.customerPhoneNumber}</p>
-                        <p className="text-gray-500">{paymentData.email}</p>
-                        {/* Address will be added later when DTO is updated */}
-                    </div>
-                </div>
 
                 {/* Order Summary */}
                 <div className="flex flex-col gap-3 border-t border-gray-100 pt-6">
@@ -136,10 +123,6 @@ const PaymentPage = () => {
                     </div>
                     <div className="flex justify-between items-center text-sm">
                         <span className="text-gray-500">검수비</span>
-                        <span>무료</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">배송비</span>
                         <span>무료</span>
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg mt-4 pt-4 border-t border-gray-200">

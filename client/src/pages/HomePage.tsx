@@ -68,8 +68,8 @@ const HomePage = () => {
             {/* Footer (Simplified) */}
             <footer className="w-full bg-white border-t border-gray-200 mt-20 pb-20">
                 <div className="max-w-content mx-auto px-10 py-12">
-                    <div className="text-center">
-                        <h4 className="font-bold text-xl mb-2">CREAM</h4>
+                    <div className="text-center flex flex-col items-center gap-4">
+                        <img src="/logo_cream.png" alt="CREAM Logo" className="h-8 w-auto object-contain grayscale opacity-80" />
                         <div className="text-sm text-gray-500 space-x-4 mb-8">
                             <a href="#" className="hover:text-primary">회사소개</a>
                             <a href="#" className="hover:text-primary">이용약관</a>

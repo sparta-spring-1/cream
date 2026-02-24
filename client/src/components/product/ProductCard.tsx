@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { type PublicSummaryProduct } from '../../api/product';
-import { Zap } from 'lucide-react';
 
 interface ProductCardProps {
     product: PublicSummaryProduct;
@@ -22,9 +21,6 @@ export const ProductCard = ({ product }: ProductCardProps) => {
                 <p className="text-xs text-gray-500 line-clamp-1">{product.name}</p>
                 <div className="mt-1 flex flex-col">
                     <p className="text-sm font-black text-black">{product.retailPrice.toLocaleString()}원</p>
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-wider flex items-center gap-1">
-                        <Zap size={10} className="fill-current" /> 빠른배송
-                    </span>
                 </div>
             </div>
         </Link>

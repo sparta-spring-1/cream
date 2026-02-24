@@ -1,8 +1,8 @@
-import { ChevronDown, Bookmark } from 'lucide-react';
+import { Bookmark } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { productApi, type GetOneProductResponse } from '../api/product';
-import { type BidResponse } from '../api/bid';
+import { bidApi, type BidResponse } from '../api/bid';
 
 const ProductPage = () => {
     const { id } = useParams();
@@ -10,6 +10,7 @@ const ProductPage = () => {
 
     const [product, setProduct] = useState<GetOneProductResponse | null>(null);
     const [isLoading, setIsLoading] = useState(!isTestItem);
+    const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
     const [marketBids, setMarketBids] = useState<BidResponse[]>([]);
 
     // Since we don't have URLs, use a local placeholder or CSS background
@@ -20,23 +21,33 @@ const ProductPage = () => {
             productApi.getPublicProduct(Number(id))
                 .then(data => {
                     setProduct(data);
+                    // Default to first option if available
+                    if (data.options && data.options.length > 0) {
+                        setSelectedOptionId(data.options[0].id);
+                    }
                 })
                 .catch(err => {
                     console.error("Failed to fetch product", err);
                     alert("상품 정보를 불러오는데 실패했습니다.");
                 })
                 .finally(() => setIsLoading(false));
-
-            // Market Price Section: Removed hardcoded ID 1 call
-            // We need option IDs from backend to fetch specific market prices.
-            setMarketBids([]);
         }
     }, [id, isTestItem]);
+
+    // Fetch market bids when selectedOptionId changes
+    useEffect(() => {
+        if (selectedOptionId) {
+            bidApi.getBidsByProduct(selectedOptionId)
+                .then(data => setMarketBids(data))
+                .catch(err => console.error("Failed to fetch bids", err));
+        }
+    }, [selectedOptionId]);
 
     if (isLoading) return <div className="flex justify-center p-20">Loading...</div>;
     if (!product) return <div className="flex justify-center p-20">Product not found</div>;
 
     // Helper for display
+    const selectedSize = product.options.find(opt => opt.id === selectedOptionId)?.size || '모든 사이즈';
     const displayPrice = product.retailPrice.toLocaleString() + '원';
 
     return (
@@ -87,22 +98,42 @@ const ProductPage = () => {
 
                         {/* Actions */}
                         <div className="py-8 flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-black">모든 사이즈</span>
-                                <button className="text-sm font-medium text-black flex items-center gap-1">
-                                    Size <ChevronDown size={16} />
-                                </button>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-black">사이즈 선택</span>
+                                    <span className="text-sm font-medium text-gray-500">{selectedSize}</span>
+                                </div>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {product.options.map((option) => (
+                                        <button
+                                            key={option.id}
+                                            onClick={() => setSelectedOptionId(option.id)}
+                                            className={`py-2 text-xs rounded-lg border transition-all ${selectedOptionId === option.id
+                                                ? 'border-black font-bold bg-gray-50'
+                                                : 'border-gray-200 text-gray-400 hover:border-gray-400'
+                                                }`}
+                                        >
+                                            {option.size}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
-                            <div className="flex gap-4">
-                                <Link to={`/bids/buy?productId=${product.id}`} className="flex-1 bg-[#ef6253] hover:bg-[#d95245] text-white rounded-xl h-14 flex items-center no-underline">
+                            <div className="flex gap-4 mt-4">
+                                <Link
+                                    to={`/bids/buy?productId=${product.id}${selectedOptionId ? `&optionId=${selectedOptionId}` : ''}`}
+                                    className="flex-1 bg-[#ef6253] hover:bg-[#d95245] text-white rounded-xl h-14 flex items-center no-underline"
+                                >
                                     <div className="w-1/3 border-r border-white/20 h-full flex items-center justify-center font-bold">구매</div>
                                     <div className="w-2/3 px-4 flex flex-col items-start">
                                         <span className="text-lg font-bold">{displayPrice}</span>
                                         <span className="text-[10px] opacity-80">구매 입찰가</span>
                                     </div>
                                 </Link>
-                                <Link to={`/bids/sell?productId=${product.id}`} className="flex-1 bg-[#41b979] hover:bg-[#38a36a] text-white rounded-xl h-14 flex items-center no-underline">
+                                <Link
+                                    to={`/bids/sell?productId=${product.id}${selectedOptionId ? `&optionId=${selectedOptionId}` : ''}`}
+                                    className="flex-1 bg-[#41b979] hover:bg-[#38a36a] text-white rounded-xl h-14 flex items-center no-underline"
+                                >
                                     <div className="w-1/3 border-r border-white/20 h-full flex items-center justify-center font-bold">판매</div>
                                     <div className="w-2/3 px-4 flex flex-col items-start">
                                         <span className="text-lg font-bold">{displayPrice}</span>
@@ -119,24 +150,28 @@ const ProductPage = () => {
 
                         {/* Market Price Section */}
                         <div className="mt-8">
-                            <h3 className="font-bold text-lg mb-4">체결 거래 (최근 시세)</h3>
+                            <h3 className="font-bold text-lg mb-1">체결 거래 (최근 시세)</h3>
+                            <p className="text-xs text-gray-400 mb-4">{selectedSize} 기준</p>
                             <div className="border-t border-gray-100">
                                 <div className="flex text-xs text-gray-400 py-2 border-b border-gray-100">
                                     <span className="flex-1">가격</span>
                                     <span className="flex-1 text-center">상태</span>
                                     <span className="flex-1 text-right">거래일</span>
-                                    {/* Actually bid date, as we are showing Bids, not Trades */}
                                 </div>
                                 {marketBids.length > 0 ? (
                                     marketBids.slice(0, 5).map(bid => (
                                         <div key={bid.id} className="flex text-sm py-2 border-b border-gray-50">
                                             <span className="flex-1 font-bold">{bid.price.toLocaleString()}원</span>
-                                            <span className="flex-1 text-center text-gray-500">{bid.status}</span>
-                                            <span className="flex-1 text-right text-gray-400">-</span>
+                                            <span className="flex-1 text-center">
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] ${bid.type === 'BUY' ? 'text-[#ef6253] bg-[#ef6253]/10' : 'text-[#41b979] bg-[#41b979]/10'}`}>
+                                                    {bid.type === 'BUY' ? '구매희망' : '판매희망'}
+                                                </span>
+                                            </span>
+                                            <span className="flex-1 text-right text-gray-400">{bid.createdAt ? bid.createdAt.substring(0, 10) : '-'}</span>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="py-8 text-center text-gray-400 text-sm">입찰 내역이 없습니다.</div>
+                                    <div className="py-8 text-center text-gray-400 text-sm">해당 사이즈의 입찰 내역이 없습니다.</div>
                                 )}
                             </div>
                         </div>

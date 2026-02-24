@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
 import { adminApi } from '../../api/admin';
-import type { ProductInfo } from '../../api/product';
+import { productApi, type ProductInfo, type ProductOptionInfo } from '../../api/product';
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -29,39 +29,63 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name,
-                modelNumber: initialData.modelNumber,
-                brandName: '', // Not in ProductInfo list response, might be missing
-                categoryId: initialData.categoryId,
-                imageIds: [1],
-                sizes: [], // We don't have sizes in list response
-                color: '', // Not in list
-                sizeUnit: 'mm',
-                productStatus: initialData.productStatus,
-                operationStatus: initialData.operationStatus,
-                retailPrice: initialData.retailPrice,
-                retailDate: new Date().toISOString().split('T')[0]
-            });
-        } else {
-            // Reset for create
-            setFormData({
-                name: '',
-                modelNumber: '',
-                brandName: '',
-                categoryId: 1,
-                imageIds: [1],
-                sizes: [],
-                color: '',
-                sizeUnit: 'mm',
-                productStatus: 'ON_SALE',
-                operationStatus: 'ACTIVE',
-                retailPrice: 0,
-                retailDate: new Date().toISOString().split('T')[0]
-            });
-            setImagePreview(null);
-        }
+        const loadFullData = async () => {
+            if (initialData && isOpen) {
+                try {
+                    const fullData = await productApi.getOne(initialData.productId);
+                    setFormData({
+                        name: fullData.name,
+                        modelNumber: fullData.modelNumber,
+                        brandName: fullData.brandName,
+                        categoryId: fullData.categoryId,
+                        imageIds: fullData.imageIds.length > 0 ? fullData.imageIds : [1],
+                        sizes: fullData.options.map((opt: ProductOptionInfo) => opt.size),
+                        color: fullData.color,
+                        sizeUnit: fullData.sizeUnit,
+                        productStatus: fullData.productStatus,
+                        operationStatus: fullData.operationStatus,
+                        retailPrice: fullData.retailPrice,
+                        retailDate: fullData.retailDate.substring(0, 10)
+                    });
+                } catch (error) {
+                    console.error("Failed to fetch full product details", error);
+                    // Fallback to partial data if fetch fails
+                    setFormData({
+                        name: initialData.name,
+                        modelNumber: initialData.modelNumber,
+                        brandName: '',
+                        categoryId: initialData.categoryId,
+                        imageIds: [1],
+                        sizes: [],
+                        color: '',
+                        sizeUnit: 'mm',
+                        productStatus: initialData.productStatus,
+                        operationStatus: initialData.operationStatus,
+                        retailPrice: initialData.retailPrice,
+                        retailDate: new Date().toISOString().split('T')[0]
+                    });
+                }
+            } else if (isOpen) {
+                // Reset for create
+                setFormData({
+                    name: '',
+                    modelNumber: '',
+                    brandName: '',
+                    categoryId: 1,
+                    imageIds: [1],
+                    sizes: [],
+                    color: '',
+                    sizeUnit: 'mm',
+                    productStatus: 'ON_SALE',
+                    operationStatus: 'ACTIVE',
+                    retailPrice: 0,
+                    retailDate: new Date().toISOString().split('T')[0]
+                });
+                setImagePreview(null);
+            }
+        };
+
+        loadFullData();
     }, [initialData, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
