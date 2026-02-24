@@ -15,13 +15,13 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
         name: '',
         modelNumber: '',
         brandName: '',
-        categoryId: 1, // Default to 1 as we don't have category list API yet
+        categoryId: 1,
         imageIds: [1], // Dummy ID as backend ignores this but requires @NotNull
         sizes: [] as string[],
         color: '',
         sizeUnit: 'mm',
         productStatus: 'ON_SALE',
-        operationStatus: 'NORMAL',
+        operationStatus: 'ACTIVE',
         retailPrice: 0,
         retailDate: new Date().toISOString().split('T')[0] // YYYY-MM-DD
     });
@@ -56,7 +56,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                 color: '',
                 sizeUnit: 'mm',
                 productStatus: 'ON_SALE',
-                operationStatus: 'NORMAL',
+                operationStatus: 'ACTIVE',
                 retailPrice: 0,
                 retailDate: new Date().toISOString().split('T')[0]
             });
@@ -200,6 +200,34 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                         </div>
                     </div>
 
+                    {/* Enum Status Selectors */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-1">운영 상태</label>
+                            <select
+                                name="operationStatus"
+                                value={formData.operationStatus}
+                                onChange={handleChange}
+                                className="w-full border p-2 rounded bg-white shadow-sm focus:ring-2 focus:ring-black outline-none"
+                            >
+                                <option value="ACTIVE">운영 중 (ACTIVE)</option>
+                                <option value="INACTIVE">운영 중지 (INACTIVE)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1">판매 상태</label>
+                            <select
+                                name="productStatus"
+                                value={formData.productStatus}
+                                onChange={handleChange}
+                                className="w-full border p-2 rounded bg-white shadow-sm focus:ring-2 focus:ring-black outline-none"
+                            >
+                                <option value="ON_SALE">판매 중 (ON_SALE)</option>
+                                <option value="NO_LISTING">등록 상품 없음 (NO_LISTING)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     {/* Options (Sizes) */}
                     <div>
                         <label className="block text-sm font-bold mb-1">사이즈 (옵션)</label>
@@ -224,10 +252,14 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                     </div>
 
                     {/* Additional Info */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-bold mb-1">컬러</label>
                             <input name="color" value={formData.color} onChange={handleChange} className="w-full border p-2 rounded" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1">사이즈 단위</label>
+                            <input name="sizeUnit" value={formData.sizeUnit} onChange={handleChange} className="w-full border p-2 rounded" placeholder="mm" />
                         </div>
                         <div>
                             <label className="block text-sm font-bold mb-1">발매일</label>
