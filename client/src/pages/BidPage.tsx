@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { productApi, type GetOneProductResponse, type ProductOptionInfo } from '../api/product';
+import { productApi, type GetOneProductResponse } from '../api/product';
 import { bidApi } from '../api/bid';
 
 const BidPage = () => {
@@ -11,8 +11,19 @@ const BidPage = () => {
     const preSelectedOptionId = searchParams.get('optionId');
     const isSell = location.pathname.includes('/sell');
 
+    // Helper for display - Handles both {id, size} objects and raw strings
+    const renderSize = (option: any) => {
+        if (typeof option === 'string') return option;
+        return option?.size || '';
+    };
+
+    const getOptionId = (option: any) => {
+        if (typeof option === 'string') return option;
+        return option?.id;
+    };
+
     const [product, setProduct] = useState<GetOneProductResponse | null>(null);
-    const [selectedOptionId, setSelectedOptionId] = useState<number | null>(preSelectedOptionId ? Number(preSelectedOptionId) : null);
+    const [selectedOptionId, setSelectedOptionId] = useState<number | string | null>(preSelectedOptionId ? (isNaN(Number(preSelectedOptionId)) ? preSelectedOptionId : Number(preSelectedOptionId)) : null);
     const [price, setPrice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -52,7 +63,7 @@ const BidPage = () => {
         try {
             setIsLoading(true);
             await bidApi.create({
-                productOptionId: selectedOptionId,
+                productOptionId: Number(selectedOptionId),
                 price: parseInt(price.replace(/,/g, ''), 10),
                 type: isSell ? 'SELL' : 'BUY'
             });
@@ -87,17 +98,17 @@ const BidPage = () => {
                 {/* Size Selection */}
                 <div className="flex flex-col gap-4">
                     <h3 className="font-bold text-lg">사이즈 선택</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                        {product.options && product.options.map((option: ProductOptionInfo) => (
+                    <div className="grid grid-cols-4 gap-2">
+                        {product.options && product.options.map((option: any) => (
                             <button
-                                key={option.id}
-                                onClick={() => setSelectedOptionId(option.id)}
-                                className={`py-3 rounded-xl border font-medium transition-colors ${selectedOptionId === option.id
-                                    ? `border-black font-bold ring-1 ring-black`
-                                    : 'border-gray-200 hover:border-gray-400'
+                                key={getOptionId(option)}
+                                onClick={() => setSelectedOptionId(getOptionId(option))}
+                                className={`py-2 text-sm border rounded-lg transition-all ${getOptionId(option) === selectedOptionId
+                                    ? 'border-primary bg-primary/5 text-primary font-bold'
+                                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
                                     }`}
                             >
-                                {option.size}
+                                {renderSize(option)}
                             </button>
                         ))}
                     </div>
@@ -127,7 +138,7 @@ const BidPage = () => {
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg mt-2">
                         <span>총 결제금액</span>
-                        <span className={`text-${isSell ? '[#41b979]' : '[#ef6253]'}`}>
+                        <span className={isSell ? 'text-[#41b979]' : 'text-[#ef6253]'}>
                             {price ? parseInt(price).toLocaleString() : 0}원
                         </span>
                     </div>

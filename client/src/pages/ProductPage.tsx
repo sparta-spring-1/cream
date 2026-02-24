@@ -46,8 +46,20 @@ const ProductPage = () => {
     if (isLoading) return <div className="flex justify-center p-20">Loading...</div>;
     if (!product) return <div className="flex justify-center p-20">Product not found</div>;
 
-    // Helper for display
-    const selectedSize = product.options.find(opt => opt.id === selectedOptionId)?.size || '모든 사이즈';
+    // Helper for display - Handles both {id, size} objects and raw strings
+    const renderSize = (option: any) => {
+        if (typeof option === 'string') return option;
+        return option?.size || '';
+    };
+
+    const getOptionId = (option: any) => {
+        if (typeof option === 'string') return option; // Should not happen but fallback
+        return option?.id;
+    };
+
+    const selectedSize = product.options.find(opt => getOptionId(opt) === selectedOptionId)
+        ? renderSize(product.options.find(opt => getOptionId(opt) === selectedOptionId))
+        : '모든 사이즈';
     const displayPrice = product.retailPrice.toLocaleString() + '원';
 
     return (
@@ -104,16 +116,16 @@ const ProductPage = () => {
                                     <span className="text-sm font-medium text-gray-500">{selectedSize}</span>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
-                                    {product.options.map((option) => (
+                                    {product.options.map((option: any) => (
                                         <button
-                                            key={option.id}
-                                            onClick={() => setSelectedOptionId(option.id)}
-                                            className={`py-2 text-xs rounded-lg border transition-all ${selectedOptionId === option.id
+                                            key={getOptionId(option)}
+                                            onClick={() => setSelectedOptionId(getOptionId(option))}
+                                            className={`py-2 text-xs rounded-lg border transition-all ${selectedOptionId === getOptionId(option)
                                                 ? 'border-black font-bold bg-gray-50'
                                                 : 'border-gray-200 text-gray-400 hover:border-gray-400'
                                                 }`}
                                         >
-                                            {option.size}
+                                            {renderSize(option)}
                                         </button>
                                     ))}
                                 </div>
