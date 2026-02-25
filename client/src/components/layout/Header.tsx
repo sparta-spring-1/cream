@@ -1,9 +1,12 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, Bell, LogOut } from 'lucide-react';
+import { useState } from 'react';
 import { authApi } from '../../api/auth';
 
 const Header = () => {
     const isLoggedIn = !!localStorage.getItem('accessToken');
+    const [searchQuery, setSearchQuery] = useState('');
+    const navigate = useNavigate();
 
     const handleLogout = async () => {
         if (!confirm("로그아웃 하시겠습니까?")) return;
@@ -16,6 +19,12 @@ const Header = () => {
             // Always clear local state and redirect
             localStorage.removeItem('accessToken');
             window.location.href = '/';
+        }
+    };
+
+    const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' && searchQuery.trim()) {
+            navigate(`/products?keyword=${encodeURIComponent(searchQuery.trim())}`);
         }
     };
 
@@ -35,6 +44,9 @@ const Header = () => {
                             className="w-full bg-gray-100 border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-gray-500"
                             placeholder="브랜드, 상품, 프로필, 태그 등"
                             type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onKeyDown={handleSearch}
                         />
                     </div>
                 </div>

@@ -6,11 +6,14 @@ const AdminTradeTab = () => {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [status, setStatus] = useState('');
 
     const fetchTrades = async () => {
         setIsLoading(true);
         try {
-            const data = await adminApi.monitorTrades(page);
+            const data = await adminApi.monitorTrades(page, {
+                status: status || undefined
+            });
             setTrades(data.items);
             setTotal(data.paging.totalElements);
         } catch (error) {
@@ -23,18 +26,30 @@ const AdminTradeTab = () => {
 
     useEffect(() => {
         fetchTrades();
-    }, [page]);
+    }, [page, status]);
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">체결 모니터링 (총 {total}건)</h2>
-                <button
-                    onClick={fetchTrades}
-                    className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-                >
-                    새로고침
-                </button>
+                <div className="flex gap-2">
+                    <select
+                        value={status}
+                        onChange={(e) => { setStatus(e.target.value); setPage(0); }}
+                        className="px-3 py-2 border rounded-lg text-sm outline-none bg-white"
+                    >
+                        <option value="">전체 상태</option>
+                        <option value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option value="COMPLETED">COMPLETED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                    <button
+                        onClick={() => { setStatus(''); setPage(0); }}
+                        className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm"
+                    >
+                        초기화
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

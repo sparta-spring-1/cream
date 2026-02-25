@@ -8,6 +8,7 @@ export interface ProductInfo {
     retailPrice: number;
     productStatus: string;
     operationStatus: string;
+    deletedAt: string | null;
 }
 
 export interface AdminGetAllProductResponse {
@@ -39,12 +40,29 @@ export interface AdminGetOneProductResponse {
     updatedAt: string;
 }
 
+export interface ProductSearchCondition {
+    sort?: 'RECENT' | 'PRICE_ASC';
+    brandName?: string;
+    category?: string;
+    productSize?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    keyword?: string;
+}
+
 export const productApi = {
-    getAll: async (page = 0, size = 10, keyword?: string) => {
+    getAll: async (page = 0, size = 10, condition?: ProductSearchCondition) => {
         const params = new URLSearchParams();
         params.append('page', page.toString());
         params.append('pageSize', size.toString());
-        if (keyword) params.append('keyword', keyword);
+
+        if (condition) {
+            Object.entries(condition).forEach(([key, value]) => {
+                if (value !== undefined && value !== '') {
+                    params.append(key, value.toString());
+                }
+            });
+        }
 
         const response = await client.get<AdminGetAllProductResponse>(`/v1/admin/products?${params.toString()}`);
         return response.data;
@@ -56,12 +74,18 @@ export const productApi = {
     },
 
     // Public APIs
-    getPublicProducts: async (page = 0, size = 10, keyword?: string) => {
+    getPublicProducts: async (page = 0, size = 10, condition?: ProductSearchCondition) => {
         const params = new URLSearchParams();
         params.append('page', page.toString());
         params.append('pageSize', size.toString());
-        if (keyword) params.append('keyword', keyword);
-        params.append('productSize', ''); // Fix for backend parameter expectation
+
+        if (condition) {
+            Object.entries(condition).forEach(([key, value]) => {
+                if (value !== undefined && value !== '') {
+                    params.append(key, value.toString());
+                }
+            });
+        }
 
         const response = await client.get<GetAllProductResponse>(`/v1/products?${params.toString()}`);
         return response.data;
