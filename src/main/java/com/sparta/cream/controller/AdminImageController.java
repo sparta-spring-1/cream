@@ -16,6 +16,7 @@ import com.sparta.cream.dto.product.ProductImageUploadResponse;
 import com.sparta.cream.service.ImageService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 관리자 전용 이미지 업로드 API를 제공하는 컨트롤러입니다.
@@ -32,12 +33,14 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/v1/admin/images")
 @RequiredArgsConstructor
+@Slf4j
 public class AdminImageController {
 
 	private final ImageService imageService;
 
 	@PostMapping("/upload")
 	public ResponseEntity<List<ProductImageUploadResponse>> s3Upload(@RequestPart(value = "image") List<MultipartFile> multipartFile) {
+		log.info("파일 업로드 요청 개수: {}", multipartFile.size());
 		List<ProductImageUploadResponse> upload = imageService.upload(multipartFile);
 		return ResponseEntity.ok(upload);
 	}
