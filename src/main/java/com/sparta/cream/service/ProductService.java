@@ -239,13 +239,12 @@ public class ProductService {
 	 */
 	public AdminGetAllProductResponse getAllProduct(int page, int pageSize, ProductSearchCondition productSearchCondition) {
 
-		//TODO 정렬 조건
-
 		Pageable pageable = PageRequest.of(page, pageSize, Sort.by("id").descending());
 
 		Page<Product> productPage =
 			productRepository.searchProducts(
 				productSearchCondition,
+				true,//삭제된 상품 포함 조회
 				pageable
 			);
 
@@ -281,6 +280,7 @@ public class ProductService {
 		Page<Product> productPage =
 			productRepository.searchProducts(
 				condition,
+				false,//삭제된 상품 미포함 조회
 				pageable
 			);
 
