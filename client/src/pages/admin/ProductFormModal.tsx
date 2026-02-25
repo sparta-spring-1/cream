@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Upload } from 'lucide-react';
 import { adminApi } from '../../api/admin';
-import type { ProductInfo } from '../../api/product';
+import { productApi, type ProductInfo, type ProductOptionInfo } from '../../api/product';
 
 interface ProductFormModalProps {
     isOpen: boolean;
@@ -15,13 +15,13 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
         name: '',
         modelNumber: '',
         brandName: '',
-        categoryId: 1, // Default to 1 as we don't have category list API yet
+        categoryId: 1,
         imageIds: [1], // Dummy ID as backend ignores this but requires @NotNull
         sizes: [] as string[],
         color: '',
         sizeUnit: 'mm',
         productStatus: 'ON_SALE',
-        operationStatus: 'NORMAL',
+        operationStatus: 'ACTIVE',
         retailPrice: 0,
         retailDate: new Date().toISOString().split('T')[0] // YYYY-MM-DD
     });
@@ -29,39 +29,63 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
     useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name,
-                modelNumber: initialData.modelNumber,
-                brandName: '', // Not in ProductInfo list response, might be missing
-                categoryId: initialData.categoryId,
-                imageIds: [1],
-                sizes: [], // We don't have sizes in list response
-                color: '', // Not in list
-                sizeUnit: 'mm',
-                productStatus: initialData.productStatus,
-                operationStatus: initialData.operationStatus,
-                retailPrice: initialData.retailPrice,
-                retailDate: new Date().toISOString().split('T')[0]
-            });
-        } else {
-            // Reset for create
-            setFormData({
-                name: '',
-                modelNumber: '',
-                brandName: '',
-                categoryId: 1,
-                imageIds: [1],
-                sizes: [],
-                color: '',
-                sizeUnit: 'mm',
-                productStatus: 'ON_SALE',
-                operationStatus: 'NORMAL',
-                retailPrice: 0,
-                retailDate: new Date().toISOString().split('T')[0]
-            });
-            setImagePreview(null);
-        }
+        const loadFullData = async () => {
+            if (initialData && isOpen) {
+                try {
+                    const fullData = await productApi.getOne(initialData.productId);
+                    setFormData({
+                        name: fullData.name,
+                        modelNumber: fullData.modelNumber,
+                        brandName: fullData.brandName,
+                        categoryId: fullData.categoryId,
+                        imageIds: fullData.imageIds.length > 0 ? fullData.imageIds : [1],
+                        sizes: fullData.options.map((opt: ProductOptionInfo) => opt.size),
+                        color: fullData.color,
+                        sizeUnit: fullData.sizeUnit,
+                        productStatus: fullData.productStatus,
+                        operationStatus: fullData.operationStatus,
+                        retailPrice: fullData.retailPrice,
+                        retailDate: fullData.retailDate.substring(0, 10)
+                    });
+                } catch (error) {
+                    console.error("Failed to fetch full product details", error);
+                    // Fallback to partial data if fetch fails
+                    setFormData({
+                        name: initialData.name,
+                        modelNumber: initialData.modelNumber,
+                        brandName: '',
+                        categoryId: initialData.categoryId,
+                        imageIds: [1],
+                        sizes: [],
+                        color: '',
+                        sizeUnit: 'mm',
+                        productStatus: initialData.productStatus,
+                        operationStatus: initialData.operationStatus,
+                        retailPrice: initialData.retailPrice,
+                        retailDate: new Date().toISOString().split('T')[0]
+                    });
+                }
+            } else if (isOpen) {
+                // Reset for create
+                setFormData({
+                    name: '',
+                    modelNumber: '',
+                    brandName: '',
+                    categoryId: 1,
+                    imageIds: [1],
+                    sizes: [],
+                    color: '',
+                    sizeUnit: 'mm',
+                    productStatus: 'ON_SALE',
+                    operationStatus: 'ACTIVE',
+                    retailPrice: 0,
+                    retailDate: new Date().toISOString().split('T')[0]
+                });
+                setImagePreview(null);
+            }
+        };
+
+        loadFullData();
     }, [initialData, isOpen]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -200,6 +224,34 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                         </div>
                     </div>
 
+                    {/* Enum Status Selectors */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold mb-1">운영 상태</label>
+                            <select
+                                name="operationStatus"
+                                value={formData.operationStatus}
+                                onChange={handleChange}
+                                className="w-full border p-2 rounded bg-white shadow-sm focus:ring-2 focus:ring-black outline-none"
+                            >
+                                <option value="ACTIVE">운영 중 (ACTIVE)</option>
+                                <option value="INACTIVE">운영 중지 (INACTIVE)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1">판매 상태</label>
+                            <select
+                                name="productStatus"
+                                value={formData.productStatus}
+                                onChange={handleChange}
+                                className="w-full border p-2 rounded bg-white shadow-sm focus:ring-2 focus:ring-black outline-none"
+                            >
+                                <option value="ON_SALE">판매 중 (ON_SALE)</option>
+                                <option value="NO_LISTING">등록 상품 없음 (NO_LISTING)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     {/* Options (Sizes) */}
                     <div>
                         <label className="block text-sm font-bold mb-1">사이즈 (옵션)</label>
@@ -224,10 +276,14 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                     </div>
 
                     {/* Additional Info */}
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-bold mb-1">컬러</label>
                             <input name="color" value={formData.color} onChange={handleChange} className="w-full border p-2 rounded" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold mb-1">사이즈 단위</label>
+                            <input name="sizeUnit" value={formData.sizeUnit} onChange={handleChange} className="w-full border p-2 rounded" placeholder="mm" />
                         </div>
                         <div>
                             <label className="block text-sm font-bold mb-1">발매일</label>
