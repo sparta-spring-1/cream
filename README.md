@@ -325,70 +325,19 @@ graph LR
 ### 5. 이미지 관리 시스템
 ### 이미지 등록 및 정리 플로우차트
 
-``` mermaid
-graph LR
-    subgraph "Client Side"
-        A["1. 이미지 업로드 요청"] 
-        B["2. 상품 등록 요청 (Image ID 포함)"]
-    end
-
-    subgraph "Application Server (Spring Boot)"
-        C["MultipartFile 스트리밍 처리<br/>(InputStream 활용)"]
-        D["Image ID 생성 및 반환"]
-        E["이미지 레코드에 product_id 매핑"]
-    end
-
-    subgraph "External Storage (Cloud)"
-        F{{"AWS S3 Storage"}}
-    end
-
-    subgraph "Database Layer"
-        G[("Image Table<br/>(product_id FK 보유)")]
-        H[("ShedLock Table")]
-    end
-
-    %% 1단계: 업로드 및 이미지 저장
-    A --> C
-    C ==>|최소 메모리 사용 전송| F
-    C --> G
-    G --> D
-    D -.->|Image ID 전달| B
-
-    %% 2단계: 상품 등록 시 연결
-    B --> E
-    E -->|UPDATE product_id| G
-
-    %% 3단계: 스케줄러 및 분산락
-    subgraph "Distributed Cleanup Scheduler"
-        I["스케줄러 실행 (Cron)"] --> J{"ShedLock 획득?"}
-        J -- "YES" --> K["DB 조회: product_id IS NULL"]
-        K --> L["S3 파일 삭제 (Bulk Delete)"]
-        L --> M["DB 레코드 삭제"]
-        J -- "NO (Skip)" --> N["작업 종료"]
-    end
-
-    G -.-> K
-    F -.-> L
-    H -.-> J
-
-    %% 스타일링
-    style F fill:#ff9900,stroke:#232f3e,stroke-width:2px,color:#fff
-    style G fill:#f9f9f9,stroke:#333
-    style J fill:#fff1f0,stroke:#ff4d4f
-    style C fill:#e6f7ff,stroke:#1890ff
-```
+<img width="5391" height="1006" alt="image" src="https://github.com/user-attachments/assets/1269db4a-321b-4d11-b6a7-a8dd19fd70d9" />
 
 - #### 확장성과 성능을 고려한 업로드 전략 (S3)
-    - MultipartFile 스트리밍: 파일을 서버 메모리에 배열로 적재하지 않고 InputStream을 통해 읽는 즉시 AWS S3로 전송합니다. 
+    - **MultipartFile 스트리밍**: 파일을 서버 메모리에 배열로 적재하지 않고 InputStream을 통해 읽는 즉시 AWS S3로 전송합니다. 
                             이를 통해 수천 명의 동시 업로드 시에도 OOM 장애를 예방하고 서버 자원을 효율적으로 관리합니다. 
-    - 외부 저장소 활용 (S3): 서버 인스턴스와 무관한 외부 스토리지를 활용하여 인스턴스 확장 시에도 파일 접근성을 보장하는 Stateless 아키텍처를 유지합니다.
+    - **외부 저장소 활용 (S3)**: 서버 인스턴스와 무관한 외부 스토리지를 활용하여 인스턴스 확장 시에도 파일 접근성을 보장하는 Stateless 아키텍처를 유지합니다.
 - #### 데이터 정합성을 위한 지연 매핑
-    - 이미지-상품 분리: 이미지 업로드 시 즉시 Image ID를 먼저 발급하여 클라이언트가 게시글 작성 중에도 이미지를 자유롭게 첨부할 수 있게 합니다.
-    - ID 매핑 연계: 최종 상품 등록 시 전달받은 Image ID를 기반으로 DB의 product_id(FK)를 업데이트합니다. 
+    - **이미지-상품 분리**: 이미지 업로드 시 즉시 Image ID를 먼저 발급하여 클라이언트가 게시글 작성 중에도 이미지를 자유롭게 첨부할 수 있게 합니다.
+    - **ID 매핑 연계**: 최종 상품 등록 시 전달받은 Image ID를 기반으로 DB의 product_id(FK)를 업데이트합니다. 
                   이 과정에서 등록이 완료되지 않은 레코드는 자연스럽게 고아 객체로 분류되어 관리됩니다.
 - #### 분산 환경의 안정적 자원 정리 (ShedLock)
-    - 스케줄러 중복 제어: 다중 서버 환경에서 각 인스턴스의 스케줄러가 동시에 실행되는 것을 방지하기 위해 ShedLock을 도입했습니다.
-    - 효율적 비용 최적화: DB 테이블 내 product_id가 NULL인 대상을 조회하여 실제 유효하지 않은 데이터만 선별합니다. 
+    - **스케줄러 중복 제어**: 다중 서버 환경에서 각 인스턴스의 스케줄러가 동시에 실행되는 것을 방지하기 위해 ShedLock을 도입했습니다.
+    - **효율적 비용 최적화**: DB 테이블 내 product_id가 NULL인 대상을 조회하여 실제 유효하지 않은 데이터만 선별합니다. 
                       주기적으로 S3의 고아 객체를 삭제하여 스토리지 과금 비용을 최소화하고 시스템의 청결도를 유지합니다.
 
 ## 5. 기술적 의사결정 및 트러블슈팅 (Technical Decision & Troubleshooting)
