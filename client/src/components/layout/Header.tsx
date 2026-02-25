@@ -42,7 +42,7 @@ const Header = () => {
                         </span>
                         <input
                             className="w-full bg-gray-100 border-none rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/20 placeholder:text-gray-500"
-                            placeholder="브랜드, 상품, 프로필, 태그 등"
+                            placeholder="상품명으로 검색..."
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}

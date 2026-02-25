@@ -10,9 +10,8 @@ const AdminProductTab = () => {
     const [page, setPage] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Search & Filter State
+    // Search Filter State
     const [keyword, setKeyword] = useState('');
-    const [statusFilter, setStatusFilter] = useState('');
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,8 +22,6 @@ const AdminProductTab = () => {
         try {
             const data = await productApi.getAll(page, 20, {
                 keyword: keyword || undefined,
-                // Status filter implementation might depend on backend DTO support
-                // For now, let's focus on keyword search which we know works.
             });
             setProducts(data.productList);
             setTotal(data.totalElements);
@@ -92,7 +89,7 @@ const AdminProductTab = () => {
                     <div className="relative flex-1">
                         <input
                             type="text"
-                            placeholder="상품명, 모델번호로 검색..."
+                            placeholder="상품명으로 검색..."
                             value={keyword}
                             onChange={(e) => setKeyword(e.target.value)}
                             className="w-full pl-3 pr-10 py-2 border border-gray-200 rounded-lg text-sm focus:ring-1 focus:ring-black outline-none"
@@ -101,24 +98,10 @@ const AdminProductTab = () => {
                             Search
                         </button>
                     </div>
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => {
-                            setStatusFilter(e.target.value);
-                            // Auto-fetch if wanted, or wait for search submit
-                        }}
-                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none bg-white"
-                    >
-                        <option value="">전체 상태</option>
-                        <option value="ON_SALE">ON_SALE</option>
-                        <option value="OUT_OF_STOCK">OUT_OF_STOCK</option>
-                        <option value="HIDDEN">HIDDEN</option>
-                    </select>
                     <button
                         type="button"
                         onClick={() => {
                             setKeyword('');
-                            setStatusFilter('');
                             setPage(0);
                         }}
                         className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"

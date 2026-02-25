@@ -16,6 +16,9 @@ const ShopPage = () => {
     const [hasNext, setHasNext] = useState(false);
     const [total, setTotal] = useState(0);
 
+    // Dynamic Filter states
+    const [availableBrands, setAvailableBrands] = useState<string[]>(BRANDS);
+
     // Initial values from URL search params
     const getInitialCondition = (): ProductSearchCondition => ({
         keyword: searchParams.get('keyword') || undefined,
@@ -35,6 +38,18 @@ const ShopPage = () => {
             setProducts(data.productList);
             setHasNext(data.hasNext);
             setTotal(data.totalElements);
+
+            // Dynamically update unique brands/categories from results if no filters are active
+            // This helps discover what's actually in the backend
+            if (!condition.brandName && !condition.category && !condition.keyword) {
+                const results = data.productList;
+                const uniqueBrands = Array.from(new Set(results.map(p => p.brandName)));
+                if (uniqueBrands.length > 0) setAvailableBrands(uniqueBrands);
+
+                // Categories are names in PublicSummaryProduct? Let's check DTO.
+                // PublicSummaryProduct only has brandName, not category. 
+                // Wait, it doesn't have category. Let's stick to Brands for now.
+            }
         } catch (err) {
             console.error("Failed to fetch products", err);
         } finally {
@@ -117,7 +132,7 @@ const ShopPage = () => {
                 <div className="mb-8">
                     <h3 className="font-bold text-sm mb-3">Brand</h3>
                     <div className="flex flex-wrap gap-2">
-                        {BRANDS.map(brand => (
+                        {availableBrands.map(brand => (
                             <button
                                 key={brand}
                                 onClick={() => handleFilterChange('brandName', condition.brandName === brand ? undefined : brand)}
@@ -141,8 +156,8 @@ const ShopPage = () => {
                                 key={size}
                                 onClick={() => handleFilterChange('productSize', condition.productSize === size ? undefined : size)}
                                 className={`w-12 h-10 flex items-center justify-center rounded border text-xs transition-colors ${condition.productSize === size
-                                        ? 'bg-black text-white border-black'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                                    ? 'bg-black text-white border-black'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                                     }`}
                             >
                                 {size}
@@ -181,7 +196,7 @@ const ShopPage = () => {
                 <div className="flex justify-between items-end mb-6">
                     <div>
                         <h1 className="text-2xl font-bold mb-1">Shop</h1>
-                        <p className="text-sm text-gray-400">{total.toLocaleString()} products</p>
+                        <p className="text-sm text-gray-400">"{condition.keyword || '전체 상품'}" 검색 결과 ({total.toLocaleString()}개)</p>
                     </div>
 
                     <div className="flex items-center gap-4">
