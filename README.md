@@ -36,7 +36,7 @@
 
 ### Tools
 * Build: Gradle
-* Documentation: Postman
+* Documentation: Swagger
 * Version Control: Git
 * Collaboration: Slack, Notion
 ---
@@ -48,68 +48,14 @@
 프로젝트의 데이터 모델은 거래의 유연성과 이력 관리에 집중하여 설계되었습니다.
 * Bid (Purchase/Sale): 사용자의 입찰 정보를 저장하며, Trade로 체결되기 전까지의 상태를 관리합니다.
 * Trade: 입찰이 일치하거나 즉시 구매/판매가 이루어질 때 생성되는 핵심 거래 데이터입니다.
-* Payment & History: 결제 상태(READY, PAID, CANCELLED)를 관리하며, 결제 시점의 모든 로그를 PaymentHistory에 기록하여 추적 가능성을 높였습니다.
+* Payment & History: 결제 정보, 결제 상태(READY, PAID, CANCELLED)를 관리하며, 결제 시점의 로그를 PaymentHistory에 기록하여 추적 가능성을 높였습니다.
+* Settlement: 판매자에게 지급할 정산금 내역 정보를 저장하며, 
 * BaseTimeEntity: 모든 엔티티가 상속받아 생성/수정 시간을 자동 추적하도록 공통화하였습니다.
 
 ---
 ### 시스템 아키텍처
 ![img_2.png](img_2.png)
-``` mermaid
-graph TB
-%% Nodes Definition
-User((사용자))
-
-    subgraph GitHub_Ecosystem [GitHub & CI/CD]
-        Repo[GitHub Repository]
-        GA[GitHub Actions]
-    end
-
-    subgraph AWS_Cloud [AWS Cloud]
-        subgraph VPC [VPC]
-            subgraph Public_Subnet [Public Subnet]
-                subgraph EC2 [EC2 Instance]
-                    subgraph Docker_Env [Docker Container]
-                        SB[Spring Boot App]
-                    end
-                end
-            end
-
-            subgraph Private_Subnet [Private Subnet]
-                subgraph EC2_pri [EC2 Instance]
-                    subgraph Docker_DB [Docker Container]
-                        MySQL[MySQL]
-                        Redis[Redis]
-                    end
-                end
-            end
-
-        end
-        
-        S3[Amazon S3<br/>Object Storage]
-    end
-
-    subgraph External_API [External Services]
-        Portone[Portone V2 API]
-    end
-
-    %% Deployment Flow
-    Repo -->|Code Push| GA
-    GA -->|Build & Deploy| Docker_Env
-
-    %% Service Flow
-    User -->|HTTP| SB
-    SB <-->|JPA/SQL| EC2_pri
-    SB <-->|File I/O| S3
-    SB <-->|REST API| Portone
-
-    %% Styling
-    style AWS_Cloud fill:#f1faff,stroke:#0073bb,stroke-width:2px
-    style VPC fill:#ffffff,stroke:#0073bb,stroke-width:2px,stroke-dasharray: 5 5
-    style Docker_Env fill:#e1f5fe,stroke:#008bb9,stroke-width:2px
-    style Docker_DB fill:#e1f5fe,stroke:#008bb9,stroke-width:2px
-    style Portone fill:#fff1f1,stroke:#ff4d4d,stroke-width:2px
-    style GitHub_Ecosystem fill:#f6f8fa,stroke:#24292e,stroke-width:2px
-```
+![Develop_Flow.png](Develop_Flow.png)
 ---
 ## 4. 주요 기능 (Key Features)
 ### 1. 입찰시스템
@@ -342,38 +288,38 @@ graph LR
 - 페이지 디자인 및 백엔드 연계 작업
   백엔드 개발 작업에 집중하기 위해 UI/UX 디자인은 [Stitch](https://stitch.withgoogle.com/), 프론트엔드 페이지 구성은 [Antigravity](https://antigravity.google/)를 활용했습니다. 프론트엔드와 연계하는 과정에서 백엔드에서 전달되어야 하는 데이터 응답 구조를 재차 점검하고 보완했습니다.
 ### 4.트러블 슈팅 
-- [Wiki](https://github.com/sparta-spring-1/cream/wiki/4.-%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85)에  작성을 하였습니다.
+- [Wiki](https://github.com/sparta-spring-1/cream/wiki/4.-%ED%8A%B8%EB%9F%AC%EB%B8%94%EC%8A%88%ED%8C%85)에  작성하였습니다.
 ---
 
 ## 6. API 명세 (API Documentation)
 
-| Domain      | Method | Endpoint                          | Description        |
-|-------------|--------|-----------------------------------|--------------------|
-| Auth        | POST   | /v1/auth/signup                   | 회원가입 및 권한 부여       |
-| Auth        | POST   | /v1/auth/login                    | 로그인                |
-| Auth        | POST   | /v1/auth/reissue                  | 토큰 재발급|
-| Mypage      | GET    | /v1/me                            |마이페이지|
-| Payment     | POST   | /v1/payments/prepare              |결제 준비|
-| Payment     | POST   | /v1/payments/{paymentId}/complete |결제 완료요청|
-| Payment     | POST   | /v1/payments/{paymentId}/refund   |환불요청|
-| Payment     | GET    | /v1/payments                      |결제데이터 조회|
-| Payment     | GET    | /v1/payments/{paymentId}          |특정 결제의 상세 정보를 조회|
-| Admin       | POST   | /v1/admin/images/upload           |이미지 업로드|
-| Admin       | PATCH  | /v1/admin/bids/{bidId}               | 관리자 권한으로 특정  입찰을 강제 취소 |
-| Product     | POST   | /v1/admin/products                | 상품등록|
-| Product     | PUT    | /v1/admin/products/{produvtId}    |상품 업데이트|
-| Product     | DELETE | /v1/admin/products/{produvtId}    | 상품삭제|
-| Settlements | POST   | /v1/settlements                   |사용자 본인의 전체 정산 내역을 조회|
-| Settlements | POST   | /v1/settlements/{settlementId}    |특정 정산의 상세 정보를 조회|
-| Product     | GET    | /v1/products/{id}                 | 상품 상세 및 시세 조회      |
-| Bid         | POST   | /v1/bids                          | 구매/판매 입찰 등록        |
-|Bid| GET    | /v1/bids/me                       |현재 내가 입찰 중인 내역 확인|
-|Bid| GET    | /v1/bids                          |	특정 상품의 입찰 리스트 조회|
-|Bid| PATCH  | /v1/bids/{id}                     |	체결 전 입찰가 또는 상품 옵션 변경|
-|Bid| DELETE | /v1/bids/{id}	                    |입찰 취소|
-| Trade | DELETE | /v1/trades/{tradeId}              | 체결취소 및 체결 취소 패널티 로직 가동      |
-|Notification|GET|/v1/notification|알림 목록 조회|
-|Notification|GET|/v1/notification/subscribe|사용자의 실시간 알림 구독을 위한 SSE 연결을 생성|
+| Domain      | Method | Endpoint                          | Description                   |
+|-------------|--------|-----------------------------------|-------------------------------|
+| Auth        | POST   | /v1/auth/signup                   | 회원가입 및 권한 부여                  |
+| Auth        | POST   | /v1/auth/login                    | 로그인                           |
+| Auth        | POST   | /v1/auth/reissue                  | 토큰 재발급                        |
+| Mypage      | GET    | /v1/me                            | 마이페이지                         |
+| Payment     | POST   | /v1/payments/prepare              | 결제 준비                         |
+| Payment     | POST   | /v1/payments/{paymentId}/complete | 결제 완료 검증                      |
+| Payment     | POST   | /v1/payments/{paymentId}/refund   | 환불 요청                         |
+| Payment     | GET    | /v1/payments                      | 결제 정보 조회                      |
+| Payment     | GET    | /v1/payments/{paymentId}          | 특정 결제의 상세 정보를 조회              |
+| Admin       | POST   | /v1/admin/images/upload           | 이미지 업로드                       |
+| Admin       | PATCH  | /v1/admin/bids/{bidId}               | 관리자 권한으로 특정  입찰을 강제 취소        |
+| Product     | POST   | /v1/admin/products                | 상품등록                          |
+| Product     | PUT    | /v1/admin/products/{produvtId}    | 상품 업데이트                       |
+| Product     | DELETE | /v1/admin/products/{produvtId}    | 상품삭제                          |
+| Settlements | POST   | /v1/settlements                   | 사용자 본인의 전체 정산 내역을 조회          |
+| Settlements | POST   | /v1/settlements/{settlementId}    | 특정 정산의 상세 정보를 조회              |
+| Product     | GET    | /v1/products/{id}                 | 상품 상세 및 시세 조회                 |
+| Bid         | POST   | /v1/bids                          | 구매/판매 입찰 등록                   |
+|Bid| GET    | /v1/bids/me                       | 현재 내가 입찰 중인 내역 확인             |
+|Bid| GET    | /v1/bids                          | 	특정 상품의 입찰 리스트 조회             |
+|Bid| PATCH  | /v1/bids/{id}                     | 	체결 전 입찰가 또는 상품 옵션 변경         |
+|Bid| DELETE | /v1/bids/{id}	                    | 입찰 취소                         |
+| Trade | DELETE | /v1/trades/{tradeId}              | 체결취소 및 체결 취소 패널티 로직 가동        |
+|Notification|GET|/v1/notification| 알림 목록 조회                      |
+|Notification|GET|/v1/notification/subscribe| 사용자의 실시간 알림 구독을 위한 SSE 연결을 생성 |
 
 ---
 
@@ -415,14 +361,14 @@ cd cream
 ### 3. 환경 변수 설정 (Environment Variables)
 - 애플리케이션 실행을 위해 환경 변수 설정이 필요합니다. 
 
-| 분류                                                             | 변수명                                                 | 설명                   |
-|----------------------------------------------------------------|-----------------------------------------------------|----------------------|
-| Database                                                       | LOCAL_DB_USERNAME / LOCAL_DB_PASSWORD,MySQL 접속 계정 정보 
-| Redis                                                          | REDIS_HOST / REDIS_PASSWORD                         | Redis 서버 주소 및 비밀번호   |
-| AWS| AWS_ACCESS_KEY / AWS_SECRET_KEY| S3 이미지 업로드용 자격 증명    |
-| AWS| BUCKET_NAME / AWS_REGION                            | S3 버킷 정보             |
-| Payment| PORTONE_STORE_ID / PORTONE_API_SECRET               | 포트원(PortOne) 결제 연동 키 |
-|Security| JWT_SECRET / JWT_ISSUER                             | JWT 토큰 생성 및 검증용 비밀키  |
+| 분류                                                             | 변수명                                    | 설명                   |
+|----------------------------------------------------------------|----------------------------------------|----------------------|
+| Database                                                       | LOCAL_DB_USERNAME / LOCAL_DB_PASSWORD  | MySQL 접속 계정 정보 
+| Redis                                                          | REDIS_HOST / REDIS_PASSWORD            | Redis 서버 주소 및 비밀번호   |
+| AWS| AWS_ACCESS_KEY / AWS_SECRET_KEY        | S3 이미지 업로드용 자격 증명    |
+| AWS| BUCKET_NAME / AWS_REGION               | S3 버킷 정보             |
+| Payment| PORTONE_STORE_ID / PORTONE_API_SECRET  | 포트원(PortOne) 결제 연동 키 |
+|Security| JWT_SECRET / JWT_ISSUER                | JWT 토큰 생성 및 검증용 비밀키  |
 
 ### 4.어플리케이션 실행 (Run)
 ``` bash
