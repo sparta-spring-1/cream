@@ -13,8 +13,6 @@ const ProductPage = () => {
     const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
     const [marketBids, setMarketBids] = useState<BidResponse[]>([]);
 
-    // Since we don't have URLs, use a local placeholder or CSS background
-    const imageUrl = "/no-image.png";
 
     useEffect(() => {
         if (id) {
@@ -76,7 +74,11 @@ const ProductPage = () => {
                     {/* Left: Image Gallery */}
                     <div className="flex flex-col gap-4">
                         <div className="aspect-square w-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100">
-                            <img className="w-full h-full object-contain p-8" alt={product.name} src={imageUrl} />
+                            {product.imageUrls && product.imageUrls.length > 0 ? (
+                                <img className="w-full h-full object-contain p-8" alt={product.name} src={product.imageUrls[0]} />
+                            ) : (
+                                <span className="text-gray-400">이미지 없음</span>
+                            )}
                         </div>
                         {/* Thumbnail gallery omitted as we don't have images */}
                     </div>
