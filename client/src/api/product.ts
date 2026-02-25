@@ -78,7 +78,7 @@ export interface PublicSummaryProduct {
     name: string;
     brandName: string;
     retailPrice: number;
-    imageUrl: string;
+    imageUrls: string[];
 }
 
 export interface GetAllProductResponse {
