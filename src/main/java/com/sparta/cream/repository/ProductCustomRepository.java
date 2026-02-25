@@ -7,5 +7,5 @@ import com.sparta.cream.dto.product.ProductSearchCondition;
 import com.sparta.cream.entity.Product;
 
 public interface ProductCustomRepository {
-	Page<Product> searchProducts(ProductSearchCondition productSearchCondition, Pageable pageable);
+	Page<Product> searchProducts(ProductSearchCondition productSearchCondition,boolean includeDeleted, Pageable pageable);
 }
