@@ -58,26 +58,27 @@ public class SecurityConfig {
 	 */
 	@Bean
 	public SecurityFilterChain filterChain(
-		HttpSecurity http,
-		JwtAuthenticationFilter jwtAuthenticationFilter,
-		SecurityErrorHandlers securityErrorHandlers) throws Exception {
+			HttpSecurity http,
+			JwtAuthenticationFilter jwtAuthenticationFilter,
+			SecurityErrorHandlers securityErrorHandlers) throws Exception {
 		http
-			.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-			.csrf(csrf -> csrf.disable())
-			.httpBasic(httpBasic -> httpBasic.disable())
-			.formLogin(formLogin -> formLogin.disable())
-			.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(eh -> eh
-				.authenticationEntryPoint(securityErrorHandlers)
-				.accessDeniedHandler(securityErrorHandlers))
-			.authorizeHttpRequests(auth -> auth
-				.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
-					"/v1/admin/**")
-				.permitAll()
-				.requestMatchers("/v1/products/**").permitAll()
-				.requestMatchers("/actuator/**").permitAll()
-				.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-				.anyRequest().authenticated());
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.csrf(csrf -> csrf.disable())
+				.httpBasic(httpBasic -> httpBasic.disable())
+				.formLogin(formLogin -> formLogin.disable())
+				.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.exceptionHandling(eh -> eh
+						.authenticationEntryPoint(securityErrorHandlers)
+						.accessDeniedHandler(securityErrorHandlers))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/v1/auth/signup", "/v1/auth/login", "/v1/auth/reissue",
+								"/v1/admin/**")
+						.permitAll()
+						.requestMatchers("/v1/products/**").permitAll()
+						.requestMatchers(org.springframework.http.HttpMethod.GET, "/v1/bids").permitAll()
+						.requestMatchers("/actuator/**").permitAll()
+						.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+						.anyRequest().authenticated());
 
 		http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -89,6 +90,7 @@ public class SecurityConfig {
 		org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
 		configuration.addAllowedOrigin("https://teamcream.shop");
 		configuration.addAllowedOrigin("https://www.teamcream.shop");
+		configuration.addAllowedOrigin("http://localhost:5174");
 		configuration.addAllowedMethod("*");
 		configuration.addAllowedHeader("*");
 		configuration.setAllowCredentials(true);
