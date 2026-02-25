@@ -61,6 +61,13 @@ export interface AdminTradePagingResponse {
     paging: PagingInfo;
 }
 
+export interface ProductImageUploadResponse {
+    imageId: number;
+    originalFileName: string;
+    objectKey: string;
+    url: string;
+}
+
 export const adminApi = {
     // --- Product ---
     // Note: GetAll is in productApi, but Delete is admin specific
@@ -127,7 +134,7 @@ export const adminApi = {
     uploadImage: async (file: File) => {
         const formData = new FormData();
         formData.append('image', file);
-        const response = await client.post<string[]>('/v1/admin/images/upload', formData, {
+        const response = await client.post<ProductImageUploadResponse[]>('/v1/admin/images/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }

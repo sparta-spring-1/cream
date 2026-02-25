@@ -20,27 +20,31 @@ const HomePage = () => {
                 <div className="flex overflow-x-auto gap-4 hide-scrollbar pb-4 -mx-2 px-2">
                     {/* Banner 1 */}
                     <div className="min-w-[700px] h-[360px] relative rounded-xl overflow-hidden group cursor-pointer flex-shrink-0">
-                        <div
-                            className="absolute inset-0 bg-gradient-to-br from-[#f8f8f8] to-[#e0e0e0] transition-transform duration-500 group-hover:scale-105"
-                        ></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                        <div className="absolute bottom-10 left-10 text-black">
+                        <img
+                            src="/banner_new_arrivals.png"
+                            alt="New Arrivals"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                        <div className="absolute bottom-10 left-10 text-white">
                             <h3 className="text-3xl font-bold mb-2">New Arrivals</h3>
                             <p className="text-lg opacity-90 mb-6">최신 트렌드 상품을 지금 바로 만나보세요.</p>
-                            <button className="bg-black text-white px-8 py-3 rounded-lg font-bold hover:bg-gray-800 transition-colors border-none cursor-pointer">구매하기</button>
+                            <button className="bg-white text-black px-8 py-3 rounded-lg font-bold hover:bg-gray-100 transition-colors border-none cursor-pointer">구매하기</button>
                         </div>
                     </div>
 
                     {/* Banner 2 */}
                     <div className="min-w-[400px] h-[360px] relative rounded-xl overflow-hidden group cursor-pointer flex-shrink-0">
-                        <div
-                            className="absolute inset-0 bg-gradient-to-br from-[#d4af37]/20 to-[#ffd700]/10 transition-transform duration-500 group-hover:scale-105"
-                        ></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                        <div className="absolute bottom-10 left-10 text-black">
+                        <img
+                            src="/banner_premium.png"
+                            alt="Premium Collection"
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-transparent"></div>
+                        <div className="absolute bottom-10 left-10 text-white">
                             <h3 className="text-2xl font-bold mb-2">Premium Collection</h3>
                             <p className="text-sm opacity-90 mb-4">검증된 프리미엄 에디션</p>
-                            <button className="bg-black text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-800 transition-colors border-none cursor-pointer">둘러보기</button>
+                            <button className="bg-white text-black px-6 py-2 rounded-lg font-bold hover:bg-gray-100 transition-colors border-none cursor-pointer">둘러보기</button>
                         </div>
                     </div>
                 </div>

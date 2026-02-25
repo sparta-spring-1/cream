@@ -27,7 +27,7 @@ export interface AdminGetOneProductResponse {
     modelNumber: string;
     brandName: string;
     categoryId: number;
-    imageIds: number[];
+    imageUrls: string[];
     options: ProductOptionInfo[];
     color: string;
     sizeUnit: string;
@@ -78,6 +78,7 @@ export interface PublicSummaryProduct {
     name: string;
     brandName: string;
     retailPrice: number;
+    imageUrls: string[];
 }
 
 export interface GetAllProductResponse {
@@ -92,7 +93,7 @@ export interface GetOneProductResponse {
     modelNumber: string;
     brandName: string;
     categoryId: number;
-    imageIds: number[];
+    imageUrls: string[];
     options: ProductOptionInfo[];
     color: string;
     sizeUnit: string;

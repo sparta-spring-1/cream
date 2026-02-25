@@ -16,7 +16,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
         modelNumber: '',
         brandName: '',
         categoryId: 1,
-        imageIds: [1], // Dummy ID as backend ignores this but requires @NotNull
+        imageIds: [] as number[],
         sizes: [] as string[],
         color: '',
         sizeUnit: 'mm',
@@ -38,7 +38,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                         modelNumber: fullData.modelNumber,
                         brandName: fullData.brandName,
                         categoryId: fullData.categoryId,
-                        imageIds: fullData.imageIds.length > 0 ? fullData.imageIds : [1],
+                        imageIds: [], // Backend GetOne does not return IDs yet, so we reset or handle as needed
                         sizes: fullData.options.map((opt: ProductOptionInfo) => opt.size),
                         color: fullData.color,
                         sizeUnit: fullData.sizeUnit,
@@ -47,6 +47,9 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                         retailPrice: fullData.retailPrice,
                         retailDate: fullData.retailDate.substring(0, 10)
                     });
+                    if (fullData.imageUrls && fullData.imageUrls.length > 0) {
+                        setImagePreview(fullData.imageUrls[0]);
+                    }
                 } catch (error) {
                     console.error("Failed to fetch full product details", error);
                     // Fallback to partial data if fetch fails
@@ -55,7 +58,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                         modelNumber: initialData.modelNumber,
                         brandName: '',
                         categoryId: initialData.categoryId,
-                        imageIds: [1],
+                        imageIds: [],
                         sizes: [],
                         color: '',
                         sizeUnit: 'mm',
@@ -72,7 +75,7 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
                     modelNumber: '',
                     brandName: '',
                     categoryId: 1,
-                    imageIds: [1],
+                    imageIds: [],
                     sizes: [],
                     color: '',
                     sizeUnit: 'mm',
@@ -100,12 +103,14 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData }: ProductFor
         if (e.target.files && e.target.files[0]) {
             try {
                 const file = e.target.files[0];
-                const urls = await adminApi.uploadImage(file);
-                if (urls && urls.length > 0) {
-                    setImagePreview(urls[0]);
-                    // Note: Backend CreateProductRequest expects IDs, but ImageController returns URLs.
-                    // Also backend service currently ignores imageList.
-                    // So we just keep the dummy ID [1] in formData.
+                const response = await adminApi.uploadImage(file);
+                if (response && response.length > 0) {
+                    const uploadedImage = response[0];
+                    setImagePreview(uploadedImage.url);
+                    setFormData(prev => ({
+                        ...prev,
+                        imageIds: [uploadedImage.imageId] // Store the actual ID
+                    }));
                 }
             } catch (error) {
                 console.error("Image upload failed", error);

@@ -13,8 +13,6 @@ const ProductPage = () => {
     const [selectedOptionId, setSelectedOptionId] = useState<number | null>(null);
     const [marketBids, setMarketBids] = useState<BidResponse[]>([]);
 
-    // Since we don't have URLs, use a local placeholder or CSS background
-    const imageUrl = "/no-image.png";
 
     useEffect(() => {
         if (id) {
@@ -46,8 +44,20 @@ const ProductPage = () => {
     if (isLoading) return <div className="flex justify-center p-20">Loading...</div>;
     if (!product) return <div className="flex justify-center p-20">Product not found</div>;
 
-    // Helper for display
-    const selectedSize = product.options.find(opt => opt.id === selectedOptionId)?.size || '모든 사이즈';
+    // Helper for display - Handles both {id, size} objects and raw strings
+    const renderSize = (option: any) => {
+        if (typeof option === 'string') return option;
+        return option?.size || '';
+    };
+
+    const getOptionId = (option: any) => {
+        if (typeof option === 'string') return option; // Should not happen but fallback
+        return option?.id;
+    };
+
+    const selectedSize = product.options.find(opt => getOptionId(opt) === selectedOptionId)
+        ? renderSize(product.options.find(opt => getOptionId(opt) === selectedOptionId))
+        : '모든 사이즈';
     const displayPrice = product.retailPrice.toLocaleString() + '원';
 
     return (
@@ -64,7 +74,11 @@ const ProductPage = () => {
                     {/* Left: Image Gallery */}
                     <div className="flex flex-col gap-4">
                         <div className="aspect-square w-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100">
-                            <img className="w-full h-full object-contain p-8" alt={product.name} src={imageUrl} />
+                            {product.imageUrls && product.imageUrls.length > 0 ? (
+                                <img className="w-full h-full object-contain p-8" alt={product.name} src={product.imageUrls[0]} />
+                            ) : (
+                                <span className="text-gray-400">이미지 없음</span>
+                            )}
                         </div>
                         {/* Thumbnail gallery omitted as we don't have images */}
                     </div>
@@ -104,16 +118,16 @@ const ProductPage = () => {
                                     <span className="text-sm font-medium text-gray-500">{selectedSize}</span>
                                 </div>
                                 <div className="grid grid-cols-4 gap-2">
-                                    {product.options.map((option) => (
+                                    {product.options.map((option: any) => (
                                         <button
-                                            key={option.id}
-                                            onClick={() => setSelectedOptionId(option.id)}
-                                            className={`py-2 text-xs rounded-lg border transition-all ${selectedOptionId === option.id
+                                            key={getOptionId(option)}
+                                            onClick={() => setSelectedOptionId(getOptionId(option))}
+                                            className={`py-2 text-xs rounded-lg border transition-all ${selectedOptionId === getOptionId(option)
                                                 ? 'border-black font-bold bg-gray-50'
                                                 : 'border-gray-200 text-gray-400 hover:border-gray-400'
                                                 }`}
                                         >
-                                            {option.size}
+                                            {renderSize(option)}
                                         </button>
                                     ))}
                                 </div>

@@ -10,10 +10,17 @@ export const ProductCard = ({ product }: ProductCardProps) => {
     return (
         <Link to={`/products/${product.productId}`} className="group flex flex-col gap-3 no-underline">
             <div className="aspect-square w-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100 overflow-hidden relative">
-                {/* Visual placeholder instead of dummy image URL */}
-                <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
-                    <span className="text-gray-400 font-bold text-lg select-none">{product.brandName}</span>
-                </div>
+                {product.imageUrls && product.imageUrls.length > 0 ? (
+                    <img
+                        src={product.imageUrls[0]}
+                        alt={product.name}
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
+                    />
+                ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center transition-transform duration-500 group-hover:scale-110">
+                        <span className="text-gray-400 font-bold text-lg select-none">{product.brandName}</span>
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-col gap-1 px-1">
