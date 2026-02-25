@@ -45,8 +45,8 @@ export const paymentApi = {
     },
 
     getAllPayment: async () => {
-        const response = await client.get<any[]>('/v1/payments');
-        return response.data;
+        const response = await client.get<any>('/v1/payments');
+        return response.data.content;
     },
 
     getDetails: async (paymentId: number) => {

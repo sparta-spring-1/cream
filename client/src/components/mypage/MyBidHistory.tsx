@@ -17,7 +17,7 @@ const MyBidHistory = () => {
         setIsLoading(true);
         bidApi.getMyBids(0, 50)
             .then(data => {
-                setBids(data.content as MyBid[]);
+                setBids(data as MyBid[]);
             })
             .catch(err => console.error("Failed to fetch bids", err))
             .finally(() => setIsLoading(false));
