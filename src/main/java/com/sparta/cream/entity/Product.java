@@ -120,5 +120,10 @@ public class Product extends BaseEntity {
 		super.softDelete();
 	}
 
+	public List<String> getImageUrls() {
+		return this.imageList.stream()
+			.map(ProductImage::getUrl)
+			.toList();
+	}
 }
 
