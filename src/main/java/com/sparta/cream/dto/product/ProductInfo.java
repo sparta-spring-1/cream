@@ -1,6 +1,7 @@
 package com.sparta.cream.dto.product;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.sparta.cream.entity.OperationStatus;
 import com.sparta.cream.entity.Product;
@@ -20,6 +21,7 @@ public class ProductInfo {
 	private BigDecimal retailPrice;
 	private ProductStatus productStatus;
 	private OperationStatus operationStatus;
+	private LocalDateTime deletedAt;
 
 	public static ProductInfo from(Product product) {
 		return new ProductInfo(product.getId(),
@@ -28,7 +30,8 @@ public class ProductInfo {
 			product.getProductCategory().getId(),
 			product.getRetailPrice(),
 			product.getProductStatus(),
-			product.getOperationStatus()
+			product.getOperationStatus(),
+			product.getDeletedAt()
 		);
 	}
 }

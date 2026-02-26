@@ -15,14 +15,24 @@ const AdminBidTab = () => {
     const [page, setPage] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedBidId, setSelectedBidId] = useState<number | null>(null);
     const [cancelForm, setCancelForm] = useState({ reasonCode: 'FRAUD', comment: '' });
 
+    // Filters
+    const [status, setStatus] = useState('');
+    const [type, setType] = useState('');
+    const [productId, setProductId] = useState<number | undefined>(undefined);
+
     const fetchBids = async () => {
         setIsLoading(true);
         try {
-            const data = await adminApi.monitorBids(page);
+            const data = await adminApi.monitorBids(page, {
+                status: status || undefined,
+                type: type || undefined,
+                productId: productId || undefined
+            });
             setBids(data.items);
             setTotal(data.paging.totalElements);
         } catch (error) {
@@ -35,7 +45,7 @@ const AdminBidTab = () => {
 
     useEffect(() => {
         fetchBids();
-    }, [page]);
+    }, [page, status, type, productId]);
 
     const openCancelModal = (id: number) => {
         setSelectedBidId(id);
@@ -65,15 +75,46 @@ const AdminBidTab = () => {
     };
 
     return (
+
         <div className="relative">
             <div className="flex justify-between items-center mb-4">
+        <div>
+            <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">입찰 모니터링 (총 {total}건)</h2>
-                <button
-                    onClick={fetchBids}
-                    className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-sm"
-                >
-                    새로고침
-                </button>
+                <div className="flex gap-2">
+                    <select
+                        value={type}
+                        onChange={(e) => { setType(e.target.value); setPage(0); }}
+                        className="px-3 py-2 border rounded-lg text-sm outline-none bg-white"
+                    >
+                        <option value="">전체 타입</option>
+                        <option value="BUY">구매</option>
+                        <option value="SALE">판매</option>
+                    </select>
+                    <select
+                        value={status}
+                        onChange={(e) => { setStatus(e.target.value); setPage(0); }}
+                        className="px-3 py-2 border rounded-lg text-sm outline-none bg-white"
+                    >
+                        <option value="">전체 상태</option>
+                        <option value="PENDING">PENDING</option>
+                        <option value="MATCHED">MATCHED</option>
+                        <option value="CANCELLED">CANCELLED</option>
+                    </select>
+                    <input
+                        type="number"
+                        placeholder="상품 ID"
+                        value={productId || ''}
+                        onChange={(e) => { setProductId(e.target.value ? Number(e.target.value) : undefined); setPage(0); }}
+                        className="w-24 px-3 py-2 border rounded-lg text-sm outline-none"
+                    />
+                    <button
+                        onClick={() => { setType(''); setStatus(''); setProductId(undefined); setPage(0); }}
+                        className="px-3 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 text-sm font-medium"
+                    >
+                        초기화
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

@@ -21,8 +21,8 @@ export interface SettlementDetailsResponse {
 }
 
 export const getSettlements = async () => {
-    const response = await client.get<SettlementListResponse[]>('/v1/settlements');
-    return response.data;
+    const response = await client.get<any>('/v1/settlements');
+    return response.data.content as SettlementListResponse[];
 };
 
 export const getSettlementDetails = async (settlementId: number) => {
