@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { productApi, type GetOneProductResponse } from '../api/product';
-import { bidApi } from '../api/bid';
+import { bidApi, type BidRequest } from '../api/bid'; //
 
 const BidPage = () => {
     const location = useLocation();
@@ -9,70 +9,63 @@ const BidPage = () => {
     const [searchParams] = useSearchParams();
     const productId = searchParams.get('productId');
     const preSelectedOptionId = searchParams.get('optionId');
-    const isSell = location.pathname.includes('/sell');
+    const bidId = searchParams.get('bidId');
 
-    // Helper for display - Handles both {id, size} objects and raw strings
-    const renderSize = (option: any) => {
-        if (typeof option === 'string') return option;
-        return option?.size || '';
-    };
-
-    const getOptionId = (option: any) => {
-        if (typeof option === 'string') return option;
-        return option?.id;
-    };
+    // 1. 타입 선택 상태 추가 (기본값은 URL 경로 기준)
+    const [bidType, setBidType] = useState<'BUY' | 'SELL'>(
+        location.pathname.includes('/sell') ? 'SELL' : 'BUY'
+    );
 
     const [product, setProduct] = useState<GetOneProductResponse | null>(null);
-    const [selectedOptionId, setSelectedOptionId] = useState<number | string | null>(preSelectedOptionId ? (isNaN(Number(preSelectedOptionId)) ? preSelectedOptionId : Number(preSelectedOptionId)) : null);
+    const [selectedOptionId, setSelectedOptionId] = useState<number | string | null>(
+        preSelectedOptionId ? (isNaN(Number(preSelectedOptionId)) ? preSelectedOptionId : Number(preSelectedOptionId)) : null
+    );
     const [price, setPrice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
+    // 디자인 설정
+    const isSell = bidType === 'SELL';
     const typeText = isSell ? '판매' : '구매';
-    const typeColor = isSell ? 'bg-[#41b979]' : 'bg-[#ef6253]';
-    const typeColorHover = isSell ? 'hover:bg-[#38a36a]' : 'hover:bg-[#d95245]';
+    const activeColor = isSell ? 'bg-[#41b979]' : 'bg-[#ef6253]';
 
     useEffect(() => {
         if (productId) {
             productApi.getPublicProduct(Number(productId))
-                .then(data => {
-                    setProduct(data);
-                    // If we have a pre-selected optionId, verify it exists in the product options
-                    if (preSelectedOptionId) {
-                        const exists = data.options.some(opt => opt.id === Number(preSelectedOptionId));
-                        if (!exists) setSelectedOptionId(null);
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
+                .then(data => setProduct(data))
+                .catch(() => {
                     alert("상품 정보를 불러올 수 없습니다.");
                     navigate(-1);
                 });
         }
-    }, [productId, navigate]);
+    }, [productId]);
 
     const handleAction = async () => {
-        if (!selectedOptionId) {
-            alert('사이즈를 선택해주세요.');
-            return;
-        }
-        if (!price) {
-            alert('가격을 입력해주세요.');
+        if (!selectedOptionId || !price) {
+            alert('필수 정보를 입력해주세요.');
             return;
         }
 
         try {
             setIsLoading(true);
-            await bidApi.create({
-                productOptionId: Number(selectedOptionId),
-                price: parseInt(price.replace(/,/g, ''), 10),
-                type: isSell ? 'SELL' : 'BUY'
-            });
+            const priceValue = Math.floor(Number(price.toString().replace(/,/g, '')));
 
-            alert(`${typeText} 입찰이 등록되었습니다.`);
-            navigate('/me'); // Go to My Page or Product Page
+            // 백엔드 BidRequestDto 형식에 맞춤
+            const requestData: BidRequest = {
+                productOptionId: Number(selectedOptionId),
+                price: priceValue,
+                type: bidType // 사용자가 선택한 타입 전송
+            };
+
+            if (bidId && bidId !== 'null') {
+                await bidApi.updateBid(Number(bidId), requestData); //
+                alert('입찰 정보가 수정되었습니다.');
+            } else {
+                await bidApi.create(requestData); //
+                alert(`${typeText} 입찰이 등록되었습니다.`);
+            }
+            navigate('/me');
         } catch (err: any) {
-            console.error(err);
-            alert(err.response?.data?.message || '입찰 등록에 실패했습니다.');
+            alert(err.response?.data?.message || '입찰 처리 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
         }
@@ -83,64 +76,68 @@ const BidPage = () => {
     return (
         <div className="flex justify-center bg-gray-50 min-h-screen py-8">
             <div className="max-w-[800px] w-full bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col gap-8">
-                {/* Header */}
-                <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
-                        <span className="text-gray-400 font-bold text-xs select-none">{product.brandName}</span>
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="font-bold text-sm">{product.modelNumber}</span>
-                        <span className="text-gray-500 text-xs">{product.name}</span>
-                        <span className="font-medium text-sm mt-1">{product.sizeUnit}</span>
+
+                {/* 2. 입찰 타입 선택 UI (구매/판매 전환) */}
+                <div className="flex flex-col gap-4">
+                    <h3 className="font-bold text-lg">입찰 유형 선택</h3>
+                    <div className="flex bg-gray-100 p-1 rounded-xl">
+                        <button
+                            onClick={() => setBidType('BUY')}
+                            className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                                bidType === 'BUY' ? 'bg-[#ef6253] text-white shadow-md' : 'text-gray-500'
+                            }`}
+                        >
+                            구매 입찰
+                        </button>
+                        <button
+                            onClick={() => setBidType('SELL')}
+                            className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                                bidType === 'SELL' ? 'bg-[#41b979] text-white shadow-md' : 'text-gray-500'
+                            }`}
+                        >
+                            판매 입찰
+                        </button>
                     </div>
                 </div>
 
-                {/* Size Selection */}
+                {/* Header & Size Selection (기존 동일) */}
+                <div className="border-b border-gray-100 pb-6 flex items-center gap-4">
+                    <div className="flex flex-col">
+                        <span className="font-bold text-sm">{product.modelNumber}</span>
+                        <span className="text-gray-500 text-xs">{product.name}</span>
+                    </div>
+                </div>
+
                 <div className="flex flex-col gap-4">
                     <h3 className="font-bold text-lg">사이즈 선택</h3>
                     <div className="grid grid-cols-4 gap-2">
-                        {product.options && product.options.map((option: any) => (
+                        {product.options.map((option: any) => (
                             <button
-                                key={getOptionId(option)}
-                                onClick={() => setSelectedOptionId(getOptionId(option))}
-                                className={`py-2 text-sm border rounded-lg transition-all ${getOptionId(option) === selectedOptionId
-                                    ? 'border-primary bg-primary/5 text-primary font-bold'
-                                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                                    }`}
+                                key={option.id}
+                                onClick={() => setSelectedOptionId(option.id)}
+                                className={`py-2 text-sm border rounded-lg ${
+                                    option.id === selectedOptionId ? 'border-black bg-gray-50 font-bold' : 'border-gray-200 text-gray-500'
+                                }`}
                             >
-                                {renderSize(option)}
+                                {option.size}
                             </button>
                         ))}
                     </div>
                 </div>
 
                 {/* Price Input */}
-                <div className="flex flex-col gap-4 border-t border-gray-100 pt-6">
+                <div className="flex flex-col gap-4 pt-6 border-t">
                     <h3 className="font-bold text-lg">{typeText} 희망가</h3>
-                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl">
+                    <div className="flex items-center justify-between bg-gray-50 p-4 rounded-xl border-2 border-transparent focus-within:border-gray-200">
                         <span className="font-bold text-gray-400">가격</span>
                         <input
-                            type="number"
+                            type="text"
                             value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            // placeholder="희망 가격 입력"
+                            onChange={(e) => setPrice(e.target.value.replace(/[^0-9]/g, ''))}
+                            placeholder="0"
                             className="bg-transparent text-right font-bold text-xl w-full outline-none"
                         />
                         <span className="font-bold ml-1">원</span>
-                    </div>
-                </div>
-
-                {/* Summary */}
-                <div className="flex flex-col gap-2 border-t border-gray-100 pt-6">
-                    <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray-500">검수비</span>
-                        <span>무료</span>
-                    </div>
-                    <div className="flex justify-between items-center font-bold text-lg mt-2">
-                        <span>총 결제금액</span>
-                        <span className={isSell ? 'text-[#41b979]' : 'text-[#ef6253]'}>
-                            {price ? parseInt(price).toLocaleString() : 0}원
-                        </span>
                     </div>
                 </div>
 
@@ -148,9 +145,9 @@ const BidPage = () => {
                 <button
                     onClick={handleAction}
                     disabled={!selectedOptionId || !price || isLoading}
-                    className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-colors ${typeColor} ${typeColorHover} disabled:bg-gray-300 disabled:cursor-not-allowed`}
+                    className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-colors ${activeColor} disabled:bg-gray-300`}
                 >
-                    {isLoading ? '처리 중...' : `${typeText} 입찰하기`}
+                    {isLoading ? '처리 중...' : bidId ? `${typeText} 수정 완료` : `${typeText} 입찰하기`}
                 </button>
             </div>
         </div>

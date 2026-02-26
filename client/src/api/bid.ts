@@ -35,8 +35,9 @@ export const bidApi = {
         return response.data;
     },
 
-    updateBid: async (bidId: number, data: any) => {
-        const response = await client.patch(`/v1/bids/${bidId}`, data);
+    updateBid: async (bidId: number | string, data: BidRequest) => {
+        const id = typeof bidId === 'string' ? parseInt(bidId, 10) : bidId;
+        const response = await client.patch(`/v1/bids/${id}`, data);
         return response.data;
     },
 
