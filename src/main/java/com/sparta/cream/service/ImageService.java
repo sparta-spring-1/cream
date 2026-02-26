@@ -54,10 +54,11 @@ public class ImageService {
 	@Transactional
 	public List<ProductImageUploadResponse> upload(List<MultipartFile> files) {
 
+		log.info("파일 업로드 시작");
 		List<S3UploadResult> s3UploadResults = files.stream()
 			.map(this::uploadImage)
 			.toList();
-
+		log.info("파일 업로드 성공");
 		List<ProductImage> newImages = new ArrayList<>();
 
 		for (S3UploadResult s3UploadResult : s3UploadResults) {
@@ -82,6 +83,8 @@ public class ImageService {
 	// validateFile메서드를 호출하여 유효성 검증 후 uploadImageToS3메서드에 데이터를 반환하여 S3에 파일 업로드, public url을 받아 서비스 로직에 반환
 	private S3UploadResult uploadImage(MultipartFile file) {
 		validateFile(file.getOriginalFilename()); // 파일 유효성 검증
+
+
 		return uploadImageToS3(file); // 이미지를 S3에 업로드하고, 저장된 파일의 public url을 서비스 로직에 반환
 	}
 

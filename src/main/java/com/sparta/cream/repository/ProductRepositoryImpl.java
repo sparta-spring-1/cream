@@ -28,9 +28,10 @@ public class ProductRepositoryImpl implements ProductCustomRepository {
 	private final JPAQueryFactory queryFactory;
 
 	@Override
-	public Page<Product> searchProducts(ProductSearchCondition cond, Pageable pageable) {
+	public Page<Product> searchProducts(ProductSearchCondition cond,boolean includeDeleted, Pageable pageable) {
 
 		BooleanExpression[] predicates = {
+			deletedCondition(includeDeleted),
 			brandEq(cond.getBrandName()),
 			categoryEq(cond.getCategory()),
 			sizeEq(cond.getProductSize()),
@@ -62,6 +63,10 @@ public class ProductRepositoryImpl implements ProductCustomRepository {
 		long totalCount = (total != null) ? total : 0L;
 
 		return new PageImpl<>(content, pageable, totalCount);
+	}
+
+	private BooleanExpression deletedCondition(boolean includeDeleted) {
+		return includeDeleted ? null : product.deletedAt.isNull();
 	}
 
 	private BooleanExpression brandEq(String brandName) {

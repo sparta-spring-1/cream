@@ -26,8 +26,8 @@ export const bidApi = {
 
     // Get My Bids
     getMyBids: async (page = 0, size = 10) => {
-        const response = await client.get(`/v1/bids/me?page=${page}&size=${size}`);
-        return response.data;
+        const response = await client.get<any>(`/v1/bids/me?page=${page}&size=${size}`);
+        return response.data.content;
     },
 
     getBidsByProduct: async (productOptionId: number) => {

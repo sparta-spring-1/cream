@@ -134,11 +134,7 @@ export const adminApi = {
     uploadImage: async (file: File) => {
         const formData = new FormData();
         formData.append('image', file);
-        const response = await client.post<ProductImageUploadResponse[]>('/v1/admin/images/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        const response = await client.post<ProductImageUploadResponse[]>('/v1/admin/images/upload', formData);
         return response.data;
     }
 };
