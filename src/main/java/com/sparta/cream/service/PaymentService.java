@@ -79,6 +79,10 @@ public class PaymentService {
 
 		Optional<Payment> existingPayment = paymentRepository.findReadyPaymentByUserIdAndTradeIdAndStatus(userId, tradeId, PaymentStatus.READY);
 
+		if (existingPayment.isEmpty()) {
+			existingPayment = paymentRepository.findReadyPaymentByUserIdAndTradeIdAndStatus(userId, tradeId, PaymentStatus.PENDING);
+		}
+
 		if (existingPayment.isPresent()) {
 			Payment payment = existingPayment.get();
 
@@ -154,7 +158,7 @@ public class PaymentService {
 				throw new BusinessException(PaymentErrorCode.PORTONE_API_ERROR);
 			}
 
-			if (!payment.getAmount().equals(total)) {
+			if (payment.getAmount().compareTo(total) != 0) {
 				throw new BusinessException(PaymentErrorCode.PAYMENT_PRICE_MISMATCH);
 			}
 

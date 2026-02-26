@@ -11,13 +11,10 @@ const PaymentPage = () => {
     const [paymentData, setPaymentData] = useState<PrepareResponse | null>(null);
 
     useEffect(() => {
-        // Initialize PortOne SDK
-        const jquery = document.createElement("script");
-        jquery.src = "https://code.jquery.com/jquery-1.12.4.min.js";
-        const iamport = document.createElement("script");
-        iamport.src = "https://cdn.iamport.kr/js/iamport.payment-1.1.8.js";
-        document.head.appendChild(jquery);
-        document.head.appendChild(iamport);
+        // Initialize PortOne V2 SDK
+        const portoneScript = document.createElement("script");
+        portoneScript.src = "https://cdn.portone.io/v2/browser-sdk.js";
+        document.head.appendChild(portoneScript);
 
         // Fetch Payment Data if tradeId exists
         if (tradeId) {
@@ -31,8 +28,7 @@ const PaymentPage = () => {
         }
 
         return () => {
-            document.head.removeChild(jquery);
-            document.head.removeChild(iamport);
+            document.head.removeChild(portoneScript);
         }
     }, [tradeId, navigate]);
 
@@ -44,44 +40,41 @@ const PaymentPage = () => {
 
             // 1. Get Config (Store ID, Channel Key)
             const config = await paymentApi.getConfig();
-            const { IMP } = window;
-            IMP.init(config.storeId);
+            const { PortOne } = window as any;
 
-            // 2. Request Payment to PortOne
-            IMP.request_pay({
-                pg: 'html5_inicis', // or user selected PG
-                pay_method: 'card',
-                merchant_uid: paymentData.paymentId,
-                name: paymentData.productName,
-                amount: paymentData.amount,
-                buyer_email: paymentData.email,
-                buyer_name: paymentData.customerName,
-                buyer_tel: paymentData.customerPhoneNumber,
-                // buyer_addr: paymentData.address, // Added to DTO requirements
-                // buyer_postcode: paymentData.zipCode
-            }, async (rsp: any) => {
-                if (rsp.success) {
-                    try {
-                        // 3. Complete Payment on Server
-                        await paymentApi.complete(paymentData.id, {
-                            impUid: rsp.imp_uid,
-                            merchantUid: rsp.merchant_uid
-                        });
-
-                        alert('결제가 성공적으로 완료되었습니다.');
-                        navigate('/me');
-                    } catch (error) {
-                        console.error(error);
-                        alert('결제 검증에 실패했습니다.');
-                    }
-                } else {
-                    alert(`결제에 실패하였습니다. 에러내용: ${rsp.error_msg}`);
-                }
+            // 2. Request Payment via PortOne V2 SDK
+            const response = await PortOne.requestPayment({
+                storeId: config.storeId,
+                channelKey: config.channelKey,
+                paymentId: paymentData.paymentId,
+                orderName: paymentData.productName,
+                totalAmount: paymentData.amount,
+                currency: 'CURRENCY_KRW',
+                payMethod: 'CARD',
+                customer: {
+                    email: paymentData.email,
+                    fullName: paymentData.customerName,
+                    phoneNumber: paymentData.customerPhoneNumber,
+                },
             });
+
+            if (response?.code !== undefined) {
+                alert(`결제에 실패하였습니다. 에러내용: ${response.message}`);
+                return;
+            }
+
+            // 3. Complete Payment on Server
+            await paymentApi.complete(paymentData.id, {
+                impUid: response.txId,
+                merchantUid: response.paymentId,
+            });
+
+            alert('결제가 성공적으로 완료되었습니다.');
+            navigate('/me');
 
         } catch (error) {
             console.error('Payment Error', error);
-            alert('결제 준비 중 오류가 발생했습니다.');
+            alert('결제 처리 중 오류가 발생했습니다.');
         } finally {
             setIsLoading(false);
         }

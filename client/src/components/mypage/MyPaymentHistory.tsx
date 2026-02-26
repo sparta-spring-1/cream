@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { paymentApi } from '../../api/payment';
 
 interface PaymentItem {
     id: number;
+    tradeId: number;
     merchantUid: string;
     productName: string;
     amount: number;
@@ -10,16 +12,26 @@ interface PaymentItem {
     paidAt: string;
 }
 
-const MyPaymentHistory = () => {
+interface Props {
+    onlyPaid?: boolean;
+}
+
+const MyPaymentHistory = ({ onlyPaid = false }: Props) => {
+    const navigate = useNavigate();
     const [payments, setPayments] = useState<PaymentItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         paymentApi.getAllPayment()
-            .then(data => setPayments(data))
+            .then(data => {
+                const filtered = onlyPaid
+                    ? data.filter((p: PaymentItem) => p.status === 'PAID')
+                    : data;
+                setPayments(filtered);
+            })
             .catch(err => console.error("Failed to fetch payments", err))
             .finally(() => setIsLoading(false));
-    }, []);
+    }, [onlyPaid]);
 
     if (isLoading) return <div className="py-10 text-center text-gray-500">로딩 중...</div>;
 
@@ -44,7 +56,7 @@ const MyPaymentHistory = () => {
                         </span>
                         <span className="text-xs text-gray-500">{payment.merchantUid}</span>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div className="flex flex-col items-end gap-2">
                         <span className="font-bold">{payment.amount.toLocaleString()}원</span>
                         <span className={`text-xs font-bold ${payment.status === 'PAID' ? 'text-green-600' :
                             payment.status === 'CANCELLED' ? 'text-red-600' : 'text-gray-500'
@@ -52,6 +64,14 @@ const MyPaymentHistory = () => {
                             {payment.status === 'PAID' ? '결제완료' :
                                 payment.status === 'CANCELLED' ? '취소됨' : payment.status}
                         </span>
+                        {payment.status === 'PENDING' && (
+                            <button
+                                onClick={() => navigate(`/payment?tradeId=${payment.tradeId}`)}
+                                className="text-xs px-3 py-1 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                결제 확인
+                            </button>
+                        )}
                     </div>
                 </div>
             ))}
