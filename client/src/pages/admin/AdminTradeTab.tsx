@@ -65,9 +65,14 @@ const AdminTradeTab = () => {
                                     <td className="px-4 py-3 font-bold">{trade.price.toLocaleString()}원</td>
                                     <td className="px-4 py-3">
                                         <span className={`px-2 py-1 rounded text-xs font-bold 
-                                            ${trade.status === 'COMPLETED' ? 'bg-blue-50 text-blue-600' :
-                                                trade.status === 'IN_PROGRESS' ? 'bg-yellow-50 text-yellow-600' : 'bg-gray-100 text-gray-600'}`}>
-                                            {trade.status}
+                                          ${trade.status === 'WAITING_PAYMENT' ? 'bg-yellow-50 text-yellow-600' : 
+                                            trade.status === 'PAYMENT_COMPLETED' ? 'bg-blue-50 text-blue-600' :
+                                            trade.status === 'PAYMENT_CANCELED' ? 'bg-red-50 text-red-600' : 
+                                                'bg-gray-100 text-gray-600'}`}>
+                                            {/* 백엔드 Enum 값을 보기 좋은 한글로 변환 */}
+                                            {trade.status === 'WAITING_PAYMENT' ? '결제대기' :
+                                                trade.status === 'PAYMENT_COMPLETED' ? '체결완료' :
+                                                    trade.status === 'PAYMENT_CANCELED' ? '거래취소' : trade.status}
                                         </span>
                                     </td>
                                     <td className="px-4 py-3 text-gray-600">{trade.sellerName}</td>

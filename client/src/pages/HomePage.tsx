@@ -63,7 +63,7 @@ const HomePage = () => {
                 </div>
 
                 <div className="grid grid-cols-5 gap-6">
-                    {products.map((product) => (
+                    {products?.map((product) => (
                         <ProductCard key={product.productId} product={product} />
                     ))}
                 </div>

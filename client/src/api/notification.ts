@@ -2,9 +2,12 @@ import client from './client';
 
 export interface NotificationResponse {
     id: number;
+    userId: number;
+    tradeId: number | null;
     title: string;
-    content: string;
+    message: string;
     createdAt: string;
+    readAt: string | null;
     isRead: boolean;
 }
 
