@@ -81,16 +81,20 @@ const MyBidHistory = () => {
     const openEditModal = async (bid: MyBid) => {
         setEditingBid(bid);
         setEditPrice(bid.price.toString());
-        setSelectedOptionId(bid.productOptionId);
 
         try {
             const productData = await productApi.getPublicProduct(bid.productId);
-            if (productData && productData.options) {
+            if (productData && productData.options && productData.options.length > 0) {
                 setOptions(productData.options);
+                const matched = productData.options.find((o: { id: number }) => o.id === bid.productOptionId);
+                setSelectedOptionId(matched ? matched.id : productData.options[0].id);
+            } else {
+                setSelectedOptionId(bid.productOptionId ?? null);
             }
         } catch (err) {
             console.error("Failed to fetch product options", err);
             setOptions([{id: bid.productOptionId, size: '현재 선택된 사이즈'}]);
+            setSelectedOptionId(bid.productOptionId ?? null);
         }
         setIsEditModalOpen(true);
     };
