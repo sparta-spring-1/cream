@@ -334,13 +334,13 @@ public class BidService {
 		List<AdminBidMonitoringResponseDto> items = bidPage.getContent().stream()
 			.map(bid -> {
 					Users user = bid.getUser();
-					Product product = bid.getProductOption().getProduct();
+					Product product = bid.getProductOption() != null ? bid.getProductOption().getProduct() : null;
 
 					return AdminBidMonitoringResponseDto.builder()
 					.bidId(bid.getId())
 					.userId(user.getId())
 					.userName(user.getName())
-					.productName(product.getName())
+					.productName(product != null ? product.getName() : null)
 					.price(bid.getPrice().longValue())
 					.type(bid.getType().name())
 					.status(bid.getStatus().name())
@@ -381,10 +381,11 @@ public class BidService {
 			.map(t -> {
 				Bid saleBid = t.getSaleBidId();
 				Bid purchaseBid = t.getPurchaseBidId();
+				Product saleProduct = saleBid.getProductOption() != null ? saleBid.getProductOption().getProduct() : null;
 
 			return AdminTradeMonitoringResponseDto.builder()
 				.tradeId(t.getId())
-				.productName(saleBid.getProductOption().getProduct().getName())
+				.productName(saleProduct != null ? saleProduct.getName() : null)
 				.price(t.getFinalPrice())
 				.status(t.getStatus().name())
 				.sellerName(saleBid.getUser().getName())
