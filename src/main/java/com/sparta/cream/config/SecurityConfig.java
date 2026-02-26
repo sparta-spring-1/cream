@@ -90,7 +90,6 @@ public class SecurityConfig {
 		org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
 		configuration.addAllowedOrigin("https://teamcream.shop");
 		configuration.addAllowedOrigin("https://www.teamcream.shop");
-		configuration.addAllowedOrigin("http://localhost:5174");
 		configuration.addAllowedMethod("*");
 		configuration.addAllowedHeader("*");
 		configuration.setAllowCredentials(true);

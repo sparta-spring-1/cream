@@ -16,7 +16,8 @@ FROM --platform=linux/amd64 eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-RUN addgroup -S creamgroup && adduser -S creamuser -G creamgroup
+RUN addgroup -S creamgroup && adduser -S creamuser -G creamgroup && \
+    mkdir -p /app/uploads/tmp && chown -R creamuser:creamgroup /app/uploads/tmp
 USER creamuser
 
 COPY --from=builder /app/build/libs/*.jar app.jar
