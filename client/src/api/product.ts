@@ -117,7 +117,7 @@ export interface GetOneProductResponse {
     modelNumber: string;
     brandName: string;
     categoryId: number;
-    imageUrls: string[];
+    imageIds: string[];
     options: ProductOptionInfo[];
     color: string;
     sizeUnit: string;
