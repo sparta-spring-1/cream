@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { bidApi } from '../../api/bid';
 import { tradeApi } from '../../api/trade';
 import { productApi } from '../../api/product';
+import { useNavigate } from 'react-router-dom';
 
 interface MyBid {
     id: number;
@@ -14,10 +15,23 @@ interface MyBid {
     tradeId?: number;
     sizeName?: string;
 }
+interface MyTrade {
+    id: number;
+    productName: string;
+    size: string;
+    price: number;
+    status: string;
+    matchedAt: string;
+    role: 'BUYER' | 'SELLER';
+}
 
 const MyBidHistory = () => {
+    const [activeTab, setActiveTab] = useState<'BID' | 'TRADE'>('BID');
     const [bids, setBids] = useState<MyBid[]>([]);
+    const [trades, setTrades] = useState<MyTrade[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const navigate = useNavigate();
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingBid, setEditingBid] = useState<MyBid | null>(null);
     const [editPrice, setEditPrice] = useState('');
@@ -50,11 +64,25 @@ const MyBidHistory = () => {
             .finally(() => setIsLoading(false));
     }
 
-    useEffect(() => {
-        fetchBids();
-    }, []);
+    const fetchTrades = async () => {
+        setIsLoading(true);
+        try {
+            const data = await tradeApi.getMyTrades(0, 50);
+            setTrades(data.content || []);
+        } catch (err) {
+            console.error("체결 로드 실패:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    const handleCancel = async (bidId: number) => {
+    useEffect(() => {
+        if (activeTab === 'BID') fetchBids();
+        else fetchTrades();
+    }, [activeTab]);
+
+
+    const handleCancelBid = async (bidId: number) => {
         if (!confirm("입찰을 취소하시겠습니까?")) return;
         try {
             await bidApi.cancelBid(bidId);
@@ -66,15 +94,14 @@ const MyBidHistory = () => {
         }
     };
 
-    const handleTradeCancel = async (tradeId: number) => {
-        if (!confirm("체결된 거래를 취소하시겠습니까? 취소 시 3일간 입찰이 제한됩니다.")) return;
+    const handleCancelTrade = async (tradeId: number) => {
+        if (!confirm("체결된 거래를 취소하시겠습니까? 취소 시 3일간 입찰이 제한되는 패널티가 부과됩니다.")) return;
         try {
-            const response = await tradeApi.cancelTrade(tradeId);
-            alert(response.message || "거래가 취소되었습니다. 3일간 입찰이 제한됩니다.");
-            fetchBids();
+            await tradeApi.cancelTrade(tradeId);
+            alert("거래가 취소되었습니다. 패널티가 적용됩니다.");
+            fetchTrades();
         } catch (error: any) {
-            console.error(error);
-            alert(error.response?.data?.message || "거래 취소에 실패했습니다.");
+            alert(error.response?.data?.message || "거래 취소 실패");
         }
     };
 
@@ -102,13 +129,26 @@ const MyBidHistory = () => {
     const handleEditSubmit = async () => {
         if (!editingBid) return;
 
-        const finalPrice = editPrice ? Number(editPrice) : editingBid.price;
-        const finalOptionId = selectedOptionId || editingBid.productOptionId;
+        // 1. 가격 결정: 입력값이 있으면 그 값을 쓰고, 없으면 기존 가격 사용
+        // trim()을 추가하여 공백 문자열 방지
+        const currentInputPrice = editPrice.trim();
+        const finalPrice = currentInputPrice !== "" ? Number(currentInputPrice) : editingBid.price;
 
-        console.log("제출 데이터 확인:", { finalPrice, finalOptionId });
+        // 2. 옵션 결정: 선택된 값이 있으면 쓰고, 없으면 기존 옵션 ID 사용
+        const finalOptionId = (selectedOptionId !== null && selectedOptionId !== undefined)
+            ? selectedOptionId
+            : editingBid.productOptionId;
 
-        if (!finalPrice || !finalOptionId) {
-            alert("가격 또는 옵션 정보가 누락되었습니다.");
+        // 디버깅 로그: 브라우저 콘솔에서 확인용
+        console.log("최종 제출 데이터:", {
+            finalPrice,
+            finalOptionId,
+            originalBid: editingBid
+        });
+
+        // 3. 누락 체크 로직 수정 (finalPrice가 0일 수도 있으므로 엄격하게 체크)
+        if (finalPrice === undefined || finalPrice === null || !finalOptionId) {
+            alert("가격 또는 옵션 정보가 유효하지 않습니다.");
             return;
         }
 
@@ -132,49 +172,87 @@ const MyBidHistory = () => {
     if (isLoading) return <div className="py-10 text-center text-gray-500">로딩 중...</div>;
 
     return (
-        <div className="flex flex-col gap-4 relative">
-            {bids.map(bid => {
-                const isSell = bid.type === 'SELL';
-                const isPending = bid.status === 'PENDING';
+        <div className="flex flex-col gap-4 max-w-lg mx-auto">
+            {/* --- 상단 탭 UI --- */}
+            <div className="flex border-b border-gray-200">
+                <button
+                    onClick={() => setActiveTab('BID')}
+                    className={`flex-1 py-4 font-bold text-sm transition-all ${activeTab === 'BID' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
+                >
+                    입찰 내역 ({bids.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('TRADE')}
+                    className={`flex-1 py-4 font-bold text-sm transition-all ${activeTab === 'TRADE' ? 'border-b-2 border-black text-black' : 'text-gray-400'}`}
+                >
+                    체결 내역 ({trades.length})
+                </button>
+            </div>
 
-                return (
-                    <div key={bid.id}
-                         className="border border-gray-200 rounded-xl p-4 flex justify-between items-center bg-white shadow-sm">
-                        <div className="flex flex-col gap-1">
-                        <span className={`text-xs font-bold ${isSell ? 'text-green-600' : 'text-red-500'}`}>
-                            {isSell ? '판매 입찰' : '구매 입찰'}
-                        </span>
-                            <span className="font-bold text-sm">상품 ID: {bid.productId}</span>
-                            <span
-                                className="text-[10px] text-gray-400">{new Date(bid.createdAt).toLocaleString()}</span>
+            {/* --- 리스트 영역 --- */}
+            <div className="mt-2 space-y-4">
+                {activeTab === 'BID' ? (
+                    bids.map(bid => (
+                        <div key={bid.id} className="border border-gray-200 rounded-xl p-4 flex justify-between items-center bg-white shadow-sm">
+                            <div className="flex flex-col gap-1">
+                                <span className={`text-xs font-bold ${bid.type === 'SELL' ? 'text-green-600' : 'text-red-500'}`}>
+                                    {bid.type === 'SELL' ? '판매 입찰' : '구매 입찰'}
+                                </span>
+                                <span className="font-bold text-sm">상품 ID: {bid.productId}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(bid.createdAt).toLocaleString()}</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <span className="font-bold text-lg">{bid.price.toLocaleString()}원</span>
+                                {bid.status === 'PENDING' && (
+                                    <div className="flex gap-2">
+                                        <button onClick={() => openEditModal(bid)} className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-bold hover:bg-gray-50">수정</button>
+                                        <button onClick={() => handleCancelBid(bid.id)} className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-bold text-red-500 hover:bg-red-50">취소</button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-
-                        <div className="flex flex-col items-end gap-2">
-                            <span className="font-bold text-lg">{bid.price.toLocaleString()}원</span>
-
-                            {isPending && (
+                    ))
+                ) : (
+                    trades.map(trade => (
+                        <div key={trade.id} className="border border-gray-200 rounded-xl p-4 flex justify-between items-center bg-white shadow-sm">
+                            <div className="flex flex-col gap-1">
+                                <span className={`px-2 py-0.5 w-fit rounded text-[10px] font-bold ${trade.role === 'SELLER' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                    {trade.role === 'SELLER' ? '판매 체결' : '구매 체결'}
+                                </span>
+                                <span className="font-bold text-sm truncate max-w-[150px]">{trade.productName}</span>
+                                <span className="text-xs text-gray-500">사이즈: {trade.size}</span>
+                                <span className="text-[10px] text-gray-400">{new Date(trade.matchedAt).toLocaleString()}</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <span className="font-bold text-lg">{trade.price.toLocaleString()}원</span>
                                 <div className="flex gap-2">
-                                    <button onClick={() => openEditModal(bid)}
-                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-bold hover:bg-gray-50 transition-all">
-                                        수정
-                                    </button>
-                                    <button onClick={() => handleCancel(bid.id)}
-                                            className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-bold text-red-500 hover:bg-red-50">
-                                        취소
-                                    </button>
+                                    {trade.role === 'BUYER' && trade.status === 'WAITING_PAYMENT' && (
+                                        <button
+                                            onClick={() => navigate(`/payment?tradeId=${trade.id}`)}
+                                            className="px-3 py-1.5 bg-blue-500 text-white rounded-md text-xs font-bold hover:bg-blue-600 transition-all"
+                                        >
+                                            결제하기
+                                        </button>
+                                    )}
+                                    {trade.status === 'WAITING_PAYMENT' && (
+                                        <button
+                                            onClick={() => handleCancelTrade(trade.id)}
+                                            className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-xs font-bold hover:bg-red-100"
+                                        >
+                                            체결 취소
+                                        </button>
+                                    )}
+                                    {trade.status !== 'WAITING_PAYMENT' && (
+                                        <span className="text-xs font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded">
+                                            {trade.status === 'PAYMENT_COMPLETED' ? '결제 완료' : '거래 종료'}
+                                        </span>
+                                    )}
                                 </div>
-                            )}
-
-                            {bid.status === 'MATCHED' && bid.tradeId && (
-                                <button onClick={() => handleTradeCancel(bid.tradeId!)}
-                                        className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-md text-xs font-bold">
-                                    체결 취소
-                                </button>
-                            )}
+                            </div>
                         </div>
-                    </div>
-                );
-            })}
+                    ))
+                )}
+            </div>
 
             {/* --- 단일 수정 모달 --- */}
             {isEditModalOpen && editingBid && (

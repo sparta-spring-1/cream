@@ -8,6 +8,10 @@ import java.util.stream.Collectors;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -17,9 +21,12 @@ import com.sparta.cream.domain.bid.entity.Bid;
 import com.sparta.cream.domain.bid.entity.BidStatus;
 import com.sparta.cream.domain.bid.entity.BidType;
 import com.sparta.cream.domain.bid.repository.BidRepository;
+import com.sparta.cream.domain.trade.dto.TradeResponseDto;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.event.TradeCancelledEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
+import com.sparta.cream.entity.Product;
+import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
@@ -127,6 +134,39 @@ public class TradeService {
 			} finally {
 				if (lock.isHeldByCurrentThread()) lock.unlock();
 			}
+		});
+	}
+
+	/**
+	 * 현재 로그인한 사용자의 모든 거래 내역을 페이징 하여 조회합니다.
+	 *
+	 * @param userId 조회할 사용자 식별자
+	 * @param page 조회할 페이지 번호
+	 * @param size 페이지당 출력할 데이터 개수
+	 * @return 사용자 역활과 상품 정보가 포함된 거래 내역
+	 */
+	@Transactional(readOnly = true)
+	public Page<TradeResponseDto> getMyTrades(Long userId, int page, int size) {
+		Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+		Page<Trade> trades = tradeRepository.findAllByUserId(userId, pageable);
+
+		return trades.map(trade -> {
+			boolean isBuyer = trade.getPurchaseBidId().getUser().getId().equals(userId);
+
+			Bid referenceBid = trade.getPurchaseBidId();
+			ProductOption option = (referenceBid != null) ? referenceBid.getProductOption() : null;
+			Product product = (option != null) ? option.getProduct() : null;
+
+			return TradeResponseDto.builder()
+				.id(trade.getId())
+				.productName(product != null ? product.getName() : "정보 없음 (삭제된 상품)")
+				.size(option != null ? option.getSize() : "-")
+				.price(trade.getFinalPrice())
+				.status(trade.getStatus() != null ? trade.getStatus().name() : "WAITING_PAYMENT")
+				.matchedAt(trade.getCreatedAt())
+				.role(isBuyer ? "BUYER" : "SELLER")
+				.build();
 		});
 	}
 
