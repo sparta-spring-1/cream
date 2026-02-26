@@ -64,14 +64,12 @@ const MyPaymentHistory = ({ onlyPaid = false }: Props) => {
                             {payment.status === 'PAID' ? '결제완료' :
                                 payment.status === 'CANCELLED' ? '취소됨' : payment.status}
                         </span>
-                        {payment.status === 'PENDING' && (
-                            <button
-                                onClick={() => navigate(`/payment?tradeId=${payment.tradeId}`)}
-                                className="text-xs px-3 py-1 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors"
-                            >
-                                결제 확인
-                            </button>
-                        )}
+                        <button
+                            onClick={() => navigate(`/payment?tradeId=${payment.tradeId}`)}
+                            className="text-xs px-3 py-1 bg-blue-500 text-white font-bold rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                            결제 확인
+                        </button>
                     </div>
                 </div>
             ))}
