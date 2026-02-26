@@ -74,8 +74,8 @@ const ProductPage = () => {
                     {/* Left: Image Gallery */}
                     <div className="flex flex-col gap-4">
                         <div className="aspect-square w-full rounded-xl bg-gray-50 flex items-center justify-center border border-gray-100">
-                            {product.imageUrls && product.imageUrls.length > 0 ? (
-                                <img className="w-full h-full object-contain p-8" alt={product.name} src={product.imageUrls[0]} />
+                            {product.imageIds && product.imageIds.length > 0 ? (
+                                <img className="w-full h-full object-contain p-8" alt={product.name} src={product.imageIds[0]} />
                             ) : (
                                 <span className="text-gray-400">이미지 없음</span>
                             )}
