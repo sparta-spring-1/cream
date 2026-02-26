@@ -29,7 +29,7 @@ public class AdminUpdateProductResponse {
 	private final String modelNumber;
 	private final String brandName;
 	private final Long categoryId;
-	private final List<Long> imageIds;
+	private final List<String> imageUrls;
 	private final List<String> options;
 	private final String color;
 	private final String sizeUnit;
@@ -40,7 +40,7 @@ public class AdminUpdateProductResponse {
 	private final LocalDateTime createdAt;
 	private final LocalDateTime updatedAt;
 
-	public static AdminUpdateProductResponse from(Product product, List<Long> imageIds, List<String> options) {
+	public static AdminUpdateProductResponse from(Product product, List<String> imageIds, List<String> options) {
 		return new AdminUpdateProductResponse(
 			product.getId(),
 			product.getName(),

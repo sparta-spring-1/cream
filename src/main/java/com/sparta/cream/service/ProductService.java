@@ -149,12 +149,14 @@ public class ProductService {
 		ProductCategory category = productCategoryRepository.findById(request.getCategoryId())
 			.orElseThrow(() -> new BusinessException(ProductErrorCode.PRODUCT_NOT_FOUND_CATEGORY));
 
-		product.getImageList().stream()
-			.filter(img -> !request.getImageIds().contains(img.getId()))
-			.forEach(ProductImage::softDelete);
+		// 기존 이미지 연결 제거
+		product.getImageList().clear();
 
-		// TODO 새로 추가된 이미지와 상품 연결
-		// TODO 입찰 정보가 있는 상품은 수정할 수 없음
+		// 새로 등록된 이미지와 상품 연결
+		if (!request.getImageIds().isEmpty()) {
+			List<ProductImage> imageList = productImageRepository.findAllByIdIn(request.getImageIds());
+			product.getImageList().addAll(imageList);
+		}
 
 		// 상품 옵션 수정
 
@@ -192,7 +194,7 @@ public class ProductService {
 			newOptions.stream().map(ProductOption::getSize)
 		).toList();
 
-		return AdminUpdateProductResponse.from(product, null, finalSizes);
+		return AdminUpdateProductResponse.from(product, product.getImageUrls(), finalSizes);
 	}
 
 	/**
@@ -213,8 +215,6 @@ public class ProductService {
 		// 상품 옵션 삭제
 		List<ProductOption> options = productOptionRepository.findAllByProduct(product);
 		options.forEach(BaseEntity::softDelete);
-
-		//TODO 해당 옵션들에 대한 입찰이 존재하면 삭제할 수 없음
 
 		List<Long> imageIdList = product.getImageList().stream()
 			.map(ProductImage::getId)
