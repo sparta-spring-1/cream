@@ -1,6 +1,10 @@
 package com.sparta.cream.domain.trade.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.sparta.cream.domain.trade.entity.Trade;
@@ -16,4 +20,13 @@ import com.sparta.cream.domain.trade.entity.Trade;
  */
 @Repository
 public interface TradeRepository extends JpaRepository<Trade, Long>, TradeRepositoryCustom {
+
+	/**
+	 * 특정 사용자의 거래 내역을 조회합니다.
+	 * @param userId 사용자 식별자
+	 * @param pageable 페이징 및 정렬 정보
+	 * @return 사용자가 구매자 혹은 판매자로 참여한 거래 내역
+	 */
+	@Query("SELECT t FROM Trade t WHERE t.purchaseBidId.user.id = :userId OR t.saleBidId.user.id = :userId")
+	Page<Trade> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 }
