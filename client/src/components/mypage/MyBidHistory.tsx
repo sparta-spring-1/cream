@@ -28,13 +28,14 @@ const MyBidHistory = () => {
         setIsLoading(true);
         bidApi.getMyBids(0, 50)
             .then(data => {
+
                 const formatted = (data.content as any[]).map(bid => ({
                     ...bid,
-                    // [해결 1] 모든 상태값에서 공백 제거 및 대문자 강제 변환
                     type: bid.type?.trim().toUpperCase(),
                     status: bid.status?.trim().toUpperCase()
                 }));
                 setBids(formatted);
+
             })
             .catch(err => console.error(err))
             .finally(() => setIsLoading(false));
