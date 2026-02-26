@@ -25,6 +25,8 @@ import com.sparta.cream.domain.trade.dto.TradeResponseDto;
 import com.sparta.cream.domain.trade.entity.Trade;
 import com.sparta.cream.domain.trade.event.TradeCancelledEvent;
 import com.sparta.cream.domain.trade.repository.TradeRepository;
+import com.sparta.cream.entity.Product;
+import com.sparta.cream.entity.ProductOption;
 import com.sparta.cream.entity.Users;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
@@ -152,10 +154,14 @@ public class TradeService {
 		return trades.map(trade -> {
 			boolean isBuyer = trade.getPurchaseBidId().getUser().getId().equals(userId);
 
+			Bid referenceBid = trade.getPurchaseBidId();
+			ProductOption option = (referenceBid != null) ? referenceBid.getProductOption() : null;
+			Product product = (option != null) ? option.getProduct() : null;
+
 			return TradeResponseDto.builder()
 				.id(trade.getId())
-				.productName(trade.getPurchaseBidId().getProductOption().getProduct().getName())
-				.size(trade.getPurchaseBidId().getProductOption().getSize())
+				.productName(product != null ? product.getName() : "정보 없음 (삭제된 상품)")
+				.size(option != null ? option.getSize() : "-")
 				.price(trade.getFinalPrice())
 				.status(trade.getStatus() != null ? trade.getStatus().name() : "WAITING_PAYMENT")
 				.matchedAt(trade.getCreatedAt())
