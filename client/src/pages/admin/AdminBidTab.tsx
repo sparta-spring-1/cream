@@ -78,8 +78,6 @@ const AdminBidTab = () => {
 
         <div className="relative">
             <div className="flex justify-between items-center mb-4">
-        <div>
-            <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold">입찰 모니터링 (총 {total}건)</h2>
                 <div className="flex gap-2">
                     <select
