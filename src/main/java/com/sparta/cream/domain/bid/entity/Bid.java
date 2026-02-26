@@ -9,6 +9,8 @@ import com.sparta.cream.exception.BidErrorCode;
 import com.sparta.cream.exception.BusinessException;
 import com.sparta.cream.exception.ErrorCode;
 
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.*;
@@ -45,8 +47,9 @@ public class Bid extends BaseEntity {
 	@JoinColumn(name = "user_id", nullable = false)
 	private Users user;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "product_option_id", nullable = false)
+	@NotFound(action = NotFoundAction.IGNORE)
 	private ProductOption productOption;
 
 	@Column(nullable = false)
