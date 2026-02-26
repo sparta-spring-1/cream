@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { notificationApi, type NotificationResponse } from '../api/notification';
 
 const NotificationPage = () => {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -117,6 +119,14 @@ const NotificationPage = () => {
                                 </span>
                             </div>
                             <p className="text-sm text-gray-600">{notif.message}</p>
+                            {notif.title === '거래 체결 완료' && notif.tradeId !== null && (
+                                <button
+                                    onClick={() => navigate(`/payment?tradeId=${notif.tradeId}`)}
+                                    className="mt-3 px-4 py-2 bg-blue-500 text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors"
+                                >
+                                    결제하기
+                                </button>
+                            )}
                         </div>
                     ))}
                 </div>

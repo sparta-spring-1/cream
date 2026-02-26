@@ -20,15 +20,17 @@ import lombok.Getter;
 @Getter
 public class YourPaymentListResponse {
 	private final Long id;
+	private final Long tradeId;
 	private final String merchantUid;
 	private final String productName;
 	private final BigDecimal amount;
 	private final LocalDateTime paidAt;
 	private final String status;
 
-	public YourPaymentListResponse(Long id, String merchantUid, String productName, BigDecimal amount, LocalDateTime paidAt,
+	public YourPaymentListResponse(Long id, Long tradeId, String merchantUid, String productName, BigDecimal amount, LocalDateTime paidAt,
 		String status) {
 		this.id = id;
+		this.tradeId = tradeId;
 		this.merchantUid = merchantUid;
 		this.productName = productName;
 		this.amount = amount;
@@ -38,6 +40,7 @@ public class YourPaymentListResponse {
 
 	public static YourPaymentListResponse from(Payment payment) {
 		return new YourPaymentListResponse(payment.getId(),
+			payment.getTrade().getId(),
 			payment.getMerchantUid(),
 			payment.getProductName(),
 			payment.getAmount(),

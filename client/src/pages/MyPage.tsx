@@ -44,11 +44,11 @@ const MyPage = () => {
                                     onClick={() => setBuyTab('bid')}
                                     className={`px-3 py-1 text-sm rounded-md ${buyTab === 'bid' ? 'bg-white shadow-sm font-bold' : 'text-gray-500'}`}
                                 >
-                                    구매 입찰
+                                    전체 내역
                                 </button>
                             </div>
                         </div>
-                        {buyTab === 'payment' ? <MyPaymentHistory /> : <MyBidHistory />}
+                        {buyTab === 'payment' ? <MyPaymentHistory onlyPaid={true} /> : <MyPaymentHistory />}
                     </div>
                 );
             case 'selling':
