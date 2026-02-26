@@ -28,16 +28,25 @@ const MyBidHistory = () => {
         setIsLoading(true);
         bidApi.getMyBids(0, 50)
             .then(data => {
+                // 1. 데이터가 Page 객체인지 배열인지 확인
+                const list = data.content || data || [];
 
-                const formatted = (data.content as any[]).map(bid => ({
-                    ...bid,
-                    type: bid.type?.trim().toUpperCase(),
-                    status: bid.status?.trim().toUpperCase()
-                }));
+                const formatted = list.map((bid: any) => {
+                    // 백엔드에서 SALE로 오든 SELL로 오든 SELL로 통일
+                    const rawType = String(bid.type || "").toUpperCase();
+                    const normalizedType = (rawType === 'SALE' || rawType === 'SELL') ? 'SELL' : 'BUY';
+
+                    return {
+                        ...bid,
+                        productId: bid.productId, // DTO에 있는 필드 그대로 사용
+                        type: normalizedType,
+                        status: String(bid.status || "").toUpperCase()
+                    };
+                });
+
                 setBids(formatted);
-
             })
-            .catch(err => console.error(err))
+            .catch(err => console.error("데이터 로드 실패:", err))
             .finally(() => setIsLoading(false));
     }
 
@@ -87,21 +96,32 @@ const MyBidHistory = () => {
     };
 
     const handleEditSubmit = async () => {
-        if (!editingBid || !selectedOptionId) return;
+        if (!editingBid) return;
+
+        const finalPrice = editPrice ? Number(editPrice) : editingBid.price;
+        const finalOptionId = selectedOptionId || editingBid.productOptionId;
+
+        console.log("제출 데이터 확인:", { finalPrice, finalOptionId });
+
+        if (!finalPrice || !finalOptionId) {
+            alert("가격 또는 옵션 정보가 누락되었습니다.");
+            return;
+        }
 
         try {
             await bidApi.updateBid(editingBid.id, {
-                price: Number(editPrice),
-                productOptionId: selectedOptionId,
+                price: finalPrice,
+                productOptionId: finalOptionId,
                 type: editingBid.type as 'BUY' | 'SELL'
             });
 
             alert("입찰 정보가 수정되었습니다.");
             setIsEditModalOpen(false);
-            fetchBids();
+            fetchBids(); // 목록 새로고침
         } catch (error: any) {
-            const errorMsg = error.response?.data?.message || "입력값이 유효하지 않습니다.";
-            alert(`수정 실패: ${errorMsg}`);
+            console.error("수정 실패:", error);
+            const errorMsg = error.response?.data?.message || "수정 처리 중 오류가 발생했습니다.";
+            alert(errorMsg);
         }
     };
 
